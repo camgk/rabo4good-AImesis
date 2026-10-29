@@ -1,0 +1,5 @@
+project_id  = "qwiklabs-gcp-00-cc29ec8bfdd9"
+region      = "europe-west1"
+zone        = "europe-west1-b"
+location_id = "europe-west1"
+environment = "dev"
