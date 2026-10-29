@@ -69,11 +69,15 @@ def evaluate_breakthrough_and_personalization(
             [
                 {
                     "step": "Stap 1: Verhoog frequentie Ondansetron",
+                    "drug": "Ondansetron",
+                    "route": "PO / IV",
                     "action": "3x/d voor matig emetogeen · 2x/d voor laag emetogeen · 1x/d voor minimaal emetogeen (of switch naar IV Palonosetron bij HEC)",
                     "citation": f"{UZA_POLICY_CITATION} p.2 · Doorbraak nausea & braken",
                 },
                 {
                     "step": "Stap 2: Opstart Olanzapine (indien ≥2 jaar)",
+                    "drug": "Olanzapine",
+                    "route": "PO",
                     "action": (
                         "Start Olanzapine 0,1 mg/kg PO 1x/d (naar beneden afgerond op 0,5 mg, max 5 mg)"
                         if patient_age_years >= 2.0
@@ -83,6 +87,8 @@ def evaluate_breakthrough_and_personalization(
                 },
                 {
                     "step": "Stap 3: Associatie Alizapride of Lorazepam",
+                    "drug": "Alizapride / Lorazepam",
+                    "route": "IV / PO",
                     "action": f"Alizapride {aliz_mg} mg IV/PO (1 mg/kg, max 6x/d op chemodagen) OF Lorazepam {loraz_low}–{loraz_high} mg IV/PO q6h PRN",
                     "citation": f"{UZA_POLICY_CITATION} p.2 · Doorbraak nausea & braken",
                 },

@@ -1,0 +1,163 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aimesis.be/schemas/agent_passport.schema.json",
+  "title": "AgentCinvPassport",
+  "description": "Strict profile of passport.schema.json for passports produced by the AImesis agent (backend/agent `generate_cinv_patient_passport`). Either a full draft passport with every clinician-review section, or a refusal that carries the inputs and reasons but no tier and no doses. Agent passports are always unsigned drafts: sign-off is a human action in the clinical API. Mirrored by the Pydantic models in backend/rules/src/aimesis_rules/passport_models.py.",
+  "oneOf": [
+    {
+      "title": "Draft passport",
+      "allOf": [
+        {
+          "$ref": "passport.schema.json"
+        },
+        {
+          "required": [
+            "generation",
+            "inputs",
+            "refusal",
+            "classification",
+            "dose_review",
+            "personalization",
+            "safety",
+            "pogo_comparison",
+            "review_flags",
+            "family_schedule_multilingual"
+          ],
+          "properties": {
+            "status": {
+              "const": "draft"
+            },
+            "refusal": {
+              "properties": {
+                "refused": {
+                  "const": false
+                },
+                "reasons": {
+                  "maxItems": 0
+                }
+              }
+            },
+            "classification": {
+              "properties": {
+                "overall_tier": {
+                  "type": "string"
+                }
+              }
+            },
+            "signoffs": {
+              "properties": {
+                "oncologist": {
+                  "properties": {
+                    "signed": {
+                      "const": false
+                    }
+                  }
+                },
+                "clinical_pharmacist": {
+                  "properties": {
+                    "signed": {
+                      "const": false
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "propertyNames": {
+        "enum": [
+          "passport_id",
+          "patient_id",
+          "cycle_number",
+          "status",
+          "emetogenicity_tier",
+          "classification_rationale",
+          "antiemetic_schedule",
+          "dexamethasone_rules",
+          "breakthrough_plan",
+          "signoffs",
+          "family_schedule_multilingual",
+          "generation",
+          "inputs",
+          "refusal",
+          "classification",
+          "dose_review",
+          "personalization",
+          "safety",
+          "pogo_comparison",
+          "review_flags"
+        ]
+      }
+    },
+    {
+      "title": "Refusal",
+      "type": "object",
+      "required": [
+        "patient_id",
+        "generation",
+        "inputs",
+        "refusal",
+        "review_flags"
+      ],
+      "not": {
+        "anyOf": [
+          {
+            "required": [
+              "antiemetic_schedule"
+            ]
+          },
+          {
+            "required": [
+              "emetogenicity_tier"
+            ]
+          },
+          {
+            "required": [
+              "dose_review"
+            ]
+          }
+        ]
+      },
+      "properties": {
+        "patient_id": {
+          "type": "string"
+        },
+        "cycle_number": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "generation": {
+          "$ref": "passport.schema.json#/properties/generation"
+        },
+        "inputs": {
+          "$ref": "passport.schema.json#/properties/inputs"
+        },
+        "refusal": {
+          "allOf": [
+            {
+              "$ref": "passport.schema.json#/properties/refusal"
+            },
+            {
+              "properties": {
+                "refused": {
+                  "const": true
+                },
+                "reasons": {
+                  "minItems": 1
+                }
+              }
+            }
+          ]
+        },
+        "classification": {
+          "$ref": "passport.schema.json#/properties/classification"
+        },
+        "review_flags": {
+          "$ref": "passport.schema.json#/properties/review_flags"
+        }
+      },
+      "additionalProperties": false
+    }
+  ]
+}

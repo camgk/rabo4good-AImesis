@@ -11,17 +11,22 @@ from typing import Any, Dict, List, Optional
 
 from aimesis_rules import (
     ChemoDrugInput,
+    EmetogenicTier,
     RefusalReason,
     RegimenClassification,
-    EmetogenicTier,
     calculate_uza_dosing,
     check_ddi_interactions as _check_ddi_interactions,
     classify_regimen_uza_v2,
     compare_regimen_uza_vs_pogo,
     evaluate_uza_cinv_policy_v2 as _evaluate_uza_cinv_policy_v2,
-    generate_cinv_patient_passport as _generate_cinv_patient_passport,
     normalize_drug_name,
 )
+from aimesis_rules.passport_contract import (
+    build_agent_passport,
+    evaluation_inputs_from_patient_context,
+    refusal_document,
+)
+from pydantic import ValidationError
 
 from aimesis_agent.a2ui.surfaces import build_clinical_plan_surfaces
 from aimesis_agent.notes_extraction import extract_prior_cycle_signals_from_note
@@ -206,23 +211,36 @@ def evaluate_uza_cinv_policy_v2(
     return res
 
 
-def generate_cinv_patient_passport(
-    patient_alias: str,
-    uza_evaluation: Dict[str, Any],
-    language: str = "NL",
-    oncologist_signed_by: Optional[str] = None,
-    pharmacist_signed_by: Optional[str] = None,
-) -> Dict[str, Any]:
-    """Generate a family-friendly multilingual (NL/FR/EN) CINV Patient Passport
-    with dual sign-off status.
+def generate_cinv_patient_passport(patient_id: str) -> Dict[str, Any]:
+    """Build the CINV Patient Passport for a stored patient (call
+    `save_patient_context` first if the data is new or corrected).
+
+    Runs every deterministic rule (classification, dosing, dexamethasone,
+    breakthrough, DDI/QTc, POGO comparison) on the stored record and returns
+    the contract document (`aimesis_rules.passport_models`, contract
+    contracts/schemas/agent_passport.schema.json):
+    an unsigned draft with all clinician-review sections, or a refusal with
+    its reasons and no doses. Present it as is; never change its values.
+    `review_flags` lists what the clinician must judge before sign-off.
     """
-    return _generate_cinv_patient_passport(
-        patient_alias=patient_alias,
-        uza_evaluation=uza_evaluation,
-        language=language,
-        oncologist_signed_by=oncologist_signed_by,
-        pharmacist_signed_by=pharmacist_signed_by,
-    )
+    record = patient_store.get(patient_id)
+    try:
+        if record is None:
+            passport = refusal_document(
+                patient_id,
+                [{"field": "patient_id", "message": f"No patient record for '{patient_id}'.",
+                  "citation": "AImesis patient store"}],
+            )
+        else:
+            passport = build_agent_passport(record)
+    except ValidationError as exc:
+        return {
+            "contract_valid": False,
+            "patient_id": patient_id,
+            "errors": [f"{'/'.join(map(str, e['loc']))}: {e['msg']}" for e in exc.errors()],
+            "message": "Passport failed contract validation and was withheld. Do not improvise a plan.",
+        }
+    return passport.to_contract()
 
 
 def get_patient_context(patient_id: str) -> Dict[str, Any]:
@@ -237,27 +255,14 @@ def get_patient_context(patient_id: str) -> Dict[str, Any]:
     if record is None:
         return {"found": False, "patient_id": patient_id}
 
-    regimen = record.get("chemo_regimen") or []
-    history = record.get("history_previous_cycles") or {}
-    all_days = [d for item in regimen for d in item.get("day_numbers") or []]
-    evaluation_inputs = {
-        "drug_list": [item["drug_name"] for item in regimen],
-        "patient_age_years": record.get("age_years"),
-        "patient_weight_kg": record.get("weight_kg"),
-        "bsa_m2": record.get("bsa_m2"),
-        "drug_doses_mg_m2": {
-            item["drug_name"]: item["dose_mg_per_m2"]
-            for item in regimen
-            if item.get("dose_mg_per_m2") is not None
-        },
-        "drug_days": {item["drug_name"]: item.get("day_numbers") or [] for item in regimen},
-        "drug_routes": {item["drug_name"]: item.get("route", "IV") for item in regimen},
-        "chemo_duration_days": (max(all_days) - min(all_days) + 1) if all_days else 1,
-        "can_swallow_tablets": record.get("preferred_formulation") == "oral_tablet",
-        "prior_breakthrough_cinv": bool(history.get("had_refractory_cinv", False)),
-        "anticipatory_vomiting": bool(history.get("anticipatory_nausea", False)),
+    evaluation_inputs, inputs = evaluation_inputs_from_patient_context(record)
+    defaulted = [i["field"] for i in inputs if i["source"] == "default"]
+    return {
+        "found": True,
+        "patient": record,
+        "evaluation_inputs": evaluation_inputs,
+        "defaulted_inputs": defaulted,
     }
-    return {"found": True, "patient": record, "evaluation_inputs": evaluation_inputs}
 
 
 def save_patient_context(
@@ -274,6 +279,8 @@ def save_patient_context(
     history_previous_cycles: Optional[Dict[str, Any]] = None,
     allergies_and_contraindications: Optional[List[str]] = None,
     preferred_formulation: Optional[str] = None,
+    diagnosis_group: Optional[str] = None,
+    active_medications: Optional[List[str]] = None,
 ) -> Dict[str, Any]:
     """Create or update a pseudonymised patient's clinical context. Only the
     provided fields are changed; omitted fields keep their stored value.
@@ -283,6 +290,9 @@ def save_patient_context(
     `history_previous_cycles`: {"had_refractory_cinv": bool,
     "prior_episode_count": int, "anticipatory_nausea": bool, "notes": str}.
     `preferred_formulation`: oral_liquid | oral_tablet | iv | orodispersible.
+    `diagnosis_group` (e.g. solid, ALL, brain_tumour) and `diagnosis` drive the
+    dexamethasone contraindication check; `active_medications` (e.g.
+    voriconazole) drive the interaction check.
     BSA is derived via Mosteller when `height_cm` and weight are given.
     Never store names or other direct identifiers.
     """
@@ -304,6 +314,8 @@ def save_patient_context(
         "history_previous_cycles": history_previous_cycles,
         "allergies_and_contraindications": allergies_and_contraindications,
         "preferred_formulation": preferred_formulation,
+        "diagnosis_group": diagnosis_group,
+        "active_medications": active_medications,
     }
     try:
         record = patient_store.upsert(updates)

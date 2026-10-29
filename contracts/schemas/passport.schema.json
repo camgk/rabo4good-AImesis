@@ -90,7 +90,8 @@
               "iv",
               "oral_liquid",
               "oral_capsule",
-              "oral_tablet"
+              "oral_tablet",
+              "orodispersible"
             ]
           },
           "frequency": {
@@ -107,6 +108,27 @@
           "rule_citation": {
             "type": "string",
             "description": "Specific guideline citation (e.g. 'UZA v2 p.2 · Ondansetron 5 mg/m², max 8 mg/dose')"
+          },
+          "day_label": {
+            "type": "string",
+            "description": "Extension: human label for cycle_days (e.g. 'D2–D3')"
+          },
+          "duration": {
+            "type": "string",
+            "description": "Extension: duration as stated by UZA v2"
+          },
+          "route_options": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Extension: all routes the rule allows (route is the one chosen for this patient)"
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         }
       }
@@ -125,6 +147,20 @@
         "rationale": {
           "type": "string",
           "description": "Rule citation explaining inclusion or block"
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Extension: every contraindication found (empty when allowed)"
+        },
+        "aprepitant_dose_reduction": {
+          "type": "boolean",
+          "description": "Extension: dose halved for CYP3A4 interaction with (fos)aprepitant"
+        },
+        "citation": {
+          "type": "string"
         }
       }
     },
@@ -164,6 +200,10 @@
               },
               "rule_citation": {
                 "type": "string"
+              },
+              "action": {
+                "type": "string",
+                "description": "Extension: full UZA v2 step text"
               }
             }
           }
@@ -370,6 +410,525 @@
     "updated_at": {
       "type": "string",
       "format": "date-time"
+    },
+    "generation": {
+      "type": "object",
+      "description": "Extension (agent): how and when this passport was computed",
+      "required": [
+        "generated_at",
+        "generator",
+        "policy_version",
+        "benchmark_version",
+        "advisory_status"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "generated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "generator": {
+          "type": "string"
+        },
+        "policy_version": {
+          "type": "string"
+        },
+        "benchmark_version": {
+          "type": "string"
+        },
+        "advisory_status": {
+          "type": "string"
+        }
+      }
+    },
+    "inputs": {
+      "type": "array",
+      "description": "Extension (agent): every value the rules engine was run with, and where it came from",
+      "items": {
+        "type": "object",
+        "required": [
+          "field",
+          "value",
+          "source"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "field": {
+            "type": "string"
+          },
+          "value": {},
+          "unit": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "patient_record",
+              "derived",
+              "default"
+            ]
+          },
+          "note": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "refusal": {
+      "type": "object",
+      "description": "Extension (agent): refuse rather than guess",
+      "required": [
+        "refused",
+        "reasons"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "refused": {
+          "type": "boolean"
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "field",
+              "message",
+              "citation"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "field": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              },
+              "citation": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "classification": {
+      "type": "object",
+      "description": "Extension (agent): UZA v2 p.1 regimen classification",
+      "required": [
+        "overall_tier",
+        "drugs",
+        "days",
+        "combination_rules"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "overall_tier": {
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": [
+                "HIGH",
+                "MODERATE",
+                "LOW",
+                "MINIMAL"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "drugs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "drug",
+              "dose_mg_m2",
+              "days",
+              "tier",
+              "rule_citation"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "drug": {
+                "type": "string"
+              },
+              "dose_mg_m2": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "days": {
+                "type": "array",
+                "items": {
+                  "type": "integer"
+                }
+              },
+              "tier": {
+                "type": "string",
+                "enum": [
+                  "HIGH",
+                  "MODERATE",
+                  "LOW",
+                  "MINIMAL"
+                ]
+              },
+              "rule_citation": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "days": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "day",
+              "tier",
+              "drugs"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "day": {
+                "type": "integer"
+              },
+              "tier": {
+                "type": "string",
+                "enum": [
+                  "HIGH",
+                  "MODERATE",
+                  "LOW",
+                  "MINIMAL"
+                ]
+              },
+              "drugs": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "combination_rules": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "dose_review": {
+      "type": "array",
+      "description": "Extension (agent): every UZA v2 p.2 dose line, including those not indicated, for clinician review",
+      "items": {
+        "type": "object",
+        "required": [
+          "drug",
+          "indicated",
+          "dose_text",
+          "frequency",
+          "duration",
+          "route",
+          "formula",
+          "citation",
+          "warnings",
+          "administrations"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "drug": {
+            "type": "string"
+          },
+          "indicated": {
+            "type": "boolean"
+          },
+          "dose_text": {
+            "type": "string"
+          },
+          "frequency": {
+            "type": "string"
+          },
+          "duration": {
+            "type": "string"
+          },
+          "route": {
+            "type": "string"
+          },
+          "formula": {
+            "type": "string"
+          },
+          "citation": {
+            "type": "string"
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "administrations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "dose_amount",
+                "dose_unit",
+                "cycle_days",
+                "day_label"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "dose_amount": {
+                  "type": "number"
+                },
+                "dose_unit": {
+                  "type": "string"
+                },
+                "cycle_days": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer"
+                  }
+                },
+                "day_label": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "personalization": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Extension (agent): UZA v2 p.2 personalization overrides applied"
+    },
+    "safety": {
+      "type": "object",
+      "description": "Extension (agent): drug-interaction and QTc screening",
+      "required": [
+        "interactions",
+        "highest_severity",
+        "safe_to_proceed_without_modification",
+        "qtc",
+        "recommended_modifications"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "interactions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "interacting_pair",
+              "severity",
+              "kind",
+              "mechanism",
+              "clinical_action",
+              "safe_alternative",
+              "citation"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "interacting_pair": {
+                "type": "string"
+              },
+              "severity": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string"
+              },
+              "mechanism": {
+                "type": "string"
+              },
+              "clinical_action": {
+                "type": "string"
+              },
+              "safe_alternative": {
+                "type": "string"
+              },
+              "citation": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "highest_severity": {
+          "type": "string"
+        },
+        "safe_to_proceed_without_modification": {
+          "type": "boolean"
+        },
+        "recommended_modifications": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "qtc": {
+          "type": "object",
+          "required": [
+            "risk_tier",
+            "cumulative_score",
+            "contributors"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "risk_tier": {
+              "type": "string"
+            },
+            "cumulative_score": {
+              "type": "number"
+            },
+            "baseline_qtc_ms": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "clinical_alert": {
+              "type": "string"
+            },
+            "citation": {
+              "type": "string"
+            },
+            "contributors": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "drug",
+                  "category",
+                  "score",
+                  "note"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "drug": {
+                    "type": "string"
+                  },
+                  "category": {
+                    "type": "string"
+                  },
+                  "score": {
+                    "type": "number"
+                  },
+                  "note": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "pogo_comparison": {
+      "type": "object",
+      "description": "Extension (agent): UZA v2 vs POGO 2025 benchmark (UZA v2 is the source of truth)",
+      "required": [
+        "has_differences",
+        "drugs",
+        "combination_notes"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "has_differences": {
+          "type": "boolean"
+        },
+        "drugs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "drug",
+              "uza_tier",
+              "pogo_tier",
+              "differs",
+              "explanation",
+              "uza_citation",
+              "pogo_citation"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "drug": {
+                "type": "string"
+              },
+              "dose_mg_m2": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "uza_tier": {
+                "type": "string"
+              },
+              "pogo_tier": {
+                "type": "string"
+              },
+              "differs": {
+                "type": "boolean"
+              },
+              "explanation": {
+                "type": "string"
+              },
+              "uza_citation": {
+                "type": "string"
+              },
+              "pogo_citation": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "combination_notes": {
+          "type": "array",
+          "items": {}
+        },
+        "prophylaxis_comparison": {
+          "type": "object"
+        }
+      }
+    },
+    "review_flags": {
+      "type": "array",
+      "description": "Extension (agent): items the clinician must actively judge before sign-off",
+      "items": {
+        "type": "object",
+        "required": [
+          "severity",
+          "code",
+          "message"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "severity": {
+            "type": "string",
+            "enum": [
+              "critical",
+              "warning",
+              "info"
+            ]
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "citation": {
+            "type": "string"
+          }
+        }
+      }
     }
   }
 }

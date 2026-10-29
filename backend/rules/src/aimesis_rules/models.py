@@ -111,6 +111,8 @@ if _HAS_PYDANTIC:
         formula_shown: str
         citation: str
         warnings: List[str] = _PydanticField(default_factory=list)
+        # Structured doses behind `dose_text`: [{dose_amount, dose_unit, cycle_days, day_label}]
+        administrations: List[Dict[str, Any]] = _PydanticField(default_factory=list)
 
     class DosingScheduleResult(_PydanticBaseModel):
         refused: bool = False
@@ -197,6 +199,7 @@ else:
         formula_shown: str
         citation: str
         warnings: List[str] = field(default_factory=list)
+        administrations: List[Dict[str, Any]] = field(default_factory=list)
 
     @dataclass
     class DosingScheduleResult(_DumpMixin):  # type: ignore[no-redef]

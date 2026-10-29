@@ -179,6 +179,7 @@ def evaluate_uza_cinv_policy_v2(
         chemo_duration_days=chemo_duration_days,
         prior_breakthrough_cinv=prior_breakthrough_cinv,
         anticipatory_vomiting=anticipatory_vomiting,
+        chemo_days=sorted({d for c in chemo_inputs for d in c.days}),
     )
 
     if dosing_res.refused:

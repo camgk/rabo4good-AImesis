@@ -26,7 +26,7 @@ from `Anti-emetica beleid CINV - V2.pdf` page 2:
 from __future__ import annotations
 
 import math
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from .dexamethasone import evaluate_dexamethasone_contraindication
 from .models import (
@@ -44,6 +44,18 @@ def round_down_to_half_mg(value_mg: float) -> float:
     return math.floor((value_mg + 1e-9) * 2.0) / 2.0
 
 
+def _day_label(days: List[int]) -> str:
+    if not days:
+        return ""
+    if days == list(range(days[0], days[-1] + 1)) and len(days) > 1:
+        return f"D{days[0]}–D{days[-1]}"
+    return ", ".join(f"D{d}" for d in days)
+
+
+def _admin(amount: float, unit: str, days: List[int]) -> Dict[str, Any]:
+    return {"dose_amount": amount, "dose_unit": unit, "cycle_days": list(days), "day_label": _day_label(days)}
+
+
 def calculate_uza_dosing(
     tier: EmetogenicTier,
     patient_age_years: Optional[float],
@@ -58,6 +70,7 @@ def calculate_uza_dosing(
     anticipatory_vomiting: bool = False,
     use_palonosetron_switch: bool = False,
     mec_prefer_aprepitant: bool = False,
+    chemo_days: Optional[List[int]] = None,
 ) -> DosingScheduleResult:
     """Computes exact deterministic doses and citations per UZA v2 p.2."""
     refusals: List[RefusalReason] = []
@@ -95,6 +108,11 @@ def calculate_uza_dosing(
         regimen_drugs=regimen_drugs or [],
         concomitant_meds=concomitant_meds or [],
     )
+
+    # Cycle days for structured administrations (chemo days, and chemo + 3 days after).
+    chemo_day_list = sorted(set(chemo_days or [])) or list(range(1, max(chemo_duration_days, 1) + 1))
+    first_day, last_day = chemo_day_list[0], chemo_day_list[-1]
+    chemo_plus_3 = chemo_day_list + [last_day + i for i in (1, 2, 3)]
 
     oral_route = "PO (siroop / suspensie / smelttablet)" if not can_swallow_tablets else "PO / IV"
     lines: Dict[str, DoseLine] = {}
@@ -134,6 +152,11 @@ def calculate_uza_dosing(
             if use_palonosetron_switch
             else []
         ),
+        administrations=(
+            [_admin(ond_dose, "mg", chemo_day_list if tier == EmetogenicTier.LOW else chemo_plus_3)]
+            if tier != EmetogenicTier.MINIMAL
+            else []
+        ),
     )
 
     # Optional Palonosetron calculation (for refractory HEC / Casus 1 option)
@@ -143,6 +166,7 @@ def calculate_uza_dosing(
         palo_formula = f"20 mcg/kg × {patient_weight_kg} kg = {raw_palo_mcg:.0f} mcg (max 1500 mcg)"
         palo_text = f"Palonosetron {palo_mcg:.0f} mcg IV eenmalig op D1 ({palo_formula})"
     else:
+        palo_mcg = 250.0
         palo_formula = ">=17j: 250 mcg/dosis eenmalig op D1 (indien nodig herhalen op D4)"
         palo_text = "Palonosetron 250 mcg IV eenmalig op D1 (indien nodig herhalen op D4)"
 
@@ -159,6 +183,7 @@ def calculate_uza_dosing(
             "Enkel in overleg met supervisie/apotheek.",
             "Niet samen met ondansetron (tot 3 dagen na toediening palonosetron).",
         ],
+        administrations=[_admin(palo_mcg, "mcg", [first_day])],
     )
 
     # 2. (FOS)APREPITANT (NK1-antagonist)
@@ -179,6 +204,7 @@ def calculate_uza_dosing(
         else "D1 t.e.m. D3"
     )
 
+    aprep_admins: List[Dict[str, Any]] = []
     if not aprepitant_eligible_age_wt:
         aprep_text = "Geen indicatie (<6 maanden of ≤6 kg — UZA v2 p.2)"
         aprep_formula = "<6m of ≤6kg: geen indicatie"
@@ -189,6 +215,7 @@ def calculate_uza_dosing(
         if patient_age_years >= 12.0 and can_swallow_tablets:
             aprep_formula = "≥12j PO: 125 mg op D1 gevolgd door 80 mg op D2 en D3"
             aprep_text = f"Aprepitant PO: D1 = 125 mg 1x/d; D2–D3 = 80 mg 1x/d ({aprep_days_label})"
+            aprep_admins = [_admin(125.0, "mg", [first_day]), _admin(80.0, "mg", [first_day + 1, first_day + 2])]
         else:
             d1_raw = round(3.0 * patient_weight_kg, 1)
             d2_raw = round(2.0 * patient_weight_kg, 1)
@@ -204,6 +231,7 @@ def calculate_uza_dosing(
                 f"(Fos)Aprepitant ({aprep_route_label}): Day 1 = {d1_mg} mg (3 mg/kg, max 125 mg); "
                 f"Days 2–3 = {d2_mg} mg (2 mg/kg, max 80 mg) [{aprep_days_label}]"
             )
+            aprep_admins = [_admin(d1_mg, "mg", [first_day]), _admin(d2_mg, "mg", [first_day + 1, first_day + 2])]
 
     lines["aprepitant"] = DoseLine(
         drug="(Fos)Aprepitant",
@@ -219,6 +247,7 @@ def calculate_uza_dosing(
             if aprepitant_indicated
             else []
         ),
+        administrations=aprep_admins if aprepitant_indicated else [],
     )
 
     # 3. DEXAMETHASONE (Corticoïden)
@@ -268,6 +297,7 @@ def calculate_uza_dosing(
         duration="Enkel op dagen van chemotherapie" if dex_indicated else "N.v.t.",
         route="IV / PO",
         formula_shown=dex_formula,
+        administrations=[_admin(dex_mg, "mg", chemo_day_list)] if dex_indicated else [],
         citation="UZA v2 p.2 · Dexamethasone: <0,6m² 1mg (met aprepitant) / 2mg (zonder) 2x/d; ≥0,6m² 2mg (met) / 4mg (zonder) 2x/d; IV Aacidexam® 5 mg/ml = ±4 mg/ml",
         warnings=dex_warnings,
     )
@@ -309,6 +339,7 @@ def calculate_uza_dosing(
         formula_shown=olanz_formula,
         citation="UZA v2 p.2 · Olanzapine PO: <2j geen indicatie; ≥2j 0,1 mg/kg (max. 5 mg/dosis) 1x/d, naar beneden afronden tot dichtstbijzijnde 0,5mg. Nooit in monotherapie.",
         warnings=["Nooit in monotherapie voor CINV-indicatie."] if olanz_indicated else [],
+        administrations=[_admin(floored_olanz, "mg", chemo_plus_3)] if olanz_indicated else [],
     )
 
     # 5. LORAZEPAM (Benzodiazepine — Doorbraak & Anticipatoir)
@@ -354,6 +385,7 @@ def calculate_uza_dosing(
         route="IV / PO",
         formula_shown=f"1 mg/kg × {patient_weight_kg} kg = {aliz_mg} mg (max 50 mg/dosis)",
         citation="UZA v2 p.2 · Alizapride IV of per os: 1 mg/kg (max. 50mg/dosis) max. 6x/d, enkel op dagen van chemotherapie",
+        administrations=[_admin(aliz_mg, "mg", chemo_day_list)],
     )
 
     return DosingScheduleResult(
