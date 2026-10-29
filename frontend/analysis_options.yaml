@@ -1,0 +1,22 @@
+# Shared analyzer settings for the frontend workspace.
+# Kept dependency-free on purpose: members add their own lint package
+# (e.g. flutter_lints) in their own analysis_options.yaml if they want it.
+analyzer:
+  exclude:
+    - build/**
+    - "**/build/**"
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+  language:
+    strict-casts: false
+    strict-raw-types: true
+
+linter:
+  rules:
+    - avoid_print
+    - prefer_const_constructors
+    - prefer_final_fields
+    - prefer_single_quotes
+    - unawaited_futures
+    - always_declare_return_types
+    - annotate_overrides
