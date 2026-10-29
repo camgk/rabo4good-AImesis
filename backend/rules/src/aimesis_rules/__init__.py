@@ -102,6 +102,7 @@ def evaluate_uza_cinv_policy_v2(
     chemo_duration_days: int = 1,
     concomitant_meds: Optional[List[str]] = None,
     strict_validation: bool = False,
+    drug_routes: Optional[Dict[str, str]] = None,
 ) -> Dict[str, Any]:
     """High-level deterministic pipeline combining Stories 1, 2, 3, 5, and 6.
 
@@ -109,7 +110,7 @@ def evaluate_uza_cinv_policy_v2(
     required dose-dependent cytostatic dose is missing, or if an unknown drug is passed.
     """
     doses_norm = {
-        normalize_drug_name(k): float(v)
+        normalize_drug_name(k): v
         for k, v in (drug_doses_mg_m2 or {}).items()
         if v is not None
     }
@@ -118,14 +119,28 @@ def evaluate_uza_cinv_policy_v2(
         for k, v in (drug_days or {}).items()
     }
 
-    chemo_inputs = [
-        ChemoDrugInput(
-            drug=d,
-            dose_mg_m2=doses_norm.get(normalize_drug_name(d)),
-            days=days_norm.get(normalize_drug_name(d), list(range(1, chemo_duration_days + 1))),
-        )
-        for d in drug_list
-    ]
+    routes_norm = {normalize_drug_name(k): v for k, v in (drug_routes or {}).items()}
+    try:
+        chemo_inputs = [
+            ChemoDrugInput(
+                drug=d,
+                dose_mg_m2=doses_norm.get(normalize_drug_name(d)),
+                route=routes_norm.get(normalize_drug_name(d), "IV"),
+                days=days_norm.get(normalize_drug_name(d), list(range(1, chemo_duration_days + 1))),
+            )
+            for d in drug_list
+        ]
+    except ValueError:
+        return {
+            "refused": True,
+            "refusal_reasons": [{
+                "field": "regimen",
+                "message": "Provide finite positive doses and non-empty lists of positive integer treatment days.",
+                "citation": f"{UZA_POLICY_CITATION} p.1",
+            }],
+            "policy_version": UZA_POLICY_CITATION,
+            "advisory_status": ADVISORY_LABEL,
+        }
 
     regimen_cls = classify_regimen_uza_v2(
         drugs=chemo_inputs,
@@ -205,6 +220,9 @@ def evaluate_uza_cinv_policy_v2(
         "policy_version": f"UZA Koningin Mathilde Moeder- en kindcentrum {UZA_POLICY_CITATION}",
         "overall_tier": regimen_cls.overall_tier.value,
         "per_day_tier": {str(k): v.value for k, v in regimen_cls.per_day_tier.items()},
+        "per_day_combination_rules": {str(k): v for k, v in regimen_cls.per_day_combination_rules.items()},
+        "per_day_baseline_prophylaxis": {str(k): v for k, v in regimen_cls.per_day_baseline_prophylaxis.items()},
+        "overall_rationale": regimen_cls.overall_rationale,
         "uza_drug_tiers": uza_tiers_map,
         "per_drug_details": [c.model_dump() for c in regimen_cls.per_drug],
         "combination_elevated": regimen_cls.combination_elevated,

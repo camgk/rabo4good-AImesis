@@ -15,6 +15,7 @@ from aimesis_rules import evaluate_uza_cinv_policy_v2
 from aimesis_agent.agui_endpoint import router as agui_router
 from aimesis_api.episodes.routes import router as episodes_router
 from aimesis_api.passport.routes import router as passport_router, passports_router
+from aimesis_api.regimens.routes import router as regimens_router
 
 load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 load_dotenv()
@@ -37,6 +38,7 @@ class RecommendationRequest(BaseModel):
     regimen_agents: List[str] = Field(..., description="List of chemotherapeutic agents, e.g. ['cisplatin', 'doxorubicin']")
     drug_doses_mg_m2: Optional[Dict[str, float]] = Field(default=None, description="Drug doses in mg/m² for dose-dependent classification")
     drug_days: Optional[Dict[str, List[int]]] = Field(default=None, description="Days each drug is administered")
+    drug_routes: Optional[Dict[str, str]] = Field(default=None, description="Administration route for each drug")
     indication: str = Field(default="solid_tumor", description="Clinical indication (e.g. solid_tumor, all, aml)")
     can_swallow_tablets: bool = Field(default=True, description="Whether child can swallow solid tablets/capsules")
     prior_breakthrough_cinv: bool = Field(default=False, description="Whether patient had breakthrough nausea/vomiting in prior cycle")
@@ -88,6 +90,7 @@ def create_app() -> FastAPI:
             bsa_m2=req.bsa_m2,
             drug_doses_mg_m2=req.drug_doses_mg_m2,
             drug_days=req.drug_days,
+            drug_routes=req.drug_routes,
             indication=req.indication,
             can_swallow_tablets=req.can_swallow_tablets,
             prior_breakthrough_cinv=req.prior_breakthrough_cinv,
@@ -98,6 +101,9 @@ def create_app() -> FastAPI:
             strict_validation=req.strict_validation,
         )
         return result
+
+    # Story 1 standalone workbench and deterministic classification.
+    app.include_router(regimens_router)
 
     # 3. Episodes & Cycle Tracking
     app.include_router(episodes_router)

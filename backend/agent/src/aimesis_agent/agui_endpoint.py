@@ -42,6 +42,7 @@ class EvaluateCaseRequest(BaseModel):
     bsa_m2: Optional[float] = Field(default=None)
     drug_doses_mg_m2: Dict[str, float] = Field(default_factory=dict)
     drug_days: Dict[str, List[int]] = Field(default_factory=dict)
+    drug_routes: Dict[str, str] = Field(default_factory=dict)
     indication: str = Field(default="solid_tumor")
     can_swallow_tablets: bool = True
     prior_breakthrough_cinv: bool = False
@@ -88,6 +89,7 @@ def evaluate_case_endpoint(req: EvaluateCaseRequest) -> Dict[str, Any]:
         bsa_m2=req.bsa_m2,
         drug_doses_mg_m2=req.drug_doses_mg_m2 or None,
         drug_days=req.drug_days or None,
+        drug_routes=req.drug_routes or None,
         indication=req.indication,
         can_swallow_tablets=req.can_swallow_tablets,
         prior_breakthrough_cinv=req.prior_breakthrough_cinv,
