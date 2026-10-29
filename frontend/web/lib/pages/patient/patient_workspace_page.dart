@@ -125,26 +125,28 @@ class _TabStrip extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Container(
+      width: double.infinity,
       decoration: BoxDecoration(
         color: cs.surface,
         border: Border(bottom: BorderSide(color: cs.outlineVariant)),
       ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Row(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: LayoutBuilder(builder: (context, c) {
+        final showIcons = c.maxWidth >= 1250;
+        return Wrap(
           children: [
             for (var i = 0; i < WorkspaceTab.values.length; i++)
               _TabButton(
                 index: i + 1,
                 tab: WorkspaceTab.values[i],
                 selected: WorkspaceTab.values[i] == current,
+                showIcon: showIcons,
                 badge: _badge(context, WorkspaceTab.values[i]),
                 onTap: () => context.go('/patients/$patientId/${WorkspaceTab.values[i].path}'),
               ),
           ],
-        ),
-      ),
+        );
+      }),
     );
   }
 }
@@ -156,7 +158,9 @@ class _TabButton extends StatelessWidget {
     required this.selected,
     required this.onTap,
     this.badge,
+    this.showIcon = true,
   });
+  final bool showIcon;
   final int index;
   final WorkspaceTab tab;
   final bool selected;
@@ -191,8 +195,10 @@ class _TabButton extends StatelessWidget {
                       fontSize: 11, fontWeight: FontWeight.w700, color: selected ? cs.onPrimary : cs.onSurfaceVariant)),
             ),
             const SizedBox(width: 8),
-            Icon(tab.icon, size: 18, color: fg),
-            const SizedBox(width: 6),
+            if (showIcon) ...[
+              Icon(tab.icon, size: 18, color: fg),
+              const SizedBox(width: 6),
+            ],
             Text(tab.label,
                 style: TextStyle(color: fg, fontWeight: selected ? FontWeight.w700 : FontWeight.w500, fontSize: 13.5)),
             if (badge != null) badge!,

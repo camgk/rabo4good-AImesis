@@ -252,11 +252,10 @@ class _DoseTableState extends State<DoseTable> {
           ]),
         ),
       ),
-      AnimatedCrossFade(
-        firstChild: const SizedBox(width: double.infinity),
-        secondChild: _Calculation(line: l),
-        crossFadeState: open ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+      AnimatedSize(
         duration: const Duration(milliseconds: 180),
+        alignment: Alignment.topCenter,
+        child: open ? _Calculation(line: l) : const SizedBox(width: double.infinity),
       ),
       if (!open)
         Padding(

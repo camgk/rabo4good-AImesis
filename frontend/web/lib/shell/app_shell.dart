@@ -50,7 +50,7 @@ class AppShell extends StatelessWidget {
     final items = _items(acc);
     final selected = _selected(items);
     final width = MediaQuery.sizeOf(context).width;
-    final extended = width >= 1180;
+    final extended = width >= 1440;
 
     return Scaffold(
       appBar: AppBar(

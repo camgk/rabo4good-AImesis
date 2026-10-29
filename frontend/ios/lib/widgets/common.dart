@@ -139,6 +139,8 @@ String routeLabel(String route, String lang) {
 
 /// Short family-friendly purpose of common antiemetics, shown under the name.
 String? medicinePurpose(String medicine, String lang) {
+  // The API often already says what it is for: "Ondansetron (tegen misselijkheid)".
+  if (medicine.contains('(')) return null;
   final m = medicine.toLowerCase();
   const sick = {'en': 'against feeling sick', 'nl': 'tegen misselijkheid', 'fr': 'contre les nausées'};
   const extra = {'en': 'extra help against feeling sick', 'nl': 'extra hulp tegen misselijkheid', 'fr': 'aide supplémentaire contre les nausées'};

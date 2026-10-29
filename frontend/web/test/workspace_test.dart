@@ -120,6 +120,7 @@ void main() {
           await tester.tap(find.text(tab.label).last);
           await tester.pumpAndSettle();
           expect(tester.takeException(), isNull, reason: '$id/${tab.path}');
+          expect(find.textContaining('Advisory only'), findsWidgets, reason: '$id/${tab.path}');
         }
       }
       expect(calls, contains('GET /patients/casus-4/passport'));
@@ -147,6 +148,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Sign-off').last);
     await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Submit for pharmacist check'));
     await tester.tap(find.text('Submit for pharmacist check'));
     await tester.pumpAndSettle();
     expect(calls, contains('POST /patients/casus-1/plan/submit'));
@@ -165,6 +167,7 @@ void main() {
     await tester.tap(find.text('How was this calculated?').first);
     await tester.pumpAndSettle();
     expect(find.text('FORMULA'), findsOneWidget);
+    expect(find.text('Hide calculation'), findsOneWidget);
     expect(find.textContaining('1.52 m² × 5 mg/m²'), findsWidgets);
   });
 }
