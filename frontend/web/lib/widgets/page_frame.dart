@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'breadcrumbs.dart';
+
 /// Standard scrollable page body with a title row and max width.
 class PageFrame extends StatelessWidget {
   const PageFrame({
@@ -9,6 +11,7 @@ class PageFrame extends StatelessWidget {
     this.subtitle,
     this.actions = const [],
     this.maxWidth = 1280,
+    this.breadcrumbs,
   });
 
   final String title;
@@ -16,6 +19,9 @@ class PageFrame extends StatelessWidget {
   final List<Widget> actions;
   final List<Widget> children;
   final double maxWidth;
+
+  /// Shown above the title on pages below the top level.
+  final List<Crumb>? breadcrumbs;
 
   @override
   Widget build(BuildContext context) {
@@ -29,6 +35,10 @@ class PageFrame extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              if (breadcrumbs != null) ...[
+                Breadcrumbs(breadcrumbs!),
+                const SizedBox(height: 8),
+              ],
               Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [

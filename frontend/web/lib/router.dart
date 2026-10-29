@@ -102,20 +102,14 @@ GoRouter buildRouter(AppState state) {
           ),
           GoRoute(
             path: '/patients/:id',
-            redirect: (_, s) {
-              if (s.uri.pathSegments.length != 2) return null;
-              final id = s.pathParameters['id']!;
-              // Patients created here have no API workspace yet: open their profile.
-              return PatientCyclesPage.isLocalId(id) ? '/patients/$id/cycles' : '/patients/$id/${WorkspaceTab.regimen.path}';
-            },
+            // The patient's home: profile and every cycle. The current
+            // cycle's plan lives one level down at /patients/:id/:tab.
+            pageBuilder: (_, s) => NoTransitionPage(
+              key: ValueKey('profile-${s.pathParameters['id']}'),
+              child: PatientCyclesPage(patientId: s.pathParameters['id']!),
+            ),
             routes: [
-              GoRoute(
-                path: 'cycles',
-                pageBuilder: (_, s) => NoTransitionPage(
-                  key: ValueKey('cycles-${s.pathParameters['id']}'),
-                  child: PatientCyclesPage(patientId: s.pathParameters['id']!),
-                ),
-              ),
+              GoRoute(path: 'cycles', redirect: (_, s) => '/patients/${s.pathParameters['id']}'),
               GoRoute(
                 path: ':tab',
                 pageBuilder: (_, s) => NoTransitionPage(

@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../onboarding/onboarding_models.dart';
 import '../../state/app_scope.dart';
+import '../../widgets/breadcrumbs.dart';
 import '../../widgets/common.dart';
 import '../../widgets/page_frame.dart';
 import 'processing_step.dart';
@@ -77,13 +78,10 @@ class OnboardingPage extends StatelessWidget {
           title: title,
           subtitle: c.isSent ? 'Sent to the pharmacist' : _subtitles[current],
           maxWidth: 1180,
-          actions: [
-            if (!newPatient || p.cycles.length > 1)
-              TextButton.icon(
-                onPressed: () => context.go('/patients/${p.id}/cycles'),
-                icon: const Icon(Icons.history_rounded),
-                label: Text('All cycles (${p.cycleCount})'),
-              ),
+          breadcrumbs: [
+            const Crumb('Patients', '/patients'),
+            Crumb(p.displayName, p.profile.isComplete ? '/patients/${p.id}' : null),
+            Crumb(p.labelOf(c)),
           ],
           children: [
             OnboardingStepper(cycleRef: ref, current: current),

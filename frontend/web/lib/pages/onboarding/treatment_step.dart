@@ -152,7 +152,7 @@ class _TreatmentStepState extends State<TreatmentStep> {
     store.save(_p, c);
     context.go(advance
         ? OnboardingPage.path(c.id, OnboardingStage.session)
-        : (_editProfile ? '/patients' : '/patients/${_p.id}/cycles'));
+        : (_editProfile ? '/patients' : '/patients/${_p.id}'));
   }
 
   String? _required(String? v) => (v == null || v.trim().isEmpty) ? 'Required' : null;

@@ -6,7 +6,7 @@ import '../../state/app_scope.dart';
 import '../../widgets/common.dart';
 import '../../widgets/page_frame.dart';
 import '../../widgets/patient_table.dart';
-import '../onboarding/onboarding_list.dart';
+import '../../onboarding/onboarding_store.dart';
 import '../onboarding/onboarding_page.dart';
 
 /// Loads `GET /patients` and refetches when a plan changes elsewhere.
@@ -73,7 +73,10 @@ class _PatientsPageState extends State<PatientsPage> {
   @override
   Widget build(BuildContext context) {
     return PatientsLoader(
-      builder: (context, all, reload) {
+      builder: (context, apiPatients, reload) => ListenableBuilder(
+        listenable: AppScope.of(context).onboarding,
+        builder: (context, _) {
+        final all = withOnboarded(apiPatients, AppScope.of(context).onboarding);
         final tags = (all.expand((p) => p.tags).toSet().toList()..sort());
         final tag = (_tag != null && tags.contains(_tag)) ? _tag : null;
         final patients = tag == null ? all : all.where((p) => p.hasTag(tag)).toList();
@@ -101,29 +104,6 @@ class _PatientsPageState extends State<PatientsPage> {
             ],
           ],
           children: [
-            ListenableBuilder(
-              listenable: app.onboarding,
-              builder: (context, _) {
-                final open = app.onboarding.inProgress;
-                final created = app.onboarding.localPatients;
-                TextStyle? h(BuildContext c) =>
-                    Theme.of(c).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600);
-                return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                  if (open.isNotEmpty) ...[
-                    Text('In progress (${open.length})', style: h(context)),
-                    const SizedBox(height: 10),
-                    CycleList(cycles: open, allowDiscard: canOnboard),
-                    const SizedBox(height: 24),
-                  ],
-                  if (created.isNotEmpty) ...[
-                    Text('New patients (${created.length})', style: h(context)),
-                    const SizedBox(height: 10),
-                    ProfileList(patients: created),
-                    const SizedBox(height: 24),
-                  ],
-                ]);
-              },
-            ),
             Wrap(spacing: 12, runSpacing: 12, children: [
               _Stat(label: 'Total', value: '${patients.length}', icon: Icons.people_alt_outlined),
               _Stat(label: 'High emetogenic', value: '$high', icon: Icons.local_fire_department_outlined),
@@ -166,13 +146,56 @@ class _PatientsPageState extends State<PatientsPage> {
             else
               PatientTable(
                 patients: patients,
-                onOpen: (p) => context.go('/patients/${p.id}/regimen'),
+                onOpen: (p) => context.go('/patients/${p.id}'),
               ),
           ],
         );
-      },
+        },
+      ),
     );
   }
+}
+
+/// API patients plus patients created here, as one list. Rows get an
+/// "in progress" tag while a cycle is being onboarded, and new patients a
+/// "new" tag.
+List<PatientSummary> withOnboarded(List<PatientSummary> api, OnboardingStore store) {
+  bool open(String id) => store.patient(id)?.inProgress != null;
+  PatientSummary tagged(PatientSummary p, List<String> extra) => PatientSummary(
+        id: p.id,
+        alias: p.alias,
+        age: p.age,
+        sex: p.sex,
+        diagnosis: p.diagnosis,
+        protocol: p.protocol,
+        cycle: p.cycle,
+        cycleStart: p.cycleStart,
+        overallTier: p.overallTier,
+        planStatus: p.planStatus,
+        language: p.language,
+        tags: [...p.tags, ...extra],
+      );
+  final created = [
+    for (final r in store.localPatients)
+      if (r.latest != null)
+        PatientSummary(
+          id: r.id,
+          alias: r.displayName,
+          age: r.profile.age,
+          sex: r.profile.sex,
+          diagnosis: r.profile.diagnosis.isEmpty ? null : r.profile.diagnosis,
+          protocol: r.latest!.intake.protocol.isEmpty ? null : r.latest!.intake.protocol,
+          cycle: r.latest!.intake.cycle.isEmpty ? '${r.numberOf(r.latest!)}' : r.latest!.intake.cycle,
+          cycleStart: r.latest!.intake.cycleStart?.toIso8601String().substring(0, 10),
+          planStatus: r.latest!.isSent ? PlanStatus.awaitingPharmacist : PlanStatus.draft,
+          language: r.profile.language,
+          tags: ['new', if (open(r.id)) 'in progress'],
+        ),
+  ];
+  return [
+    ...created,
+    for (final p in api) open(p.id) ? tagged(p, const ['in progress']) : p,
+  ];
 }
 
 class _Stat extends StatelessWidget {

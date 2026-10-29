@@ -128,6 +128,8 @@ void main() {
     await _finishCycle(tester);
 
     expect(find.text('Patient profile · 2 cycles'), findsOneWidget);
+    await _tap(tester, find.byKey(const Key('crumb-Patients')));
+    expect(find.text('Casus 9'), findsOneWidget, reason: 'new patients are in the main table');
     final p = state.onboarding.localPatients.single;
     expect(p.cycles.map((c) => c.intake.weightKg), [24, 25]);
     expect(p.cycles.last.session.canSwallowTablets, isFalse);
@@ -142,7 +144,7 @@ void main() {
 
     _go(tester, '/patients/$id/cycles');
     await tester.pumpAndSettle();
-    expect(find.text('From patient record'), findsWidgets);
+    expect(find.byKey(const Key('current-cycle-tile')), findsOneWidget);
 
     await _tap(tester, find.byKey(const Key('new-cycle')));
     expect(find.widgetWithText(TextFormField, drug), findsOneWidget);
@@ -157,6 +159,20 @@ void main() {
     expect(rec.imported, isNotEmpty);
     expect(rec.cycles.single.isSent, isTrue);
     expect(find.text('Patient profile · ${rec.cycleCount} cycles'), findsOneWidget);
+  });
+
+  testWidgets('clicking a patient opens the profile; the plan is one level down', (tester) async {
+    await _pump(tester, 'oncologist');
+    final id = cases.keys.first;
+    final alias = (cases[id]['patient'] as Map)['alias'] as String;
+    await _tap(tester, find.text(alias).first);
+    expect(find.textContaining('Patient profile'), findsOneWidget);
+    await _tap(tester, find.text('Open plan'));
+    expect(find.text('Overall emetogenicity'.toUpperCase()), findsOneWidget);
+    await _tap(tester, find.byKey(Key('crumb-$alias')));
+    expect(find.textContaining('Patient profile'), findsOneWidget);
+    await _tap(tester, find.byKey(const Key('crumb-Patients')));
+    expect(find.text('Patients starting or in a chemotherapy cycle'), findsOneWidget);
   });
 
   testWidgets('pharmacist sees sent cycles and cannot start one', (tester) async {

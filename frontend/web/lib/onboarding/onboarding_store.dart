@@ -74,7 +74,9 @@ class OnboardingStore extends ChangeNotifier {
       profile
         ..formulationPreference = existing.profile.formulationPreference
         ..whatHelps = existing.profile.whatHelps;
-      existing.profile = profile;
+      existing
+        ..profile = profile
+        ..imported = priorCyclesOf(api);
       _changed();
       return existing;
     }
@@ -157,6 +159,7 @@ class OnboardingStore extends ChangeNotifier {
               api.chemo.map((c) => '${c.drug} d${daysText(c.days)}').join(', '),
             ].where((s) => s.isNotEmpty).join(' · '),
             note: 'Plan ${PlanStatus.label(api.planStatus).toLowerCase()}',
+            current: true,
           ),
       ];
 

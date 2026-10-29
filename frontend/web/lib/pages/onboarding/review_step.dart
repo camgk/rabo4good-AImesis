@@ -41,7 +41,7 @@ class _ReviewStepState extends State<ReviewStep> {
       behavior: SnackBarBehavior.floating,
       content: Text('${_p.displayName} · ${_p.labelOf(d)} sent to the pharmacist'),
     ));
-    context.go('/patients/${_p.id}/cycles');
+    context.go('/patients/${_p.id}');
   }
 
   @override

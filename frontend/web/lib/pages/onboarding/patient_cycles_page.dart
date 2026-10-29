@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../onboarding/onboarding_models.dart';
 import '../../onboarding/onboarding_store.dart';
 import '../../state/app_scope.dart';
+import '../../widgets/breadcrumbs.dart';
 import '../../widgets/common.dart';
 import '../../widgets/page_frame.dart';
 import 'onboarding_list.dart';
@@ -95,22 +96,16 @@ class _Profile extends StatelessWidget {
 
     final tiles = <Widget>[
       for (final c in _cycles.reversed) _CycleTile.local(record!, c),
-      for (var i = _imported.length - 1; i >= 0; i--) _CycleTile.imported(_imported[i], i + 1),
+      for (var i = _imported.length - 1; i >= 0; i--) _CycleTile.imported(_imported[i], i + 1, _id),
     ];
 
     return PageFrame(
       title: pr.alias.isEmpty ? 'Patient' : pr.alias,
       subtitle: 'Patient profile · $total cycle${total == 1 ? '' : 's'}',
       maxWidth: 1100,
+      breadcrumbs: [const Crumb('Patients', '/patients'), Crumb(pr.alias.isEmpty ? 'Patient' : pr.alias)],
       actions: [
-        if (api != null)
-          TextButton.icon(
-            onPressed: () => context.go('/patients/$_id/regimen'),
-            icon: const Icon(Icons.dashboard_outlined),
-            label: const Text('Current plan'),
-          ),
         if (canAdd) ...[
-          const SizedBox(width: 8),
           FilledButton.icon(
             key: const Key('new-cycle'),
             onPressed: () => open != null
@@ -191,7 +186,8 @@ class _CycleTile extends StatelessWidget {
     );
   }
 
-  factory _CycleTile.imported(PriorCycle c, int number) => _CycleTile._(
+  factory _CycleTile.imported(PriorCycle c, int number, String patientId) => _CycleTile._(
+        key2: c.current ? const Key('current-cycle-tile') : null,
         number: number,
         title: [
           c.label,
@@ -199,7 +195,9 @@ class _CycleTile extends StatelessWidget {
             DateTime.tryParse(c.date!) == null ? c.date! : DateFormat('d MMM yyyy').format(DateTime.parse(c.date!)),
         ].join(' · '),
         lines: [c.summary, c.note].where((x) => x.isNotEmpty).toList(),
-        chip: const _RecordChip(),
+        chip: _RecordChip(current: c.current),
+        action: c.current ? 'Open plan' : null,
+        onTap: c.current ? (ctx) => ctx.go('/patients/$patientId/regimen') : null,
       );
 
   final int number;
@@ -258,7 +256,8 @@ class _CycleTile extends StatelessWidget {
 }
 
 class _RecordChip extends StatelessWidget {
-  const _RecordChip();
+  const _RecordChip({this.current = false});
+  final bool current;
 
   @override
   Widget build(BuildContext context) {
@@ -266,7 +265,8 @@ class _RecordChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(color: cs.surfaceContainerHighest, borderRadius: BorderRadius.circular(20)),
-      child: Text('From patient record', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+      child: Text(current ? 'Current plan' : 'From patient record',
+          style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
     );
   }
 }

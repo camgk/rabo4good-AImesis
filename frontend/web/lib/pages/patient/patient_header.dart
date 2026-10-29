@@ -1,8 +1,8 @@
 import 'package:aimesis_a2ui_catalog/aimesis_a2ui_catalog.dart';
 import 'package:aimesis_client/aimesis_client.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 
+import '../../widgets/breadcrumbs.dart';
 import '../../widgets/common.dart';
 
 class PatientHeader extends StatelessWidget {
@@ -28,18 +28,18 @@ class PatientHeader extends StatelessWidget {
     final sexLabel = switch (p.sex) { 'F' => 'female', 'M' => 'male', _ => p.sex ?? '' };
     return Container(
       color: cs.surfaceContainerLow,
-      padding: const EdgeInsets.fromLTRB(16, 12, 24, 14),
+      padding: const EdgeInsets.fromLTRB(24, 12, 24, 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          Breadcrumbs([
+            const Crumb('Patients', '/patients'),
+            Crumb(p.alias, '/patients/${p.id}'),
+            Crumb(p.cycle == null ? 'Current cycle' : 'Cycle ${p.cycle}'),
+          ]),
+          const SizedBox(height: 6),
           Row(
             children: [
-              IconButton(
-                tooltip: 'Back to patients',
-                onPressed: () => context.go('/patients'),
-                icon: const Icon(Icons.arrow_back_rounded),
-              ),
-              const SizedBox(width: 4),
               Expanded(
                 child: Wrap(
                   crossAxisAlignment: WrapCrossAlignment.center,
@@ -61,12 +61,6 @@ class PatientHeader extends StatelessWidget {
               ],
               PlanStatusChip(plan.status),
               const SizedBox(width: 4),
-              TextButton.icon(
-                key: const Key('open-cycles'),
-                onPressed: () => context.go('/patients/${p.id}/cycles'),
-                icon: const Icon(Icons.history_rounded),
-                label: const Text('Cycles'),
-              ),
               refreshing
                   ? const Padding(
                       padding: EdgeInsets.all(12),
@@ -81,7 +75,7 @@ class PatientHeader extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Padding(
-            padding: const EdgeInsets.only(left: 52),
+            padding: EdgeInsets.zero,
             child: Wrap(
               spacing: 28,
               runSpacing: 10,

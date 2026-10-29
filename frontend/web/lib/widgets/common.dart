@@ -283,8 +283,12 @@ class PlanStatusChip extends StatelessWidget {
         children: [
           Icon(icon, size: dense ? 13 : 15, color: fg),
           const SizedBox(width: 5),
-          Text(PlanStatus.label(status),
-              style: TextStyle(color: fg, fontWeight: FontWeight.w600, fontSize: dense ? 12 : 13)),
+          Flexible(
+            child: Text(PlanStatus.label(status),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: fg, fontWeight: FontWeight.w600, fontSize: dense ? 12 : 13)),
+          ),
         ],
       ),
     );

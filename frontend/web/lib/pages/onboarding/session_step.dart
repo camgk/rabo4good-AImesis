@@ -106,7 +106,7 @@ class _SessionStepState extends State<SessionStep> {
             label: const Text('Treatment & patient'),
           ),
           secondary: TextButton(
-            onPressed: () => _save(_p.isLocal && _p.isFirst(_c) ? '/patients' : '/patients/${_p.id}/cycles'),
+            onPressed: () => _save(_p.isLocal && _p.isFirst(_c) ? '/patients' : '/patients/${_p.id}'),
             child: const Text('Save and exit'),
           ),
           primary: FilledButton.icon(
@@ -171,7 +171,7 @@ class _SessionStepState extends State<SessionStep> {
       subtitle: '${rows.length} on the profile',
       icon: Icons.history_rounded,
       trailing: rows.length > 3
-          ? TextButton(onPressed: () => context.go('/patients/${_p.id}/cycles'), child: const Text('See all'))
+          ? TextButton(onPressed: () => context.go('/patients/${_p.id}'), child: const Text('See all'))
           : null,
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         for (final r in shown)

@@ -115,6 +115,8 @@ void main() {
         await tester.pumpAndSettle();
         await tester.tap(find.text(alias).first);
         await tester.pumpAndSettle();
+        await tester.tap(find.text('Open plan'));
+        await tester.pumpAndSettle();
         expect(find.text('Overall emetogenicity'.toUpperCase()), findsOneWidget, reason: id);
         for (final tab in WorkspaceTab.values) {
           await tester.tap(find.text(tab.label).last);
@@ -158,6 +160,8 @@ void main() {
     // Patient header shows the tags instead of a "Demo data" chip.
     await tester.tap(find.text('Casus 1').first);
     await tester.pumpAndSettle();
+    await tester.tap(find.text('Open plan'));
+    await tester.pumpAndSettle();
     expect(find.text('Demo data'), findsNothing);
     expect(find.text('demo'), findsOneWidget);
     expect(find.text('Advisory only — requires clinician sign-off.'), findsWidgets);
@@ -167,6 +171,8 @@ void main() {
     addTearDown(tester.view.reset);
     await pumpLoggedIn(tester, 'nurse', [], const Size(1280, 900));
     await tester.tap(find.text('Casus 4 · interactions').first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Open plan'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Safety gates').last);
     await tester.pumpAndSettle();
@@ -180,6 +186,8 @@ void main() {
     final calls = <String>[];
     await pumpLoggedIn(tester, 'oncologist', calls, const Size(1280, 900));
     await tester.tap(find.text('Casus 1').first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Open plan'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Sign-off').last);
     await tester.pumpAndSettle();
@@ -196,6 +204,8 @@ void main() {
     await tester.tap(find.text('Patients').first);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Casus 1').first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Open plan'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Plan & doses').last);
     await tester.pumpAndSettle();

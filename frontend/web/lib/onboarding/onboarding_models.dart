@@ -204,16 +204,21 @@ class PriorCycle {
   final String summary;
   final String note;
 
-  const PriorCycle({required this.label, this.date, this.summary = '', this.note = ''});
+  /// The API record's current cycle: its plan opens in the workspace.
+  final bool current;
+
+  const PriorCycle({required this.label, this.date, this.summary = '', this.note = '', this.current = false});
 
   factory PriorCycle.fromJson(Map<String, dynamic> j) => PriorCycle(
         label: (j['label'] as String?) ?? '',
         date: j['date'] as String?,
         summary: (j['summary'] as String?) ?? '',
         note: (j['note'] as String?) ?? '',
+        current: (j['current'] as bool?) ?? false,
       );
 
-  Map<String, dynamic> toJson() => {'label': label, 'date': date, 'summary': summary, 'note': note};
+  Map<String, dynamic> toJson() =>
+      {'label': label, 'date': date, 'summary': summary, 'note': note, 'current': current};
 }
 
 /// What one model contributed to the suggestion.

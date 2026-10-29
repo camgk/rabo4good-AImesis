@@ -96,44 +96,6 @@ class CycleList extends StatelessWidget {
   }
 }
 
-/// Patients created here, each opening their profile with all cycles.
-class ProfileList extends StatelessWidget {
-  const ProfileList({super.key, required this.patients});
-  final List<PatientRecord> patients;
-
-  @override
-  Widget build(BuildContext context) => _ListCard([for (final p in patients) _row(context, p)]);
-
-  Widget _row(BuildContext context, PatientRecord p) {
-    final cs = Theme.of(context).colorScheme;
-    final latest = p.latest;
-    final pr = p.profile;
-    void open() => context.go('/patients/${p.id}/cycles');
-    return ListTile(
-      key: Key('profile-row-${p.id}'),
-      onTap: open,
-      leading: CircleAvatar(
-        backgroundColor: cs.tertiaryContainer,
-        child: Text(
-          pr.alias.trim().isEmpty ? '?' : pr.alias.trim()[0].toUpperCase(),
-          style: TextStyle(color: cs.onTertiaryContainer, fontWeight: FontWeight.w700),
-        ),
-      ),
-      title: Text(p.displayName, style: const TextStyle(fontWeight: FontWeight.w600)),
-      subtitle: Text([
-        if (pr.age != null) '${pr.age} yrs',
-        if (pr.diagnosis.isNotEmpty) pr.diagnosis,
-        '${p.cycleCount} cycle${p.cycleCount == 1 ? '' : 's'}',
-      ].join(' · ')),
-      trailing: Row(mainAxisSize: MainAxisSize.min, children: [
-        if (latest != null) StageChip(latest.stage, prefix: '${p.labelOf(latest)}: '),
-        const SizedBox(width: 8),
-        TextButton(onPressed: open, child: const Text('Profile')),
-      ]),
-    );
-  }
-}
-
 class StageChip extends StatelessWidget {
   const StageChip(this.stage, {super.key, this.prefix = ''});
   final OnboardingStage stage;
