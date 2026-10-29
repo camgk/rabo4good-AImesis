@@ -84,7 +84,15 @@ class PatientTable extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(p.alias, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14.5)),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 2,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Text(p.alias, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14.5)),
+                        for (final t in p.tags) TagChip(t, dense: true),
+                      ],
+                    ),
                     Text(ageSex, style: sub),
                   ]),
                 ),

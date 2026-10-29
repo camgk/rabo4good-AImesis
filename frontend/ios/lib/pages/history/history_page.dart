@@ -126,7 +126,7 @@ class HistoryPage extends StatelessWidget {
               ),
             ],
           ],
-          const DemoFooter(),
+          const SizedBox(height: 24),
         ],
       ),
     );

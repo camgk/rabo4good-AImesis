@@ -172,12 +172,6 @@ abstract class AppLocalizations {
   /// **'Language'**
   String get language;
 
-  /// No description provided for @demoFooter.
-  ///
-  /// In en, this message translates to:
-  /// **'Demo app — not for medical use'**
-  String get demoFooter;
-
   /// No description provided for @roleParent.
   ///
   /// In en, this message translates to:

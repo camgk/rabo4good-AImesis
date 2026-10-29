@@ -188,7 +188,7 @@ class _TodayPageState extends State<TodayPage> {
               ],
             ),
           ],
-          const DemoFooter(),
+          const SizedBox(height: 24),
         ],
       ),
     );

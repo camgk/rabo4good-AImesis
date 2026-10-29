@@ -13,42 +13,48 @@ class AboutPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = AppScope.of(context);
     final cs = Theme.of(context).colorScheme;
-    final body = Theme.of(context).textTheme.bodyMedium;
     return PageFrame(
-      title: 'About this demo',
-      subtitle: 'AImesis · Solve with Google: Hacking for Good 2026 · use case 3 (BSPHO / UZA)',
+      title: 'About AImesis',
+      subtitle: 'Clinical decision support for chemotherapy-induced nausea and vomiting (CINV) in children',
       maxWidth: 1000,
       children: [
         SectionCard(
-          title: 'What is real and what is mock',
-          icon: Icons.science_outlined,
+          title: 'What AImesis does',
+          icon: Icons.info_outline_rounded,
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            _bullet(context, 'Patients are fictional demo cases (Casus 1–4). No real patient data anywhere.'),
             _bullet(context,
-                'Tiers, doses, dexamethasone gate, interactions and the POGO comparison come from a deterministic '
-                'mock rules engine ("UZA v2 (mock rules)"). No language model calculates any dose.'),
-            _bullet(context, 'Interaction messages cite "BCFI/CBIP (mock)". Breakthrough doses are labelled "mock dose".'),
+                'Classifies the emetogenic risk of each chemotherapy day and of the whole regimen, '
+                'following the UZA v2 antiemetic policy and comparing it with POGO.'),
             _bullet(context,
-                'The live ADK agent over AG-UI / A2UI is stubbed in this build; the app talks to the demo REST API.'),
-            _bullet(context, 'Every screen is advisory only and needs oncologist + pharmacist sign-off.'),
+                'Proposes antiemetic prophylaxis with weight- and BSA-based doses. Every line shows its formula '
+                'and source; doses come from a deterministic rules engine, never from a language model.'),
+            _bullet(context,
+                'Checks safety gates: dexamethasone restrictions and interactions with active medication.'),
+            _bullet(context,
+                'Personalises the plan with risk factors and nausea or vomiting reported by the family, '
+                'and produces a printable CINV passport in Dutch, French or English.'),
+            _bullet(context,
+                'Every recommendation is advisory only and needs oncologist and hospital pharmacist sign-off.'),
             const SizedBox(height: 8),
+            Text('Prototype · rules labelled with their source',
+                style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+            const SizedBox(height: 2),
             Text('API: ${state.config.apiUrl}  (from ${state.config.source})',
                 style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant, fontFamily: 'monospace')),
           ]),
         ),
         const SizedBox(height: 16),
         SectionCard(
-          title: 'Demo accounts',
-          subtitle: 'Password for every account: aimesis-demo',
+          title: 'Roles',
           icon: Icons.badge_outlined,
           child: Table(
-            columnWidths: const {0: FlexColumnWidth(3), 1: FlexColumnWidth(2), 2: FlexColumnWidth(4)},
+            columnWidths: const {0: FlexColumnWidth(2), 1: FlexColumnWidth(5)},
             defaultVerticalAlignment: TableCellVerticalAlignment.middle,
             children: [
-              _tr(context, 'oncologist@demo.aimesis.app', 'Oncologist', 'Edits risk factors, submits plans', header: false),
-              _tr(context, 'nurse@demo.aimesis.app', 'Nurse specialist', 'Edits risk factors, reads everything'),
-              _tr(context, 'pharmacist@demo.aimesis.app', 'Pharmacist', 'Approves or returns submitted plans'),
-              _tr(context, 'parent.casus2@demo.aimesis.app', 'Parent', 'Family app only (rejected here)'),
+              _tr('Oncologist', 'Edits risk factors and submits plans for pharmacist review'),
+              _tr('Nurse specialist', 'Edits risk factors and follows up on reported episodes'),
+              _tr('Pharmacist', 'Approves or returns submitted plans'),
+              _tr('Parent / patient', 'Uses the AImesis Family app (passport, symptom log)'),
             ],
           ),
         ),
@@ -66,14 +72,12 @@ class AboutPage extends StatelessWidget {
                 trailing: StoryTag(t.story),
               ),
             const SizedBox(height: 8),
-            Text('Suggested demo run: Casus 1 → 2 → 3, then Casus 4 for interactions.', style: body),
-            const SizedBox(height: 8),
             Align(
               alignment: Alignment.centerLeft,
               child: FilledButton.tonalIcon(
-                onPressed: () => context.go('/patients/casus-1/regimen'),
-                icon: const Icon(Icons.play_arrow_rounded),
-                label: const Text('Start with Casus 1'),
+                onPressed: () => context.go('/worklist'),
+                icon: const Icon(Icons.people_alt_outlined),
+                label: const Text('Open the worklist'),
               ),
             ),
           ]),
@@ -82,13 +86,12 @@ class AboutPage extends StatelessWidget {
     );
   }
 
-  TableRow _tr(BuildContext context, String a, String b, String c, {bool header = false}) {
+  TableRow _tr(String role, String what) {
     return TableRow(children: [
       Padding(
           padding: const EdgeInsets.symmetric(vertical: 6),
-          child: SelectableText(a, style: const TextStyle(fontFamily: 'monospace', fontSize: 13))),
-      Padding(padding: const EdgeInsets.symmetric(vertical: 6), child: Text(b, style: const TextStyle(fontWeight: FontWeight.w600))),
-      Padding(padding: const EdgeInsets.symmetric(vertical: 6), child: Text(c)),
+          child: Text(role, style: const TextStyle(fontWeight: FontWeight.w600))),
+      Padding(padding: const EdgeInsets.symmetric(vertical: 6), child: Text(what)),
     ]);
   }
 

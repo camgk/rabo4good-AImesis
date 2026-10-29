@@ -86,7 +86,7 @@ class SettingsPage extends StatelessWidget {
                 await state.logout();
               },
             ),
-            const DemoFooter(),
+            const SizedBox(height: 24),
           ],
         ),
       ),

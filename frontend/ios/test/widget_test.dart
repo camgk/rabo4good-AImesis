@@ -22,9 +22,9 @@ http.Response _json(Object body, [int status = 200]) => http.Response(
     jsonEncode(body), status,
     headers: {'content-type': 'application/json; charset=utf-8'});
 
-MockClient _fakeBackend({bool offlineEpisodes = false}) => MockClient((req) async {
+MockClient _fakeBackend({bool offlineEpisodes = false, bool withDemoAccounts = true}) => MockClient((req) async {
       final path = req.url.path;
-      if (path == '/auth/demo-accounts') return _json(_demoAccounts);
+      if (path == '/auth/demo-accounts') return _json(withDemoAccounts ? _demoAccounts : []);
       if (path == '/auth/login') {
         final body = jsonDecode(req.body) as Map;
         if (body['email'] == 'oncologist@demo.aimesis.app') {
@@ -35,17 +35,17 @@ MockClient _fakeBackend({bool offlineEpisodes = false}) => MockClient((req) asyn
         }
         return _json({
           'token': 't-teen',
-          'account': {'id': 'acc-teen1', 'email': body['email'], 'role': 'patient', 'displayName': 'Casus 1 · teen (demo)', 'patientIds': ['casus-1']}
+          'account': {'id': 'acc-teen1', 'email': body['email'], 'role': 'patient', 'displayName': 'Casus 1 · teen (demo)', 'patientIds': ['PAT-2026-0001']}
         });
       }
       if (path == '/patients') {
         return _json([
-          {'id': 'casus-1', 'alias': 'Casus 1', 'age': 16, 'cycle': 'B4', 'cycleStart': '2026-09-25', 'language': 'nl'}
+          {'id': 'PAT-2026-0001', 'alias': 'Casus 1', 'age': 16, 'cycle': 'B4', 'cycleStart': '2026-09-25', 'language': 'nl', 'tags': ['demo']}
         ]);
       }
-      if (path == '/patients/casus-1/passport') {
+      if (path == '/patients/PAT-2026-0001/passport') {
         return _json({
-          'patientId': 'casus-1', 'alias': 'Casus 1', 'lang': req.url.queryParameters['lang'] ?? 'en',
+          'patientId': 'PAT-2026-0001', 'alias': 'Casus 1', 'lang': req.url.queryParameters['lang'] ?? 'en',
           'title': 'Passport', 'status': 'draft', 'signedOff': false,
           'days': [
             {'day': 1, 'label': 'Day 1', 'items': [
@@ -53,15 +53,15 @@ MockClient _fakeBackend({bool offlineEpisodes = false}) => MockClient((req) asyn
             ]}
           ],
           'warningSigns': ['Vomiting more than 3 times'], 'wardPhone': '+32 3 000 00 00',
-          'resources': [], 'disclaimer': 'Demo'
+          'resources': [], 'disclaimer': 'This schedule was prepared by your care team. Call the ward if you are worried.'
         });
       }
-      if (path == '/patients/casus-1/episodes') {
+      if (path == '/patients/PAT-2026-0001/episodes') {
         if (offlineEpisodes && req.method == 'POST') {
           throw http.ClientException('offline');
         }
         if (req.method == 'POST') {
-          return _json({'id': 'ep1', 'patientId': 'casus-1', 'type': 'nausea', 'at': DateTime.now().toUtc().toIso8601String(), 'cycleDay': 1, 'loggedBy': 'acc-teen1', 'loggedByRole': 'patient'});
+          return _json({'id': 'ep1', 'patientId': 'PAT-2026-0001', 'type': 'nausea', 'at': DateTime.now().toUtc().toIso8601String(), 'cycleDay': 1, 'loggedBy': 'acc-teen1', 'loggedByRole': 'patient'});
         }
         return _json([]);
       }
@@ -93,9 +93,21 @@ void main() {
     expect(find.text('Casus 1 · teen (demo)'), findsOneWidget);
     expect(find.text('Casus 2 · parent (demo)'), findsOneWidget);
     expect(find.text('Oncologist (demo)'), findsNothing);
-    await tester.scrollUntilVisible(find.text('Demo app — not for medical use'), 200,
-        scrollable: find.descendant(of: find.byType(ListView), matching: find.byType(Scrollable)).first);
-    expect(find.text('Demo app — not for medical use'), findsOneWidget);
+    expect(find.text('Demo accounts'), findsOneWidget);
+    expect(find.textContaining('not for medical use'), findsNothing);
+  });
+
+  testWidgets('no demo accounts from the API → no quick-pick', (tester) async {
+    _phone(tester);
+    final state = await _state(_fakeBackend(withDemoAccounts: false));
+    await tester.pumpWidget(AimesisFamilyApp(state: state));
+    await state.restore();
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('signIn')), findsOneWidget);
+    expect(find.byKey(const Key('demoAccounts')), findsNothing);
+    expect(find.text('Demo accounts'), findsNothing);
+    expect(find.textContaining('Demo password'), findsNothing);
   });
 
   testWidgets('tapping a demo chip fills credentials and signs in', (tester) async {
@@ -167,14 +179,14 @@ void main() {
     var offline = true;
     final client = MockClient((req) async {
       if (offline) throw http.ClientException('offline');
-      return _json({'id': 'ep1', 'patientId': 'casus-1', 'type': 'vomiting', 'at': '2026-10-29T10:00:00Z', 'cycleDay': 35, 'loggedBy': 'a', 'loggedByRole': 'parent'});
+      return _json({'id': 'ep1', 'patientId': 'PAT-2026-0001', 'type': 'vomiting', 'at': '2026-10-29T10:00:00Z', 'cycleDay': 35, 'loggedBy': 'a', 'loggedByRole': 'parent'});
     });
     SharedPreferences.setMockInitialValues({});
     final prefs = await SharedPreferences.getInstance();
     final api = AimesisApi(baseUrl: 'http://test', client: client)..token = 't';
     final service = EpisodeService(api: api, queue: OfflineQueue(prefs));
 
-    final r = await service.logNow('casus-1', 'vomiting', severity: 3);
+    final r = await service.logNow('PAT-2026-0001', 'vomiting', severity: 3);
     expect(r.outcome, LogOutcome.savedOffline);
     expect(OfflineQueue(prefs).length, 1);
 

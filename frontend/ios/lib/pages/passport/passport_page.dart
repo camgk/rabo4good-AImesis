@@ -123,7 +123,7 @@ class PassportPage extends StatelessWidget {
                   style: theme.textTheme.bodySmall
                       ?.copyWith(color: scheme.onSurfaceVariant)),
             ),
-          const DemoFooter(),
+          const SizedBox(height: 24),
         ],
       ),
     );

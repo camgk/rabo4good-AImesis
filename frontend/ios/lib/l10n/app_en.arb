@@ -19,7 +19,6 @@
   "loginFailed": "Could not sign in. Check your email and password.",
   "networkError": "No connection to AImesis. Check your internet and try again.",
   "language": "Language",
-  "demoFooter": "Demo app — not for medical use",
   "roleParent": "Parent",
   "rolePatient": "Teen",
   "pairTitle": "Connect your child",

@@ -12,7 +12,6 @@
   "loginFailed": "Aanmelden lukt niet. Controleer je e-mail en wachtwoord.",
   "networkError": "Geen verbinding met AImesis. Controleer je internet en probeer opnieuw.",
   "language": "Taal",
-  "demoFooter": "Demo-app — niet voor medisch gebruik",
   "roleParent": "Ouder",
   "rolePatient": "Tiener",
   "pairTitle": "Je kind koppelen",

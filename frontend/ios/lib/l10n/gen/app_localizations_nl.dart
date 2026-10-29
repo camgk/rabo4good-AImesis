@@ -51,9 +51,6 @@ class AppLocalizationsNl extends AppLocalizations {
   String get language => 'Taal';
 
   @override
-  String get demoFooter => 'Demo-app — niet voor medisch gebruik';
-
-  @override
   String get roleParent => 'Ouder';
 
   @override

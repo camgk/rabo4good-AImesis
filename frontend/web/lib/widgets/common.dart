@@ -198,6 +198,28 @@ class StoryTag extends StatelessWidget {
   }
 }
 
+/// Outlined chip for a patient tag (e.g. "demo").
+class TagChip extends StatelessWidget {
+  const TagChip(this.tag, {super.key, this.dense = false});
+  final String tag;
+  final bool dense;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: dense ? 6 : 8, vertical: dense ? 1 : 2),
+      decoration: BoxDecoration(
+        border: Border.all(color: cs.outline),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(tag,
+          style: TextStyle(
+              fontSize: dense ? 10.5 : 11, color: cs.onSurfaceVariant, fontWeight: FontWeight.w600)),
+    );
+  }
+}
+
 /// Muted source / rule citation line, e.g. "UZA v2 (mock rules)".
 class SourceLabel extends StatelessWidget {
   const SourceLabel(this.text, {super.key, this.icon = Icons.menu_book_outlined});

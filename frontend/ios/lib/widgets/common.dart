@@ -7,26 +7,6 @@ import '../state/app_state.dart';
 /// Minimum touch target for the family app (stressed parent, one hand).
 const double kTouch = 56;
 
-/// Small grey footer shown on every screen.
-class DemoFooter extends StatelessWidget {
-  const DemoFooter({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final t = AppLocalizations.of(context);
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-      child: Text(
-        t.demoFooter,
-        textAlign: TextAlign.center,
-        style: theme.textTheme.bodySmall
-            ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-      ),
-    );
-  }
-}
-
 /// Segmented NL / FR / EN picker with big targets.
 class LanguagePicker extends StatelessWidget {
   const LanguagePicker({super.key});

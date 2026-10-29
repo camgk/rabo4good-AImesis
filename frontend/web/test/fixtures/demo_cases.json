@@ -1,7 +1,7 @@
 {
- "casus-1": {
+ "PAT-2026-0001": {
   "patient": {
-   "id": "casus-1",
+   "id": "PAT-2026-0001",
    "alias": "Casus 1",
    "age": 16,
    "sex": "F",
@@ -51,10 +51,13 @@
     "anticipatory": false,
     "priorNauseaNote": null
    },
-   "pairingCode": "C1-NBL2"
+   "pairingCode": "C1-NBL2",
+   "tags": [
+    "demo"
+   ]
   },
   "plan": {
-   "patientId": "casus-1",
+   "patientId": "PAT-2026-0001",
    "status": "draft",
    "refused": false,
    "refusalReasons": [],
@@ -252,10 +255,10 @@
     "pharmacist": null
    },
    "comments": [],
-   "advisory": "Advisory only — requires clinician sign-off. Demo data, not for clinical use."
+   "advisory": "Advisory only — requires clinician sign-off."
   },
   "passport": {
-   "patientId": "casus-1",
+   "patientId": "PAT-2026-0001",
    "alias": "Casus 1",
    "lang": "nl",
    "title": "CINV-paspoort · Casus 1",
@@ -447,12 +450,12 @@
     }
    ],
    "pairingCode": "C1-NBL2",
-   "disclaimer": "Demo-gegevens, niet voor klinisch gebruik. Dit schema is pas geldig na ondertekening door de oncoloog en de ziekenhuisapotheker. Bel bij twijfel altijd de afdeling."
+   "disclaimer": "Dit schema is opgesteld door je zorgteam. Bel de afdeling als je je zorgen maakt."
   }
  },
- "casus-2": {
+ "PAT-2026-0002": {
   "patient": {
-   "id": "casus-2",
+   "id": "PAT-2026-0002",
    "alias": "Casus 2",
    "age": 2,
    "sex": "M",
@@ -500,10 +503,13 @@
     "anticipatory": false,
     "priorNauseaNote": null
    },
-   "pairingCode": "C2-ALL8"
+   "pairingCode": "C2-ALL8",
+   "tags": [
+    "demo"
+   ]
   },
   "plan": {
-   "patientId": "casus-2",
+   "patientId": "PAT-2026-0002",
    "status": "draft",
    "refused": false,
    "refusalReasons": [],
@@ -637,10 +643,10 @@
     "pharmacist": null
    },
    "comments": [],
-   "advisory": "Advisory only — requires clinician sign-off. Demo data, not for clinical use."
+   "advisory": "Advisory only — requires clinician sign-off."
   },
   "passport": {
-   "patientId": "casus-2",
+   "patientId": "PAT-2026-0002",
    "alias": "Casus 2",
    "lang": "fr",
    "title": "Passeport CINV · Casus 2",
@@ -776,12 +782,12 @@
     }
    ],
    "pairingCode": "C2-ALL8",
-   "disclaimer": "Données de démonstration, pas pour usage clinique. Ce schéma n'est valable qu'après signature par l'oncologue et le pharmacien hospitalier. En cas de doute, appelez toujours le service."
+   "disclaimer": "Ce schéma a été préparé par votre équipe soignante. Appelez le service si vous êtes inquiet."
   }
  },
- "casus-3": {
+ "PAT-2026-0003": {
   "patient": {
-   "id": "casus-3",
+   "id": "PAT-2026-0003",
    "alias": "Casus 3",
    "age": 14,
    "sex": "M",
@@ -841,10 +847,13 @@
     "anticipatory": false,
     "priorNauseaNote": null
    },
-   "pairingCode": "C3-IE03"
+   "pairingCode": "C3-IE03",
+   "tags": [
+    "demo"
+   ]
   },
   "plan": {
-   "patientId": "casus-3",
+   "patientId": "PAT-2026-0003",
    "status": "draft",
    "refused": false,
    "refusalReasons": [],
@@ -1094,10 +1103,10 @@
     "pharmacist": null
    },
    "comments": [],
-   "advisory": "Advisory only — requires clinician sign-off. Demo data, not for clinical use."
+   "advisory": "Advisory only — requires clinician sign-off."
   },
   "passport": {
-   "patientId": "casus-3",
+   "patientId": "PAT-2026-0003",
    "alias": "Casus 3",
    "lang": "nl",
    "title": "CINV-paspoort · Casus 3",
@@ -1492,12 +1501,12 @@
     }
    ],
    "pairingCode": "C3-IE03",
-   "disclaimer": "Demo-gegevens, niet voor klinisch gebruik. Dit schema is pas geldig na ondertekening door de oncoloog en de ziekenhuisapotheker. Bel bij twijfel altijd de afdeling."
+   "disclaimer": "Dit schema is opgesteld door je zorgteam. Bel de afdeling als je je zorgen maakt."
   }
  },
- "casus-4": {
+ "PAT-2026-0004": {
   "patient": {
-   "id": "casus-4",
+   "id": "PAT-2026-0004",
    "alias": "Casus 4 · interactions",
    "age": 7,
    "sex": "M",
@@ -1538,10 +1547,14 @@
     "anticipatory": false,
     "priorNauseaNote": null
    },
-   "pairingCode": "C4-DDI7"
+   "pairingCode": "C4-DDI7",
+   "tags": [
+    "demo",
+    "interactions"
+   ]
   },
   "plan": {
-   "patientId": "casus-4",
+   "patientId": "PAT-2026-0004",
    "status": "draft",
    "refused": false,
    "refusalReasons": [],
@@ -1713,10 +1726,10 @@
     "pharmacist": null
    },
    "comments": [],
-   "advisory": "Advisory only — requires clinician sign-off. Demo data, not for clinical use."
+   "advisory": "Advisory only — requires clinician sign-off."
   },
   "passport": {
-   "patientId": "casus-4",
+   "patientId": "PAT-2026-0004",
    "alias": "Casus 4 · interactions",
    "lang": "en",
    "title": "CINV Passport · Casus 4 · interactions",
@@ -1871,7 +1884,7 @@
     }
    ],
    "pairingCode": "C4-DDI7",
-   "disclaimer": "Demo data, not for clinical use. This schedule is only valid once signed off by the oncologist and the hospital pharmacist. If in doubt, always call the ward."
+   "disclaimer": "This schedule was prepared by your care team. Call the ward if you are worried."
   }
  }
 }

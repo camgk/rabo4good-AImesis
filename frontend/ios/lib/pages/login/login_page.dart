@@ -7,7 +7,8 @@ import '../../widgets/common.dart';
 
 const demoPassword = 'aimesis-demo';
 
-/// Welcome + sign-in. Shows family demo accounts as one-tap chips.
+/// Welcome + sign-in. Shows family demo accounts as one-tap chips, only when
+/// the API returns some.
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -25,7 +26,10 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void initState() {
     super.initState();
-    _demo = AppScope.read(context).api.demoAccounts();
+    _demo = AppScope.read(context)
+        .api
+        .demoAccounts()
+        .catchError((Object _) => <DemoAccount>[]);
   }
 
   @override
@@ -155,61 +159,52 @@ class _LoginPageState extends State<LoginPage> {
                       child: CircularProgressIndicator(strokeWidth: 3))
                   : Text(t.signIn),
             ),
-            const SizedBox(height: 28),
-            Text(t.demoAccounts, style: theme.textTheme.titleMedium),
-            const SizedBox(height: 4),
-            Text(t.demoPasswordHint(demoPassword),
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(color: scheme.onSurfaceVariant)),
-            const SizedBox(height: 8),
             FutureBuilder<List<DemoAccount>>(
               future: _demo,
               builder: (context, snap) {
-                if (snap.connectionState != ConnectionState.done) {
-                  return const Padding(
-                    padding: EdgeInsets.all(12),
-                    child: LinearProgressIndicator(),
-                  );
+                final family = (snap.data ?? const <DemoAccount>[])
+                    .where((a) => a.isFamily)
+                    .toList();
+                if (snap.connectionState != ConnectionState.done ||
+                    family.isEmpty) {
+                  return const SizedBox.shrink();
                 }
-                if (snap.hasError) {
-                  return Row(
-                    children: [
-                      Expanded(child: Text(friendlyError(context, snap.error))),
-                      TextButton(
-                        style: TextButton.styleFrom(minimumSize: const Size(64, kTouch)),
-                        onPressed: () => setState(() {
-                          _demo = AppScope.read(context).api.demoAccounts();
-                        }),
-                        child: Text(t.retry),
-                      ),
-                    ],
-                  );
-                }
-                final family =
-                    snap.data!.where((a) => a.isFamily).toList();
-                return Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
+                return Column(
+                  key: const Key('demoAccounts'),
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    for (final a in family)
-                      ActionChip(
-                        key: Key('demo-${a.email}'),
-                        avatar: Icon(
-                          a.role == Role.patient
-                              ? Icons.face_rounded
-                              : Icons.family_restroom_rounded,
-                          size: 20,
-                        ),
-                        label: Text(a.displayName),
-                        labelPadding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 10),
-                        onPressed: () => _fill(a),
-                      ),
+                    const SizedBox(height: 28),
+                    Text(t.demoAccounts, style: theme.textTheme.titleMedium),
+                    const SizedBox(height: 4),
+                    Text(t.demoPasswordHint(demoPassword),
+                        style: theme.textTheme.bodySmall
+                            ?.copyWith(color: scheme.onSurfaceVariant)),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        for (final a in family)
+                          ActionChip(
+                            key: Key('demo-${a.email}'),
+                            avatar: Icon(
+                              a.role == Role.patient
+                                  ? Icons.face_rounded
+                                  : Icons.family_restroom_rounded,
+                              size: 20,
+                            ),
+                            label: Text(a.displayName),
+                            labelPadding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 10),
+                            onPressed: () => _fill(a),
+                          ),
+                      ],
+                    ),
                   ],
                 );
               },
             ),
-            const DemoFooter(),
+            const SizedBox(height: 24),
           ],
         ),
       ),

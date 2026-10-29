@@ -31,7 +31,7 @@ class AppShell extends StatelessWidget {
           Icons.fact_check_outlined,
           Icons.fact_check_rounded,
         ),
-        const _NavItem('/about', 'About demo', Icons.info_outline_rounded, Icons.info_rounded),
+        const _NavItem('/about', 'About', Icons.info_outline_rounded, Icons.info_rounded),
       ];
 
   int _selected(List<_NavItem> items) {
@@ -116,7 +116,7 @@ class AppShell extends StatelessWidget {
                         child: SizedBox(
                           width: 188,
                           child: Text(
-                            'Hackathon prototype · mock rules\nAPI: ${state.config.apiUrl}',
+                            'API: ${state.config.apiUrl}',
                             style: theme.textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant, fontSize: 11),
                           ),
                         ),

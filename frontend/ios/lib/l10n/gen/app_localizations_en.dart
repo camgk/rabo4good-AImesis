@@ -50,9 +50,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get language => 'Language';
 
   @override
-  String get demoFooter => 'Demo app — not for medical use';
-
-  @override
   String get roleParent => 'Parent';
 
   @override

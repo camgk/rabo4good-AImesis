@@ -112,7 +112,7 @@ class _PairingPageState extends State<PairingPage> {
                       child: CircularProgressIndicator(strokeWidth: 3))
                   : Text(t.pairButton),
             ),
-            const DemoFooter(),
+            const SizedBox(height: 24),
           ],
         ),
       ),

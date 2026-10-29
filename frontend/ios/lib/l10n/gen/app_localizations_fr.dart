@@ -51,9 +51,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get language => 'Langue';
 
   @override
-  String get demoFooter => 'Application de démo — pas pour un usage médical';
-
-  @override
   String get roleParent => 'Parent';
 
   @override

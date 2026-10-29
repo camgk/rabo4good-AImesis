@@ -51,15 +51,7 @@ class PatientHeader extends StatelessWidget {
                       [if (p.age != null) '${p.age} years', sexLabel].where((s) => s.isNotEmpty).join(', '),
                       style: theme.textTheme.titleMedium?.copyWith(color: cs.onSurfaceVariant),
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: cs.outline),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text('Demo data',
-                          style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant, fontWeight: FontWeight.w600)),
-                    ),
+                    for (final t in p.tags) TagChip(t),
                   ],
                 ),
               ),

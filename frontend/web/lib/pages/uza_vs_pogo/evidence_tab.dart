@@ -82,7 +82,7 @@ class _EvidenceTabState extends State<EvidenceTab> {
         ),
         const SizedBox(height: 12),
         Text(
-          'Differences are informative: the plan always follows UZA v2. POGO mock values in this demo '
+          'Differences are informative: the plan always follows UZA v2. POGO values come from the mock rules '
           '(e.g. doxorubicin moderate, cyclophosphamide ≥ 1000 mg/m² high).',
           style: TextStyle(fontSize: 12.5, color: cs.onSurfaceVariant),
         ),

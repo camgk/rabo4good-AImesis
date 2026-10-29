@@ -57,18 +57,29 @@ class _PatientsLoaderState extends State<PatientsLoader> {
   }
 }
 
-class WorklistPage extends StatelessWidget {
+class WorklistPage extends StatefulWidget {
   const WorklistPage({super.key});
+
+  @override
+  State<WorklistPage> createState() => _WorklistPageState();
+}
+
+class _WorklistPageState extends State<WorklistPage> {
+  /// Selected tag filter; null = all patients.
+  String? _tag;
 
   @override
   Widget build(BuildContext context) {
     return PatientsLoader(
-      builder: (context, patients, reload) {
+      builder: (context, all, reload) {
+        final tags = (all.expand((p) => p.tags).toSet().toList()..sort());
+        final tag = (_tag != null && tags.contains(_tag)) ? _tag : null;
+        final patients = tag == null ? all : all.where((p) => p.hasTag(tag)).toList();
         final awaiting = patients.where((p) => p.planStatus == PlanStatus.awaitingPharmacist).length;
         final high = patients.where((p) => p.overallTier == Tier.high).length;
         return PageFrame(
           title: 'Worklist',
-          subtitle: 'Patients starting or in a chemotherapy cycle · demo data',
+          subtitle: 'Patients starting or in a chemotherapy cycle',
           actions: [
             IconButton(tooltip: 'Refresh', onPressed: reload, icon: const Icon(Icons.refresh_rounded)),
           ],
@@ -78,12 +89,39 @@ class WorklistPage extends StatelessWidget {
               _Stat(label: 'High emetogenic', value: '$high', icon: Icons.local_fire_department_outlined),
               _Stat(label: 'Awaiting pharmacist', value: '$awaiting', icon: Icons.hourglass_top_rounded),
             ]),
+            if (tags.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              Wrap(
+                key: const Key('worklist-tag-filter'),
+                spacing: 8,
+                runSpacing: 8,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  Icon(Icons.sell_outlined, size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  FilterChip(
+                    label: const Text('All'),
+                    selected: tag == null,
+                    showCheckmark: false,
+                    onSelected: (_) => setState(() => _tag = null),
+                  ),
+                  for (final t in tags)
+                    FilterChip(
+                      label: Text(t),
+                      selected: tag == t,
+                      showCheckmark: false,
+                      onSelected: (sel) => setState(() => _tag = sel ? t : null),
+                    ),
+                ],
+              ),
+            ],
             const SizedBox(height: 20),
             if (patients.isEmpty)
-              const EmptyView(
+              EmptyView(
                 icon: Icons.inbox_outlined,
                 title: 'No patients',
-                message: 'The demo backend has no patients. Reset the demo data and refresh.',
+                message: tag == null
+                    ? 'There are no patients on the worklist yet.'
+                    : 'No patients tagged "$tag".',
               )
             else
               PatientTable(

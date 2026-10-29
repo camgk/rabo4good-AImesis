@@ -40,7 +40,7 @@ MockClient fakeBackend(String role, List<String> calls) {
       return _json([
         for (final e in cases.entries)
           {
-            for (final k in ['id', 'alias', 'age', 'sex', 'diagnosis', 'protocol', 'cycle', 'cycleStart', 'language'])
+            for (final k in ['id', 'alias', 'age', 'sex', 'diagnosis', 'protocol', 'cycle', 'cycleStart', 'language', 'tags'])
               k: (e.value['patient'] as Map)[k],
             'overallTier': plans[e.key]!['overallTier'],
             'planStatus': plans[e.key]!['status'],
@@ -128,10 +128,40 @@ void main() {
           expect(find.textContaining('Advisory only'), findsWidgets, reason: '$id/${tab.path}');
         }
       }
-      expect(calls, contains('GET /patients/casus-4/passport'));
-      expect(calls, contains('GET /patients/casus-1/episodes'));
+      expect(calls, contains('GET /patients/PAT-2026-0004/passport'));
+      expect(calls, contains('GET /patients/PAT-2026-0001/episodes'));
     });
   }
+
+  testWidgets('worklist shows tag chips and filters by tag', (tester) async {
+    addTearDown(tester.view.reset);
+    await pumpLoggedIn(tester, 'oncologist', [], const Size(1280, 900));
+    final filter = find.byKey(const Key('worklist-tag-filter'));
+    expect(filter, findsOneWidget);
+    expect(find.descendant(of: filter, matching: find.widgetWithText(FilterChip, 'All')), findsOneWidget);
+    expect(find.descendant(of: filter, matching: find.widgetWithText(FilterChip, 'demo')), findsOneWidget);
+    expect(find.descendant(of: filter, matching: find.widgetWithText(FilterChip, 'interactions')), findsOneWidget);
+    // Row chips: 4 "demo" tags + filter chip label.
+    expect(find.text('demo'), findsNWidgets(5));
+    expect(find.text('Casus 1'), findsOneWidget);
+    expect(find.textContaining('demo data'), findsNothing);
+
+    await tester.tap(find.descendant(of: filter, matching: find.widgetWithText(FilterChip, 'interactions')));
+    await tester.pumpAndSettle();
+    expect(find.text('Casus 1'), findsNothing);
+    expect(find.text('Casus 4 · interactions'), findsOneWidget);
+
+    await tester.tap(find.descendant(of: filter, matching: find.widgetWithText(FilterChip, 'All')));
+    await tester.pumpAndSettle();
+    expect(find.text('Casus 1'), findsOneWidget);
+
+    // Patient header shows the tags instead of a "Demo data" chip.
+    await tester.tap(find.text('Casus 1').first);
+    await tester.pumpAndSettle();
+    expect(find.text('Demo data'), findsNothing);
+    expect(find.text('demo'), findsOneWidget);
+    expect(find.text('Advisory only — requires clinician sign-off.'), findsWidgets);
+  });
 
   testWidgets('safety gates show the critical azole interaction for Casus 4', (tester) async {
     addTearDown(tester.view.reset);
@@ -156,7 +186,7 @@ void main() {
     await tester.ensureVisible(find.text('Submit for pharmacist check'));
     await tester.tap(find.text('Submit for pharmacist check'));
     await tester.pumpAndSettle();
-    expect(calls, contains('POST /patients/casus-1/plan/submit'));
+    expect(calls, contains('POST /patients/PAT-2026-0001/plan/submit'));
     expect(find.text('Awaiting pharmacist'), findsWidgets);
   });
 

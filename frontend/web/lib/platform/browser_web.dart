@@ -27,7 +27,7 @@ void openUrl(String url) {
 void printPage() => web.window.print();
 
 /// Base URI of the app (honours `<base href>`), so `config.json` resolves to
-/// the app root even on deep links like /patients/casus-1/passport.
+/// the app root even on deep links like /patients/PAT-2026-0001/passport.
 Uri appBaseUri() {
   try {
     final base = web.document.baseURI;

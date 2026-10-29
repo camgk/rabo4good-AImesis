@@ -161,7 +161,7 @@ class _LogPageState extends State<LogPage> {
                         : t.loggedByCareTeam,
               ),
           ],
-          const DemoFooter(),
+          const SizedBox(height: 24),
         ],
       ),
     );

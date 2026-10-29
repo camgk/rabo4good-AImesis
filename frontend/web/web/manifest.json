@@ -5,7 +5,7 @@
     "display": "standalone",
     "background_color": "#F4F7F6",
     "theme_color": "#0F766E",
-    "description": "Paediatric CINV decision support for the care team. Hackathon prototype: advisory only, demo data.",
+    "description": "Paediatric CINV decision support for the care team. Advisory only.",
     "orientation": "any",
     "prefer_related_applications": false,
     "icons": [

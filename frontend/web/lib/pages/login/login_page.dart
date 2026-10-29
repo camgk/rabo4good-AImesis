@@ -25,12 +25,23 @@ class _LoginPageState extends State<LoginPage> {
   String? _error;
   bool _familyError = false;
 
+  /// Demo accounts from the API (quick-pick). Empty / failed → the section
+  /// is hidden entirely.
   Future<List<DemoAccount>>? _demoAccounts;
+  bool _hasDemoAccounts = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _demoAccounts ??= AppScope.read(context).api.demoAccounts();
+    if (_demoAccounts == null) _loadDemoAccounts();
+  }
+
+  void _loadDemoAccounts() {
+    final f = AppScope.read(context).api.demoAccounts().catchError((Object _) => <DemoAccount>[]);
+    _demoAccounts = f;
+    f.then((list) {
+      if (mounted) setState(() => _hasDemoAccounts = list.isNotEmpty);
+    });
   }
 
   @override
@@ -138,7 +149,7 @@ class _LoginPageState extends State<LoginPage> {
                                 onFieldSubmitted: (_) => _submit(),
                                 decoration: InputDecoration(
                                   labelText: 'Password',
-                                  helperText: 'Demo password: $demoPassword',
+                                  helperText: _hasDemoAccounts ? 'Demo password: $demoPassword' : null,
                                   prefixIcon: const Icon(Icons.lock_outline_rounded),
                                   border: const OutlineInputBorder(),
                                   suffixIcon: IconButton(
@@ -165,27 +176,7 @@ class _LoginPageState extends State<LoginPage> {
                                       : const Text('Log in'),
                                 ),
                               ),
-                              const SizedBox(height: 28),
-                              Row(children: [
-                                const Expanded(child: Divider()),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                                  child: Text('Demo accounts', style: theme.textTheme.labelMedium),
-                                ),
-                                const Expanded(child: Divider()),
-                              ]),
-                              const SizedBox(height: 12),
-                              _DemoAccounts(future: _demoAccounts!, onPick: _pick, onRetry: () {
-                                setState(() => _demoAccounts = AppScope.read(context).api.demoAccounts());
-                              }),
-                              const SizedBox(height: 20),
-                              Text(
-                                'Hackathon prototype for Solve with Google: Hacking for Good 2026. '
-                                'All patients are fictional demo cases (Casus 1–4); dosing uses mock rules '
-                                'derived from UZA v2 and must be checked by a clinician.',
-                                textAlign: TextAlign.center,
-                                style: theme.textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant),
-                              ),
+                              _DemoAccounts(future: _demoAccounts!, onPick: _pick),
                             ],
                           ),
                         ),
@@ -224,11 +215,12 @@ class _ErrorBox extends StatelessWidget {
   }
 }
 
+/// "Demo accounts" quick-pick; renders nothing unless the API returns
+/// clinician demo accounts.
 class _DemoAccounts extends StatelessWidget {
-  const _DemoAccounts({required this.future, required this.onPick, required this.onRetry});
+  const _DemoAccounts({required this.future, required this.onPick});
   final Future<List<DemoAccount>> future;
   final ValueChanged<DemoAccount> onPick;
-  final VoidCallback onRetry;
 
   @override
   Widget build(BuildContext context) {
@@ -236,21 +228,25 @@ class _DemoAccounts extends StatelessWidget {
     return FutureBuilder<List<DemoAccount>>(
       future: future,
       builder: (context, snap) {
-        if (snap.connectionState != ConnectionState.done) {
-          return const Center(child: SizedBox(height: 32, child: LoadingView()));
-        }
-        if (snap.hasError) {
-          return Column(children: [
-            Text('Could not load demo accounts: ${errorMessage(snap.error!)}',
-                textAlign: TextAlign.center, style: TextStyle(color: cs.error, fontSize: 12)),
-            TextButton.icon(onPressed: onRetry, icon: const Icon(Icons.refresh), label: const Text('Retry')),
-          ]);
+        if (snap.connectionState != ConnectionState.done || snap.hasError) {
+          return const SizedBox.shrink();
         }
         final clinicians = (snap.data ?? const <DemoAccount>[]).where((a) => a.isClinician).toList();
         final family = (snap.data ?? const <DemoAccount>[]).where((a) => a.isFamily).length;
+        if (clinicians.isEmpty) return const SizedBox.shrink();
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            const SizedBox(height: 28),
+            Row(children: [
+              const Expanded(child: Divider()),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                child: Text('Demo accounts', style: Theme.of(context).textTheme.labelMedium),
+              ),
+              const Expanded(child: Divider()),
+            ]),
+            const SizedBox(height: 12),
             Wrap(
               alignment: WrapAlignment.center,
               spacing: 8,
@@ -268,7 +264,7 @@ class _DemoAccounts extends StatelessWidget {
             if (family > 0) ...[
               const SizedBox(height: 10),
               Text(
-                '$family family demo account${family == 1 ? '' : 's'} (parent / teen) use the AImesis Family app.',
+                '$family family account${family == 1 ? '' : 's'} (parent / teen) sign in with the AImesis Family app.',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
               ),

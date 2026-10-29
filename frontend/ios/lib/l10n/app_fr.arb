@@ -12,7 +12,6 @@
   "loginFailed": "Connexion impossible. Vérifiez votre e-mail et votre mot de passe.",
   "networkError": "Pas de connexion à AImesis. Vérifiez votre connexion Internet et réessayez.",
   "language": "Langue",
-  "demoFooter": "Application de démo — pas pour un usage médical",
   "roleParent": "Parent",
   "rolePatient": "Ado",
   "pairTitle": "Associer votre enfant",
