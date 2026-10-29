@@ -8,6 +8,7 @@ import '../../platform/browser.dart';
 import '../../state/app_scope.dart';
 import '../../state/patient_workspace.dart';
 import '../../widgets/common.dart';
+import 'clinical_overview_card.dart';
 
 const _langs = {'nl': 'Nederlands', 'fr': 'Français', 'en': 'English'};
 
@@ -80,9 +81,30 @@ class _PassportTabState extends State<PassportTab> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        ClinicalOverviewCard(ws: widget.ws),
+        const SizedBox(height: 24),
+        Row(
+          children: [
+            Icon(Icons.badge_outlined, size: 20, color: cs.primary),
+            const SizedBox(width: 8),
+            Text(
+              'Patient & Family CINV Passport',
+              style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+            ),
+            const Spacer(),
+            Text(
+              'Printable daily schedule & emergency guidance',
+              style: theme.textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
         Wrap(
           spacing: 12,
           runSpacing: 12,
