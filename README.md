@@ -185,7 +185,7 @@ Every file below exists and is **empty**. Fill them in as you build.
 
 | Person | Area | Main folders |
 |---|---|---|
-| Cameron | Clinician web app + companion iOS app | `apps/*`, `packages/aimesis_a2ui_catalog` |
+| Person 1 | Clinician web app + companion iOS app | `apps/*`, `packages/aimesis_a2ui_catalog` |
 | Person 2 | Rules engine (Stories 1–3) | `services/agent/app/tools/uza_policy.py`, `packages/golden` |
 | Person 3 | Agent, AG-UI endpoint, A2UI surfaces, deployment | `services/agent/app/{main,agent,agui_endpoint}.py`, `app/a2ui/`, `infra/` |
 | Person 4 | Clinical link to UZA + Passport output | `docs/open-questions.md`, `app/passport/`, `tests/eval/` |
@@ -262,7 +262,7 @@ cd infra/terraform && terraform init && terraform apply -var-file=env/dev.tfvars
 
 ## Working agreements
 
-- Branch per person (`cameron/web-passport`, `p2/uza-policy`, …), small PRs into `main`. One reviewer is enough today.
+- Branch per person (`p1/web-passport`, `p2/uza-policy`, …), small PRs into `main`. One reviewer is enough today.
 - `main` must always build and run.
 - No secrets or real patient data in git. Put config in `.env` (local only) and `.env.example` (names only).
 - Golden cases change only through `packages/golden` and both test suites.
