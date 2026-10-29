@@ -66,27 +66,39 @@ void main() {
 
   test('records survive a JSON round-trip', () {
     final store = OnboardingStore(persist: false);
-    final ref = store.createPatient(createdBy: 'Dr A');
-    ref.patient.profile.alias = 'Casus 9';
-    ref.cycle.intake.chemo = [const ChemoRow(drug: 'ifosfamide', doseMgM2: 1800, days: [1, 2])];
-    final back = PatientRecord.fromJson(ref.patient.toJson());
+    final p = store.createPatient(PatientProfile(alias: 'Casus 9', age: 7, diagnosis: 'Ewing sarcoma'), createdBy: 'Dr A');
+    final c = store.startCycle(p, createdBy: 'Dr A').cycle;
+    c.intake.chemo = [const ChemoRow(drug: 'ifosfamide', doseMgM2: 1800, days: [1, 2])];
+    final back = PatientRecord.fromJson(p.toJson());
     expect(back.profile.alias, 'Casus 9');
     expect(back.cycles.single.intake.chemo.single.days, [1, 2]);
+    expect(back.cycles.single.intake.firstCycle, isTrue);
   });
 
-  testWidgets('new patient, then a second cycle on the same profile', (tester) async {
+  testWidgets('onboard a patient, then add cycles from the profile', (tester) async {
     final state = await _pump(tester, 'oncologist');
 
+    // Patient onboarding: details only.
     await _tap(tester, find.byKey(const Key('new-patient')));
-    expect(find.text('Chemotherapy'), findsOneWidget);
-
-    // Step 1 refuses to continue while required fields are empty.
-    await _tap(tester, find.byKey(const Key('onboarding-continue')));
+    expect(find.text('Chemotherapy'), findsNothing);
+    await _tap(tester, find.byKey(const Key('save-patient')));
     expect(find.text('Required'), findsWidgets);
-
     await _type(tester, 'field-alias', 'Casus 9');
     await _type(tester, 'field-age', '7');
     await _type(tester, 'field-diagnosis', 'Ewing sarcoma');
+    await _tap(tester, find.byKey(const Key('save-patient')));
+
+    // The profile exists, with no cycles yet.
+    expect(find.text('Patient profile · 0 cycles'), findsOneWidget);
+    expect(find.text('No cycles yet'), findsOneWidget);
+    expect(state.onboarding.localPatients.single.cycles, isEmpty);
+
+    // First cycle, started from the profile.
+    await _tap(tester, find.byKey(const Key('new-cycle')));
+    expect(find.text('Casus 9 · Cycle 1'), findsOneWidget);
+    expect(find.byKey(const Key('field-alias')), findsNothing, reason: 'patient details are not re-entered');
+    await _tap(tester, find.byKey(const Key('onboarding-continue')));
+    expect(find.text('Required'), findsWidgets);
     await _type(tester, 'field-weight', '24');
     await _type(tester, 'field-height', '120');
     await _type(tester, 'chemo-drug-0', 'ifosfamide');
@@ -94,7 +106,6 @@ void main() {
     await _type(tester, 'chemo-days-0', '1-5');
     await _tap(tester, find.byKey(const Key('onboarding-continue')));
 
-    // Step 2: no history yet; cannot swallow tablets.
     expect(find.text('Who is here'), findsOneWidget);
     expect(find.text('Previous cycles'), findsNothing);
     await _tap(tester, find.byKey(const Key('session-swallow')));
@@ -107,22 +118,17 @@ void main() {
     await _tap(tester, find.byKey(const Key('onboarding-reviewed')));
     await _tap(tester, send);
 
-    // Lands on the profile with one cycle.
     expect(find.text('Patient profile · 1 cycle'), findsOneWidget);
     expect(find.textContaining('Approved by Oncologist (demo)'), findsOneWidget);
 
-    // Second cycle: chemo and route carried over, weight must be measured again.
+    // Second cycle: chemo and route carried over, weight measured again.
     await _tap(tester, find.byKey(const Key('new-cycle')));
     expect(find.text('Casus 9 · Cycle 2'), findsOneWidget);
     expect(find.text('Last: 24 kg'), findsOneWidget);
     expect(find.widgetWithText(TextFormField, 'ifosfamide'), findsOneWidget);
-    expect(find.byKey(const Key('field-alias')), findsNothing, reason: 'profile is not re-entered');
-    await _tap(tester, find.byKey(const Key('onboarding-continue')));
-    expect(find.text('Who is here'), findsNothing);
     await _type(tester, 'field-weight', '25');
     await _type(tester, 'field-height', '121');
     await _tap(tester, find.byKey(const Key('onboarding-continue')));
-
     expect(find.text('Previous cycles'), findsOneWidget);
     expect(find.text('How did the last cycle go?'), findsOneWidget);
     await _finishCycle(tester);
@@ -133,7 +139,20 @@ void main() {
     final p = state.onboarding.localPatients.single;
     expect(p.cycles.map((c) => c.intake.weightKg), [24, 25]);
     expect(p.cycles.last.session.canSwallowTablets, isFalse);
-    expect(state.onboarding.sent, hasLength(2));
+  });
+
+  testWidgets('profile can be edited after onboarding', (tester) async {
+    final store = OnboardingStore(persist: false);
+    final p = store.createPatient(PatientProfile(alias: 'Casus 11', age: 9, diagnosis: 'ALL'), createdBy: 'Dr A');
+    await _pump(tester, 'oncologist', store: store);
+    _go(tester, '/patients/${p.id}');
+    await tester.pumpAndSettle();
+    await _tap(tester, find.byKey(const Key('edit-profile')));
+    await _type(tester, 'field-diagnosis', 'AML');
+    await _tap(tester, find.byKey(const Key('save-patient')));
+    expect(find.text('Patient profile · 0 cycles'), findsOneWidget);
+    expect(find.text('AML'), findsOneWidget);
+    expect(p.profile.diagnosis, 'AML');
   });
 
   testWidgets('existing patient: new cycle builds on the record history', (tester) async {
@@ -177,10 +196,9 @@ void main() {
 
   testWidgets('pharmacist sees sent cycles and cannot start one', (tester) async {
     final store = OnboardingStore(persist: false);
-    final ref = store.createPatient(createdBy: 'Oncologist (demo)');
-    ref.patient.profile.alias = 'Casus 10';
-    ref.cycle.stage = OnboardingStage.sent;
-    store.save(ref.patient, ref.cycle);
+    final p = store.createPatient(PatientProfile(alias: 'Casus 10', age: 5, diagnosis: 'ALL'), createdBy: 'Oncologist (demo)');
+    final c = store.startCycle(p, createdBy: 'Oncologist (demo)').cycle..stage = OnboardingStage.sent;
+    store.save(p, c);
 
     await _pump(tester, 'pharmacist', store: store);
     expect(find.byKey(const Key('new-patient')), findsNothing);

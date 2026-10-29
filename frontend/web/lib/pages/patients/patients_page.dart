@@ -7,7 +7,6 @@ import '../../widgets/common.dart';
 import '../../widgets/page_frame.dart';
 import '../../widgets/patient_table.dart';
 import '../../onboarding/onboarding_store.dart';
-import '../onboarding/onboarding_page.dart';
 
 /// Loads `GET /patients` and refetches when a plan changes elsewhere.
 class PatientsLoader extends StatefulWidget {
@@ -94,10 +93,7 @@ class _PatientsPageState extends State<PatientsPage> {
               const SizedBox(width: 8),
               FilledButton.icon(
                 key: const Key('new-patient'),
-                onPressed: () {
-                  final ref = app.onboarding.createPatient(createdBy: app.account?.displayName ?? '');
-                  context.go(OnboardingPage.path(ref.cycle.id, ref.cycle.stage));
-                },
+                onPressed: () => context.go('/patients/new'),
                 icon: const Icon(Icons.person_add_alt_1_rounded),
                 label: const Text('New patient'),
               ),
@@ -177,20 +173,19 @@ List<PatientSummary> withOnboarded(List<PatientSummary> api, OnboardingStore sto
       );
   final created = [
     for (final r in store.localPatients)
-      if (r.latest != null)
-        PatientSummary(
-          id: r.id,
-          alias: r.displayName,
-          age: r.profile.age,
-          sex: r.profile.sex,
-          diagnosis: r.profile.diagnosis.isEmpty ? null : r.profile.diagnosis,
-          protocol: r.latest!.intake.protocol.isEmpty ? null : r.latest!.intake.protocol,
-          cycle: r.latest!.intake.cycle.isEmpty ? '${r.numberOf(r.latest!)}' : r.latest!.intake.cycle,
-          cycleStart: r.latest!.intake.cycleStart?.toIso8601String().substring(0, 10),
-          planStatus: r.latest!.isSent ? PlanStatus.awaitingPharmacist : PlanStatus.draft,
-          language: r.profile.language,
-          tags: ['new', if (open(r.id)) 'in progress'],
-        ),
+      PatientSummary(
+        id: r.id,
+        alias: r.displayName,
+        age: r.profile.age,
+        sex: r.profile.sex,
+        diagnosis: r.profile.diagnosis.isEmpty ? null : r.profile.diagnosis,
+        protocol: (r.latest?.intake.protocol.isEmpty ?? true) ? null : r.latest!.intake.protocol,
+        cycle: r.latest == null ? null : (r.latest!.intake.cycle.isEmpty ? '${r.numberOf(r.latest!)}' : r.latest!.intake.cycle),
+        cycleStart: r.latest?.intake.cycleStart?.toIso8601String().substring(0, 10),
+        planStatus: r.latest == null ? null : (r.latest!.isSent ? PlanStatus.awaitingPharmacist : PlanStatus.draft),
+        language: r.profile.language,
+        tags: ['new', if (open(r.id)) 'in progress'],
+      ),
   ];
   return [
     ...created,

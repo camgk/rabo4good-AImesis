@@ -23,7 +23,7 @@ class OnboardingPage extends StatelessWidget {
       '/onboarding/$cycleId/${(s == OnboardingStage.sent ? OnboardingStage.review : s).path}';
 
   static const _subtitles = {
-    OnboardingStage.treatment: 'Session 1 · Prepare the chemotherapy and patient details',
+    OnboardingStage.treatment: 'Session 1 · Prepare the chemotherapy for this cycle',
     OnboardingStage.session: 'Session 2 · Fill this in together with the patient and family',
     OnboardingStage.processing: 'The models run over the inputs and bring the results together',
     OnboardingStage.review: 'Check the suggestion, approve it and send it to the pharmacist',
@@ -69,18 +69,13 @@ class OnboardingPage extends StatelessWidget {
           _ => ReviewStep(key: ValueKey('review-$cycleId'), cycleRef: ref),
         };
 
-        final newPatient = p.isLocal && p.isFirst(c);
-        final named = p.profile.alias.trim().isNotEmpty;
-        final title = newPatient
-            ? (named ? 'New patient · ${p.displayName}' : 'New patient')
-            : '${p.displayName} · ${p.labelOf(c)}';
         return PageFrame(
-          title: title,
+          title: '${p.displayName} · ${p.labelOf(c)}',
           subtitle: c.isSent ? 'Sent to the pharmacist' : _subtitles[current],
           maxWidth: 1180,
           breadcrumbs: [
             const Crumb('Patients', '/patients'),
-            Crumb(p.displayName, p.profile.isComplete ? '/patients/${p.id}' : null),
+            Crumb(p.displayName, '/patients/${p.id}'),
             Crumb(p.labelOf(c)),
           ],
           children: [

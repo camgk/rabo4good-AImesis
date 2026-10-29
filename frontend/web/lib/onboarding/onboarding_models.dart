@@ -4,7 +4,7 @@ import 'package:aimesis_client/aimesis_client.dart';
 ///
 /// treatment → session → processing → review → sent
 enum OnboardingStage {
-  treatment('treatment', 'Treatment & patient'),
+  treatment('treatment', 'Treatment'),
   session('session', 'Patient session'),
   processing('processing', 'Processing'),
   review('review', 'Review & approve'),
@@ -446,8 +446,7 @@ class PatientRecord {
   /// Cycles before [c] (added here); imported ones come before all of them.
   List<CycleRecord> before(CycleRecord c) => cycles.takeWhile((x) => x.id != c.id).toList();
 
-  /// Whether [c] is the patient's first cycle overall: profile details are
-  /// entered with it.
+  /// Whether [c] is the patient's first cycle on the profile.
   bool isFirst(CycleRecord c) => imported.isEmpty && cycles.isNotEmpty && cycles.first.id == c.id;
 
   String labelOf(CycleRecord c) =>

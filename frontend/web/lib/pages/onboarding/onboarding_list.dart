@@ -45,9 +45,7 @@ class CycleList extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final p = ref.patient, c = ref.cycle;
     final when = c.isSent && c.approvedAt != null ? c.approvedAt! : c.updatedAt;
-    final newPatient = p.isLocal && p.isFirst(c);
     final details = [
-      if (newPatient) 'New patient',
       if (p.profile.diagnosis.isNotEmpty) p.profile.diagnosis,
       if (c.intake.protocol.isNotEmpty) c.intake.protocol,
       '${c.isSent ? 'Sent' : 'Updated'} ${DateFormat('d MMM, HH:mm').format(when)}',
@@ -59,7 +57,7 @@ class CycleList extends StatelessWidget {
       leading: CircleAvatar(
         backgroundColor: c.isSent ? cs.primaryContainer : cs.secondaryContainer,
         child: Icon(
-          c.isSent ? Icons.send_rounded : (newPatient ? Icons.person_add_alt_1_outlined : Icons.event_repeat_outlined),
+          c.isSent ? Icons.send_rounded : Icons.event_repeat_outlined,
           size: 20,
           color: c.isSent ? cs.onPrimaryContainer : cs.onSecondaryContainer,
         ),
@@ -79,9 +77,7 @@ class CycleList extends StatelessWidget {
                 context: context,
                 builder: (d) => AlertDialog(
                   title: Text('Discard ${p.labelOf(c).toLowerCase()} for ${p.displayName}?'),
-                  content: Text(newPatient
-                      ? 'This patient has no other cycles, so the new patient is removed too.'
-                      : 'The inputs entered for this cycle will be removed. Earlier cycles stay on the profile.'),
+                  content: const Text('The inputs entered for this cycle will be removed. The profile and earlier cycles stay.'),
                   actions: [
                     TextButton(onPressed: () => Navigator.pop(d, false), child: const Text('Cancel')),
                     FilledButton(onPressed: () => Navigator.pop(d, true), child: const Text('Discard')),

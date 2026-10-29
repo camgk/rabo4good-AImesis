@@ -103,10 +103,10 @@ class _SessionStepState extends State<SessionStep> {
           back: TextButton.icon(
             onPressed: () => _save(OnboardingPage.path(id, OnboardingStage.treatment)),
             icon: const Icon(Icons.arrow_back_rounded),
-            label: const Text('Treatment & patient'),
+            label: const Text('Treatment'),
           ),
           secondary: TextButton(
-            onPressed: () => _save(_p.isLocal && _p.isFirst(_c) ? '/patients' : '/patients/${_p.id}'),
+            onPressed: () => _save('/patients/${_p.id}'),
             child: const Text('Save and exit'),
           ),
           primary: FilledButton.icon(

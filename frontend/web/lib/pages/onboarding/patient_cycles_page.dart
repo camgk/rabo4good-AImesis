@@ -105,14 +105,24 @@ class _Profile extends StatelessWidget {
       maxWidth: 1100,
       breadcrumbs: [const Crumb('Patients', '/patients'), Crumb(pr.alias.isEmpty ? 'Patient' : pr.alias)],
       actions: [
+        if (record?.isLocal ?? false)
+          TextButton.icon(
+            key: const Key('edit-profile'),
+            onPressed: () => context.go('/patients/$_id/edit'),
+            icon: const Icon(Icons.edit_outlined),
+            label: const Text('Edit profile'),
+          ),
         if (canAdd) ...[
+          const SizedBox(width: 8),
           FilledButton.icon(
             key: const Key('new-cycle'),
             onPressed: () => open != null
                 ? context.go(OnboardingPage.path(open.id, open.stage))
                 : _newCycle(context),
             icon: Icon(open != null ? Icons.arrow_forward_rounded : Icons.add_rounded),
-            label: Text(open != null ? 'Continue ${record!.labelOf(open).toLowerCase()}' : 'New cycle'),
+            label: Text(open != null
+                ? 'Continue ${record!.labelOf(open).toLowerCase()}'
+                : (total == 0 ? 'Start first cycle' : 'New cycle')),
           ),
         ],
       ],
@@ -134,7 +144,13 @@ class _Profile extends StatelessWidget {
         Text('Cycles', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
         const SizedBox(height: 10),
         if (tiles.isEmpty)
-          const EmptyView(icon: Icons.event_busy_outlined, title: 'No cycles yet')
+          EmptyView(
+            icon: Icons.event_note_outlined,
+            title: 'No cycles yet',
+            message: canAdd
+                ? 'Start the first cycle to enter the chemotherapy, hold the patient session and get a suggestion.'
+                : 'The oncologist or nurse specialist starts cycles from here.',
+          )
         else
           for (var i = 0; i < tiles.length; i++) ...[
             if (i > 0) const SizedBox(height: 10),

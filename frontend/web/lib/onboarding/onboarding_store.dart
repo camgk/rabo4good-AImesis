@@ -54,15 +54,12 @@ class OnboardingStore extends ChangeNotifier {
   static String _id(String prefix) =>
       '$prefix-${DateTime.now().microsecondsSinceEpoch.toRadixString(36).toUpperCase()}';
 
-  /// New patient with an empty first cycle.
-  CycleRef createPatient({required String createdBy}) {
-    final now = DateTime.now();
-    final p = PatientRecord(id: _id('NEW'), createdAt: now, isLocal: true);
-    final c = CycleRecord(id: _id('CYC'), patientId: p.id, createdAt: now, createdBy: createdBy);
-    p.cycles.add(c);
+  /// Patient onboarding: creates the profile. Cycles are started from it.
+  PatientRecord createPatient(PatientProfile profile, {required String createdBy}) {
+    final p = PatientRecord(id: _id('NEW'), createdAt: DateTime.now(), isLocal: true, profile: profile);
     _patients[p.id] = p;
     _changed();
-    return (patient: p, cycle: c);
+    return p;
   }
 
   /// Profile for an existing (API) patient, holding its record's cycles as
@@ -107,7 +104,7 @@ class OnboardingStore extends ChangeNotifier {
       createdBy: createdBy,
       intake: CycleIntake(
         protocol: prev?.intake.protocol ?? api?.protocol ?? '',
-        firstCycle: false,
+        firstCycle: p.cycleCount == 0,
         chemo: [...?(prev?.intake.chemo ?? api?.chemo)],
         activeMeds: [...?(prev?.intake.activeMeds ?? api?.activeMeds)],
       ),
@@ -128,12 +125,11 @@ class OnboardingStore extends ChangeNotifier {
     _changed();
   }
 
-  /// Removes an unsent cycle; a new patient with no cycles left goes too.
+  /// Removes an unsent cycle. The patient's profile stays.
   void discardCycle(String cycleId) {
     final ref = cycle(cycleId);
     if (ref == null || ref.cycle.isSent) return;
     ref.patient.cycles.removeWhere((c) => c.id == cycleId);
-    if (ref.patient.cycles.isEmpty) _patients.remove(ref.patient.id);
     _changed();
   }
 

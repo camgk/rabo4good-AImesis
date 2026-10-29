@@ -9,6 +9,7 @@ import 'pages/pharmacist_queue/pharmacist_queue_page.dart';
 import 'onboarding/onboarding_models.dart';
 import 'pages/onboarding/onboarding_page.dart';
 import 'pages/onboarding/patient_cycles_page.dart';
+import 'pages/onboarding/patient_form_page.dart';
 import 'pages/patients/patients_page.dart';
 import 'shell/app_shell.dart';
 import 'state/app_state.dart';
@@ -101,6 +102,10 @@ GoRouter buildRouter(AppState state) {
             ],
           ),
           GoRoute(
+            path: '/patients/new',
+            pageBuilder: (_, __) => const NoTransitionPage(child: PatientFormPage()),
+          ),
+          GoRoute(
             path: '/patients/:id',
             // The patient's home: profile and every cycle. The current
             // cycle's plan lives one level down at /patients/:id/:tab.
@@ -110,6 +115,13 @@ GoRouter buildRouter(AppState state) {
             ),
             routes: [
               GoRoute(path: 'cycles', redirect: (_, s) => '/patients/${s.pathParameters['id']}'),
+              GoRoute(
+                path: 'edit',
+                pageBuilder: (_, s) => NoTransitionPage(
+                  key: ValueKey('edit-${s.pathParameters['id']}'),
+                  child: PatientFormPage(patientId: s.pathParameters['id']),
+                ),
+              ),
               GoRoute(
                 path: ':tab',
                 pageBuilder: (_, s) => NoTransitionPage(

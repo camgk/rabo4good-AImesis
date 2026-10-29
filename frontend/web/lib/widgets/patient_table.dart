@@ -125,7 +125,10 @@ class PatientTable extends StatelessWidget {
             ),
             Expanded(
               flex: 3,
-              child: Align(alignment: Alignment.centerLeft, child: PlanStatusChip(p.planStatus, dense: true)),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: p.planStatus == null ? Text('No cycle yet', style: sub) : PlanStatusChip(p.planStatus, dense: true),
+              ),
             ),
             SizedBox(
               width: 40,

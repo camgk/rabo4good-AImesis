@@ -275,9 +275,13 @@ class _ReviewStepState extends State<ReviewStep> {
       subtitle: 'Editing an input re-runs the models',
       icon: Icons.fact_check_outlined,
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        section('Treatment & patient', OnboardingStage.treatment, [
-          KeyValue('Patient', '${pr.alias}${pr.age == null ? '' : ', ${pr.age} yrs'}${pr.sex == null ? '' : ', ${pr.sex}'}'),
-          KeyValue('Diagnosis', text(pr.diagnosis)),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: KeyValue('Patient',
+              '${pr.alias}${pr.age == null ? '' : ', ${pr.age} yrs'}${pr.sex == null ? '' : ', ${pr.sex}'} · ${text(pr.diagnosis)}'),
+        ),
+        Divider(color: cs.outlineVariant),
+        section('Treatment', OnboardingStage.treatment, [
           KeyValue('Cycle', '${_p.labelOf(d)} · ${previous == 0 ? 'no previous cycles on the profile' : '$previous previous on the profile'}'),
           KeyValue('Weight / height', '${fmtNum(i.weightKg ?? 0)} kg · ${fmtNum(i.heightCm ?? 0)} cm'),
           KeyValue('Protocol', '${text(i.protocol)}${i.cycle.isEmpty ? '' : ' · cycle ${i.cycle}'}'),
