@@ -17,7 +17,7 @@ class AppState extends ChangeNotifier {
     SuggestionEngine? suggestionEngine,
   })  : api = api ?? AimesisApi(baseUrl: config.apiUrl),
         onboarding = onboarding ?? OnboardingStore(),
-        suggestionEngine = suggestionEngine ?? PlaceholderSuggestionEngine();
+        _engineOverride = suggestionEngine;
 
   static const _tokenKey = 'aimesis.web.token';
 
@@ -27,9 +27,11 @@ class AppState extends ChangeNotifier {
   /// New patients being onboarded (kept in this browser tab for now).
   final OnboardingStore onboarding;
 
-  /// Runs the models during onboarding. Placeholder until the calculation
-  /// APIs are built.
-  final SuggestionEngine suggestionEngine;
+  final SuggestionEngine? _engineOverride;
+
+  /// Runs the models during onboarding: `POST /cycles/evaluate` by default;
+  /// tests pass [PlaceholderSuggestionEngine].
+  late final SuggestionEngine suggestionEngine = _engineOverride ?? ApiSuggestionEngine(api);
 
   Account? _account;
   Account? get account => _account;

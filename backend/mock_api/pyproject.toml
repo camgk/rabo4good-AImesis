@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "aimesis-mock-api"
 version = "0.2.0"
-description = "AImesis stand-in backend (mock rules) until backend/api + backend/agent are ready. Advisory only — requires clinician sign-off."
+description = "AImesis stand-in backend computing plans with the real aimesis_rules engine (UZA v2 + POGO 250111). Advisory only — requires clinician sign-off."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -14,6 +14,8 @@ dependencies = [
     "pydantic>=2",
     "pyjwt>=2.8",
     "google-cloud-firestore>=2.16",
+    "google-genai>=1.0",
+    "aimesis-rules",  # backend/rules (installed from ../rules locally, /rules in the Docker image)
 ]
 
 [project.optional-dependencies]

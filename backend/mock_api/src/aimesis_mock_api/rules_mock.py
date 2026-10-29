@@ -1,9 +1,11 @@
-"""MOCK rules engine for the hackathon demo.
+"""Plan computation for mock_api — now delegating to the REAL engine (aimesis_rules).
 
-This is a deliberately small, pure-Python stand-in so the frontends can run today.
-The real engine is `backend/rules` (aimesis_rules), owned by teammates; do not treat
-anything here as clinical logic. Every line produced here is labelled with the source
-"UZA v2 (mock rules)" and the plan carries the advisory banner text.
+Public API is unchanged (compute_plan, episode_day, interactions, classify_regimen,
+dex_status). Classification, combination rules, the dexamethasone guardrail,
+UZA-vs-POGO rows, interactions and breakthrough lines come from backend/rules
+(UZA CINV beleid v2 (juli 2026) + POGO 250111) via real_rules.py. This module keeps the
+per-line antiemetic assembly (doses per UZA v2 formulas, days, step-ups) and the
+episode summary. Advisory only — requires clinician sign-off.
 
 Everything is a pure function: data in, data out. No I/O, no LLM.
 """
@@ -35,10 +37,12 @@ from .models import (
     StepUp,
 )
 
-SOURCE = "UZA v2 (mock rules)"
-SOURCE_COMBO = "UZA v2 + POGO (mock rules)"
-SOURCE_DDI = "BCFI/CBIP (mock)"
-SOURCE_POGO = "POGO 2010 (mock)"
+from . import real_rules
+
+SOURCE = "UZA CINV beleid v2 (juli 2026)"
+SOURCE_COMBO = "UZA CINV beleid v2 (juli 2026) + POGO 250111"
+SOURCE_DDI = "BCFI/CBIP"
+SOURCE_POGO = "POGO 250111"
 
 TIERS = ["minimal", "low", "moderate", "high"]
 TIER_RANK = {t: i for i, t in enumerate(TIERS)}
@@ -126,7 +130,7 @@ class Classification:
     uza_vs_pogo: list[PogoRow] = field(default_factory=list)
 
 
-def classify_regimen(patient: Patient) -> Classification:
+def _legacy_classify_regimen(patient: Patient) -> Classification:  # unused; kept for reference
     c = Classification()
     tier_of: dict[str, str] = {}
     for row in patient.chemo:
@@ -198,8 +202,20 @@ def classify_regimen(patient: Patient) -> Classification:
     return c
 
 
-# --------------------------------------------------------------------------- Story 3 helpers
+def classify_regimen(patient: Patient) -> Classification:
+    """Story 1 via aimesis_rules (UZA v2 + POGO 250111)."""
+    dt, days, overall, combos, unknown, pogo = real_rules.classify(patient)
+    return Classification(drug_tiers=dt, day_tiers=days, overall=overall, combination_rules=combos,
+                          unknown=unknown, uza_vs_pogo=pogo)
+
+
 def dex_status(patient: Patient) -> DexStatus:
+    """Story 3 guardrail via aimesis_rules."""
+    return real_rules.dex_status(patient)
+
+
+# --------------------------------------------------------------------------- Story 3 helpers
+def _legacy_dex_status(patient: Patient) -> DexStatus:  # unused; kept for reference
     group = patient.diagnosis_group
     if group in DEX_BLOCK_GROUPS:
         return DexStatus(blocked=True, reason=f"GEEN dexamethasone bij {DEX_BLOCK_GROUPS[group]} (UZA v2)", source=SOURCE)
@@ -431,40 +447,28 @@ def compute_plan(patient: Patient, episodes: list[Episode] | None = None) -> Pla
     # ---- olanzapine (high)
     if tier == "high":
         raw = 0.1 * weight
-        capped = min(raw, 10.0)
+        capped = min(raw, 5.0)
         dose = math.floor(round(capped, 6) * 2) / 2
         lines.append(
             AntiemeticLine(
                 drug="olanzapine", dose_mg=dose, frequency="1x/d (evening)", route=route, days=cover_days,
-                formula="0.1 mg/kg once daily in the evening, max 10 mg, rounded down to 0.5 mg",
+                formula="0.1 mg/kg once daily (first dose just before chemo, then evening), max 5 mg, rounded down to 0.5 mg",
                 steps=[f"{fmt(weight)} kg × 0.1 = {raw:.1f} mg → {dose:.1f} mg"]
-                + (["max 10 mg applied"] if raw > 10 else []),
+                + (["max 5 mg applied"] if raw > 5 else []),
                 source=f"{SOURCE} · Olanzapine", notes=list(route_notes),
             )
         )
 
     plan.antiemetics = lines
 
-    # ---- breakthrough
-    day_total = min(5 * weight, 150.0)
-    per_dose = round_half_up(day_total / 3, 1)
-    plan.breakthrough.append(
-        BreakthroughLine(
-            drug="alizapride", dose_mg=per_dose, frequency="3x/d if needed", route=route,
-            formula="5 mg/kg/day in 3 doses, max 150 mg/day (mock dose)", source=SOURCE,
-            notes=["mock dose", f"{fmt(weight)} kg × 5 mg/kg = {5 * weight:.1f} mg/day → {day_total:g} mg/day ÷ 3"],
-        )
-    )
-    if rf.anticipatory:
-        lz_raw = 0.025 * weight
-        lz = round_half_up(min(lz_raw, 1.0), 2)
-        plan.breakthrough.append(
-            BreakthroughLine(
-                drug="lorazepam", dose_mg=lz, frequency="once before chemo if needed", route=route,
-                formula="0.025 mg/kg, max 1 mg (mock dose) — anticipatory nausea", source=SOURCE,
-                notes=["mock dose", f"{fmt(weight)} kg × 0.025 = {lz_raw:.3f} mg → {lz:g} mg"],
-            )
-        )
+    # ---- breakthrough (aimesis_rules UZA v2 p.2)
+    plan.breakthrough = real_rules.breakthrough(patient, route)
+
+    # ---- sources: aimesis_rules citations per line
+    cites = real_rules.line_citations(patient, tier)
+    for ln in lines:
+        if ln.drug in cites:
+            ln.source = f"{SOURCE} · {cites[ln.drug]}"
 
     plan.interactions = interactions(patient, [ln.drug for ln in lines])
     return plan
@@ -472,50 +476,18 @@ def compute_plan(patient: Patient, episodes: list[Episode] | None = None) -> Pla
 
 # --------------------------------------------------------------------------- Story 6
 def interactions(patient: Patient, proposed: list[str]) -> list[Interaction]:
-    meds = {norm(m) for m in patient.active_meds}
-    chemo = {norm(r.drug) for r in patient.chemo}
+    """Story 6 via aimesis_rules (BCFI/CBIP-cited DDI + QTc screen)."""
+    out = real_rules.interactions(patient, proposed)
     prop = {norm(p) for p in proposed}
-    out: list[Interaction] = []
-    for azole in sorted(meds & AZOLES):
-        if "vincristine" in chemo:
-            out.append(
-                Interaction(
-                    severity="critical",
-                    drugs=[azole, "vincristine"],
-                    message="Strong CYP3A4 inhibition raises vincristine exposure: neuropathy, paralytic ileus",
-                    alternative="Consider switching antifungal (e.g. to an echinocandin) — discuss with infectious disease",
-                    source=SOURCE_DDI,
-                )
-            )
-        if "aprepitant" in prop:
-            out.append(
-                Interaction(
-                    severity="warning",
-                    drugs=[azole, "aprepitant"],
-                    message="CYP3A4 inhibition: azole raises aprepitant exposure, and aprepitant may raise azole levels",
-                    alternative="Monitor for side effects; consider omitting aprepitant if the azole cannot be changed",
-                    source=SOURCE_DDI,
-                )
-            )
-    if "ondansetron" in prop:
-        for qt in sorted(meds & QT_DRUGS):
-            out.append(
-                Interaction(
-                    severity="warning",
-                    drugs=["ondansetron", qt],
-                    message="Additive QTc prolongation",
-                    alternative="ECG and electrolytes before start; avoid combination if QTc is prolonged",
-                    source=SOURCE_DDI,
-                )
-            )
-    if "aprepitant" in prop and "dexamethasone" in prop:
+    have_apr_dex = any({"aprepitant", "dexamethasone"} <= {norm(d) for d in i.drugs} for i in out)
+    if "aprepitant" in prop and "dexamethasone" in prop and not have_apr_dex:
         out.append(
             Interaction(
                 severity="info",
                 drugs=["aprepitant", "dexamethasone"],
                 message="Aprepitant inhibits CYP3A4 and raises dexamethasone exposure — dexamethasone dose already halved",
                 alternative=None,
-                source=SOURCE_DDI,
+                source=f"{SOURCE} p.2 · Dexamethasone 50% reductie i.c.m. (fos)aprepitant",
             )
         )
     return out

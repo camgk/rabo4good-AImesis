@@ -283,12 +283,40 @@ class Suggestion {
   /// True while the output comes from the placeholder engine.
   final bool placeholder;
 
+  /// Gemini summary for the clinician and plain-language family explanation.
+  final String? aiSummary;
+  final String? familyExplanation;
+  final String? aiModel;
+
+  /// Why the AI step failed (the rule-based plan is still valid).
+  final String? aiError;
+
+  /// Set when dexamethasone is contraindicated for this cycle.
+  final String? dexBlockedReason;
+  final bool dexBlocked;
+
+  /// The models refused to suggest a plan (e.g. unknown drugs).
+  final bool refused;
+  final String? refusalReason;
+
+  /// Critical drug–drug interactions, shown above everything else.
+  final List<String> criticalInteractions;
+
   const Suggestion({
     this.overallTier,
     this.antiemetics = const [],
     this.outputs = const [],
     required this.generatedAt,
     this.placeholder = false,
+    this.aiSummary,
+    this.familyExplanation,
+    this.aiModel,
+    this.aiError,
+    this.dexBlocked = false,
+    this.dexBlockedReason,
+    this.refused = false,
+    this.refusalReason,
+    this.criticalInteractions = const [],
   });
 
   factory Suggestion.fromJson(Map<String, dynamic> j) => Suggestion(
@@ -303,6 +331,17 @@ class Suggestion {
         ],
         generatedAt: DateTime.tryParse((j['generatedAt'] as String?) ?? '') ?? DateTime.now(),
         placeholder: (j['placeholder'] as bool?) ?? false,
+        aiSummary: j['aiSummary'] as String?,
+        familyExplanation: j['familyExplanation'] as String?,
+        aiModel: j['aiModel'] as String?,
+        aiError: j['aiError'] as String?,
+        dexBlocked: (j['dexBlocked'] as bool?) ?? false,
+        dexBlockedReason: j['dexBlockedReason'] as String?,
+        refused: (j['refused'] as bool?) ?? false,
+        refusalReason: j['refusalReason'] as String?,
+        criticalInteractions: [
+          for (final c in (j['criticalInteractions'] as List? ?? const [])) c as String,
+        ],
       );
 
   Map<String, dynamic> toJson() => {
@@ -311,6 +350,15 @@ class Suggestion {
         'outputs': outputs.map((o) => o.toJson()).toList(),
         'generatedAt': generatedAt.toIso8601String(),
         'placeholder': placeholder,
+        'aiSummary': aiSummary,
+        'familyExplanation': familyExplanation,
+        'aiModel': aiModel,
+        'aiError': aiError,
+        'dexBlocked': dexBlocked,
+        'dexBlockedReason': dexBlockedReason,
+        'refused': refused,
+        'refusalReason': refusalReason,
+        'criticalInteractions': criticalInteractions,
       };
 }
 

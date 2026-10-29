@@ -12,13 +12,13 @@ import logging
 import os
 from contextlib import asynccontextmanager
 
-from fastapi import Depends, FastAPI, Query, Request
+from fastapi import Body, Depends, FastAPI, Query, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from . import docs, rules_mock
+from . import ai_summary, docs, rules_mock
 from .auth import (
     CLINICIAN_ROLES,
     FAMILY_ROLES,
@@ -109,6 +109,25 @@ def save_state(store: Store, patient_doc: dict, state: dict) -> Plan:
     patient, plan, _, _ = build_from_doc(store, patient_doc, state)
     store.save_passport(docs.passport_doc(patient_doc, patient, plan, state, existing))
     return plan
+
+
+def evaluate_patient(raw: dict) -> tuple[Patient, Plan]:
+    """Stateless: wire-shape Patient JSON -> (Patient, Plan) via the same engine call as build_from_doc."""
+    data = dict(raw or {})
+    data.setdefault("tags", [])
+    data.setdefault("pairingCode", "")
+    data.setdefault("overallTier", "minimal")
+    data.setdefault("planStatus", "draft")
+    data.setdefault("riskFactors", {})
+    if data.get("bsaM2") in (None, "", 0) and data.get("heightCm") and data.get("weightKg"):
+        data["bsaM2"] = round((float(data["heightCm"]) * float(data["weightKg"]) / 3600) ** 0.5, 2)
+    try:
+        patient = Patient.model_validate(data)
+    except Exception as exc:
+        raise ApiError(422, f"Invalid patient: {exc}")
+    plan = rules_mock.compute_plan(patient, [])
+    patient.overall_tier = plan.overall_tier
+    return patient, plan
 
 
 def summary_of(patient: Patient) -> PatientSummary:
@@ -300,6 +319,16 @@ def create_app(store: Store | None = None) -> FastAPI:
         return _pharmacist_decision(patient_id, request, acc, False, body.comment)
 
     # ---- passport
+    @app.post("/cycles/evaluate")
+    def evaluate_cycle(body: dict = Body(...), acc: dict = Depends(require_roles(*CLINICIAN_ROLES))):
+        """Stateless what-if: compute the plan for an ad-hoc patient (nothing persisted) + Gemini summary."""
+        if not isinstance(body, dict) or not isinstance(body.get("patient"), dict):
+            raise ApiError(422, "Body must be {\"patient\": {...}}")
+        patient, plan = evaluate_patient(body["patient"])
+        plan_wire = plan.wire()
+        ai, ai_error = ai_summary.summarise(patient.wire(), plan_wire)
+        return {"plan": plan_wire, "ai": ai, "aiError": ai_error}
+
     @app.get("/patients/{patient_id}/passport")
     def get_passport(
         patient_id: str,

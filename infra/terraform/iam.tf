@@ -14,6 +14,7 @@ resource "google_project_iam_member" "mock_api" {
   for_each = toset([
     "roles/datastore.user",
     "roles/logging.logWriter",
+    "roles/aiplatform.user", # Gemini on Vertex AI for the cycle summary
   ])
 
   project = var.project_id

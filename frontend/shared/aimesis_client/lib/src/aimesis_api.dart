@@ -1,4 +1,5 @@
 import 'models/account.dart';
+import 'models/cycle_evaluation.dart';
 import 'models/patient_context.dart';
 import 'models/plan.dart';
 import 'rest/api_core.dart';
@@ -83,6 +84,11 @@ class AimesisApi extends ApiCore with EpisodesApi, PassportApi {
   /// `POST /patients/{id}/plan/return` (pharmacist, comment required).
   Future<Plan> returnPlan(String patientId, String comment) async => Plan.fromJson(
       asObject(await postJson('/patients/${_e(patientId)}/plan/return', {'comment': comment})));
+
+  /// `POST /cycles/evaluate` `{"patient": ...}` — runs the models over an
+  /// unsaved cycle and returns the plan plus the (optional) AI summary.
+  Future<CycleEvaluation> evaluateCycle(Patient p) async => CycleEvaluation.fromJson(
+      asObject(await postJson('/cycles/evaluate', {'patient': p.toJson()})));
 
   // ---- misc --------------------------------------------------------------
 

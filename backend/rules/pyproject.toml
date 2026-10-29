@@ -2,7 +2,7 @@
 name = "aimesis-rules"
 version = "0.1.0"
 description = "Pure Python deterministic UZA v2 & POGO 250111 rules engine for pediatric CINV"
-requires-python = ">=3.11,<3.14"
+requires-python = ">=3.11"
 dependencies = [
     "pydantic>=2.7.0",
 ]

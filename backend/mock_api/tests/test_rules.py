@@ -1,4 +1,4 @@
-"""Pins the Casus 1–4 expectations of the MOCK rules (backend/rules is the real engine)."""
+"""Pins the Casus 1–4 expectations of mock_api plans computed with the real engine (aimesis_rules)."""
 
 import pytest
 
@@ -41,8 +41,9 @@ def test_casus1_high_ondansetron_stepup_dex_halved_olanzapine():
     assert olz.dose_mg == 5.0
     assert "52 kg × 0.1 = 5.2 mg → 5.0 mg" in olz.steps[0]
     assert plan.episodes_summary.prior_nausea_days == [2]
-    assert any(i.severity == "info" for i in plan.interactions)
-    assert all("mock" in a.source for a in plan.antiemetics)
+    assert any({"aprepitant", "dexamethasone"} <= set(i.drugs) for i in plan.interactions)
+    assert all(a.source.startswith("UZA CINV beleid v2 (juli 2026)") for a in plan.antiemetics)
+    assert not any("mock" in a.source for a in plan.antiemetics)
 
 
 def test_casus2_moderate_dex_blocked_all_liquid():
@@ -66,7 +67,7 @@ def test_casus2_moderate_dex_blocked_all_liquid():
 def test_casus3_combination_high_aprepitant_extended():
     plan = rules_mock.compute_plan(patient("casus-3"))
     assert plan.overall_tier == "high"
-    assert any("Ifosfamide + Etoposide = HEC" in c.rule for c in plan.combination_rules)
+    assert any("Ifosfamide/Etoposide" in c.rule and "HEC" in c.rule for c in plan.combination_rules)
     assert [d.day for d in plan.day_tiers] == [1, 2, 3, 4, 5]
     assert all(d.tier == "high" for d in plan.day_tiers)
     apr_later = line(plan, "aprepitant", 2)
@@ -88,7 +89,7 @@ def test_casus4_cyclophosphamide_high_dex_blocked_critical_interaction():
     crit = [i for i in plan.interactions if i.severity == "critical"]
     assert crit and set(crit[0].drugs) == {"voriconazole", "vincristine"}
     assert "echinocandin" in crit[0].alternative
-    assert all(i.source == "BCFI/CBIP (mock)" for i in plan.interactions)
+    assert all("mock" not in i.source for i in plan.interactions)
     ond = line(plan, "ondansetron")
     assert ond.dose_mg == 4.3  # 0.85 × 5 = 4.25 → 4.3
     assert ond.route == "oral_liquid"
@@ -119,6 +120,7 @@ def test_unknown_drug_refuses():
     assert plan.refused and plan.unknown_drugs == ["madeupmab"]
 
 
+@pytest.mark.xfail(reason="'>=2 moderates same day = high' was a mock-only rule; aimesis_rules (UZA v2) keeps this moderate — confirm with clinicians", strict=True)
 def test_two_moderates_same_day_is_high():
     p = patient(
         "casus-3",

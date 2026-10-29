@@ -26,7 +26,7 @@ resource "google_cloud_run_v2_service" "mock_api" {
       resources {
         limits = {
           cpu    = "1"
-          memory = "512Mi"
+          memory = "1Gi"
         }
         cpu_idle          = true
         startup_cpu_boost = true
@@ -43,6 +43,14 @@ resource "google_cloud_run_v2_service" "mock_api" {
       env {
         name  = "STORE"
         value = "firestore"
+      }
+      env {
+        name  = "GOOGLE_CLOUD_LOCATION"
+        value = "global"
+      }
+      env {
+        name  = "AIMESIS_GEMINI_MODEL"
+        value = "gemini-2.5-flash"
       }
       env {
         # Demo only. Next step: Secret Manager + secret_key_ref.

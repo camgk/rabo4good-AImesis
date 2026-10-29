@@ -5,6 +5,7 @@ library;
 export 'src/aimesis_api.dart';
 export 'src/models/account.dart';
 export 'src/models/chemo_row.dart';
+export 'src/models/cycle_evaluation.dart';
 export 'src/models/ddi_alert.dart';
 export 'src/models/episode.dart';
 export 'src/models/passport.dart';
