@@ -6,6 +6,8 @@ import '../../state/app_scope.dart';
 import '../../widgets/common.dart';
 import '../../widgets/page_frame.dart';
 import '../../widgets/patient_table.dart';
+import '../onboarding/onboarding_list.dart';
+import '../onboarding/onboarding_page.dart';
 
 /// Loads `GET /patients` and refetches when a plan changes elsewhere.
 class PatientsLoader extends StatefulWidget {
@@ -77,13 +79,44 @@ class _PatientsPageState extends State<PatientsPage> {
         final patients = tag == null ? all : all.where((p) => p.hasTag(tag)).toList();
         final awaiting = patients.where((p) => p.planStatus == PlanStatus.awaitingPharmacist).length;
         final high = patients.where((p) => p.overallTier == Tier.high).length;
+        final app = AppScope.of(context);
+        final acc = app.account;
+        final canOnboard = acc != null && (acc.isOncologist || acc.isNurse);
         return PageFrame(
           title: 'Patients',
           subtitle: 'Patients starting or in a chemotherapy cycle',
           actions: [
             IconButton(tooltip: 'Refresh', onPressed: reload, icon: const Icon(Icons.refresh_rounded)),
+            if (canOnboard) ...[
+              const SizedBox(width: 8),
+              FilledButton.icon(
+                key: const Key('new-patient'),
+                onPressed: () {
+                  final d = app.onboarding.create(createdBy: app.account?.displayName ?? '');
+                  context.go(OnboardingPage.path(d.id, d.stage));
+                },
+                icon: const Icon(Icons.person_add_alt_1_rounded),
+                label: const Text('New patient'),
+              ),
+            ],
           ],
           children: [
+            ListenableBuilder(
+              listenable: app.onboarding,
+              builder: (context, _) {
+                final drafts = app.onboarding.drafts;
+                if (drafts.isEmpty) return const SizedBox.shrink();
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 24),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                    Text('Onboarding (${drafts.length})',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 10),
+                    OnboardingList(drafts: drafts, allowDiscard: canOnboard),
+                  ]),
+                );
+              },
+            ),
             Wrap(spacing: 12, runSpacing: 12, children: [
               _Stat(label: 'Total', value: '${patients.length}', icon: Icons.people_alt_outlined),
               _Stat(label: 'High emetogenic', value: '$high', icon: Icons.local_fire_department_outlined),

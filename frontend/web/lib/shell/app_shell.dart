@@ -35,7 +35,7 @@ class AppShell extends StatelessWidget {
       ];
 
   int _selected(List<_NavItem> items) {
-    if (location.startsWith('/patients')) return 0;
+    if (location.startsWith('/patients') || location.startsWith('/onboarding')) return 0;
     final i = items.indexWhere((it) => location.startsWith(it.path));
     return i < 0 ? 0 : i;
   }

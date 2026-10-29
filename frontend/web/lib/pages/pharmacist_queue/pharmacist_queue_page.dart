@@ -6,6 +6,7 @@ import '../../state/app_scope.dart';
 import '../../widgets/common.dart';
 import '../../widgets/page_frame.dart';
 import '../../widgets/patient_table.dart';
+import '../onboarding/onboarding_list.dart';
 import '../patients/patients_page.dart';
 
 /// Plans awaiting the pharmacist check first, then everything else.
@@ -50,6 +51,22 @@ class PharmacistQueuePage extends StatelessWidget {
             )
           else
             PatientTable(patients: waiting, onOpen: open, actionLabel: 'Open sign-off'),
+          ListenableBuilder(
+            listenable: AppScope.of(context).onboarding,
+            builder: (context, _) {
+              final sent = AppScope.of(context).onboarding.sent;
+              if (sent.isEmpty) return const SizedBox.shrink();
+              return Padding(
+                padding: const EdgeInsets.only(top: 28),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                  Text('New patients from onboarding (${sent.length})',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 10),
+                  OnboardingList(drafts: sent),
+                ]),
+              );
+            },
+          ),
           const SizedBox(height: 28),
           Text('Other plans (${others.length})',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),

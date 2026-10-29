@@ -6,6 +6,8 @@ import 'pages/login/login_page.dart';
 import 'pages/passport/passport_print_page.dart';
 import 'pages/patient/patient_workspace_page.dart';
 import 'pages/pharmacist_queue/pharmacist_queue_page.dart';
+import 'onboarding/onboarding_models.dart';
+import 'pages/onboarding/onboarding_page.dart';
 import 'pages/patients/patients_page.dart';
 import 'shell/app_shell.dart';
 import 'state/app_state.dart';
@@ -78,6 +80,24 @@ GoRouter buildRouter(AppState state) {
           GoRoute(
             path: '/about',
             pageBuilder: (_, __) => const NoTransitionPage(child: AboutPage()),
+          ),
+          GoRoute(
+            path: '/onboarding/:id',
+            redirect: (_, s) => s.uri.pathSegments.length == 2
+                ? '/onboarding/${s.pathParameters['id']}/${OnboardingStage.treatment.path}'
+                : null,
+            routes: [
+              GoRoute(
+                path: ':step',
+                pageBuilder: (_, s) => NoTransitionPage(
+                  key: ValueKey('onboarding-${s.pathParameters['id']}'),
+                  child: OnboardingPage(
+                    draftId: s.pathParameters['id']!,
+                    step: OnboardingStage.fromPath(s.pathParameters['step']),
+                  ),
+                ),
+              ),
+            ],
           ),
           GoRoute(
             path: '/patients/:id',

@@ -9,6 +9,7 @@ Hackathon prototype: **advisory only, demo data, mock rules.** Every page shows 
 |---|---|---|
 | `/login` | Login with demo-account quick-pick (clinician roles only; family roles are told to use the Family app) | — |
 | `/patients` | Patients: alias, age, diagnosis, protocol, cycle, overall tier, plan status | — |
+| `/onboarding/:id/:step` | New patient onboarding: `treatment` (doctor prepares chemo + patient details) → `session` (with patient and family) → `processing` (models) → `review` (approve, send to pharmacist). Drafts live in `sessionStorage`; models run through `SuggestionEngine` (placeholder until the calculation APIs exist) | — |
 | `/pharmacist` | Pharmacist queue: plans awaiting pharmacist first (read-only for other roles) | sign-off |
 | `/about` | What is mock, demo accounts, story map | — |
 | `/patients/:id/regimen` | Regimen & tier: per-drug tier + rule + source, per-day tier strip, combination rules | 1 |
@@ -79,7 +80,8 @@ lib/
   router.dart                go_router, login redirect, WorkspaceTab enum
   state/                     AppState (session, api), PatientWorkspace (patient + plan cache)
   shell/app_shell.dart       app bar, role-aware navigation rail, advisory banner
-  pages/                     login, patients, pharmacist_queue, about, patient (workspace + header),
+  onboarding/                OnboardingStore (drafts), SuggestionEngine (+ placeholder), models
+  pages/                     login, patients, onboarding, pharmacist_queue, about, patient (workspace + header),
                              risk_tier, personalise, interactions, doses, uza_vs_pogo, signoff, passport
   agent/                     AG-UI / A2UI stubs — switch from REST mock when backend/agent is deployed
   platform/                  sessionStorage / window.open / print via package:web (VM stub for tests)
