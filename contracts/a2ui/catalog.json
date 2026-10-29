@@ -1,0 +1,43 @@
+{
+  "version": "0.9",
+  "catalog_id": "aimesis_a2ui_catalog_v1",
+  "description": "Allowlisted A2UI components that backend/agent may emit and frontend/web renders.",
+  "components": [
+    {
+      "type": "AdvisoryBanner",
+      "required_props": ["label", "policy_version"]
+    },
+    {
+      "type": "RefusalAlertCard",
+      "required_props": ["reasons"]
+    },
+    {
+      "type": "RiskTierCard",
+      "required_props": ["overall_tier", "per_drug_details", "combination_elevated", "citation"]
+    },
+    {
+      "type": "ContraindicationBanner",
+      "required_props": ["contraindicated", "reasons", "citation"]
+    },
+    {
+      "type": "DoseScheduleCard",
+      "required_props": ["lines", "citation"]
+    },
+    {
+      "type": "PersonalizationCard",
+      "required_props": ["overrides", "breakthrough_steps"]
+    },
+    {
+      "type": "PogoComparisonTable",
+      "required_props": ["per_drug_comparison", "prophylaxis_comparison"]
+    },
+    {
+      "type": "DdiAlertList",
+      "required_props": ["highest_severity", "qtc_prolongation_risk", "interactions_found"]
+    },
+    {
+      "type": "PatientPassportPreview",
+      "required_props": ["passport_id", "emetogenicity_tier", "active_orders", "sign_off", "belgian_family_resources"]
+    }
+  ]
+}

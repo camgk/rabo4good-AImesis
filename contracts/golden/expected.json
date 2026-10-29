@@ -1,0 +1,31 @@
+{
+  "expected": {
+    "casus_1": {
+      "overall_tier": "High",
+      "combination_elevated": false,
+      "dexamethasone_contraindicated": false,
+      "ondansetron_indicated": true,
+      "aprepitant_indicated": true,
+      "dexamethasone_indicated": true,
+      "olanzapine_indicated": true
+    },
+    "casus_2": {
+      "overall_tier": "Moderate",
+      "combination_elevated": false,
+      "dexamethasone_contraindicated": true,
+      "ondansetron_indicated": true,
+      "aprepitant_indicated": true,
+      "dexamethasone_indicated": false,
+      "olanzapine_indicated": false
+    },
+    "casus_3": {
+      "overall_tier": "High",
+      "combination_elevated": true,
+      "dexamethasone_contraindicated": false,
+      "ondansetron_indicated": true,
+      "aprepitant_indicated": true,
+      "dexamethasone_indicated": true,
+      "olanzapine_indicated": true
+    }
+  }
+}
