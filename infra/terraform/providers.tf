@@ -16,6 +16,7 @@ terraform {
 provider "google" {
   project = var.project_id
   region  = var.region
+  zone    = var.zone
 
   # Bill API calls made with user credentials to the lab project itself, so
   # Firestore / Service Usage don't complain about a missing quota project.

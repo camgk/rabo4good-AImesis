@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aimesis.be/schemas/episode.schema.json",
+  "title": "CinvEpisode",
+  "description": "Nausea, vomiting, or retching episode recorded by family via companion app or care team.",
+  "type": "object",
+  "required": [
+    "episode_id",
+    "patient_id",
+    "passport_id",
+    "timestamp",
+    "symptom_type",
+    "severity"
+  ],
+  "properties": {
+    "episode_id": {
+      "type": "string",
+      "description": "Unique episode ID (UUID or ULID)"
+    },
+    "patient_id": {
+      "type": "string",
+      "description": "Patient identifier"
+    },
+    "passport_id": {
+      "type": "string",
+      "description": "Active Passport ID during which episode occurred"
+    },
+    "cycle_day": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Day of chemotherapy cycle when episode occurred"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Exact episode occurrence timestamp"
+    },
+    "symptom_type": {
+      "type": "string",
+      "enum": ["nausea", "vomiting", "retching", "both_nausea_and_vomiting"]
+    },
+    "severity": {
+      "type": "string",
+      "enum": ["mild", "moderate", "severe"],
+      "description": "Visual analog / Baxter scale rating reported by child/parent"
+    },
+    "duration_minutes": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "vomiting_count": {
+      "type": "integer",
+      "minimum": 0,
+      "default": 0,
+      "description": "Number of emetic events within this episode"
+    },
+    "rescue_medication_administered": {
+      "type": "object",
+      "properties": {
+        "given": { "type": "boolean", "default": false },
+        "drug_name": { "type": "string" },
+        "dose_given": { "type": "string" },
+        "time_given": { "type": "string", "format": "date-time" }
+      }
+    },
+    "reported_by": {
+      "type": "string",
+      "enum": ["parent", "patient", "nurse", "clinician"],
+      "default": "parent"
+    },
+    "free_notes": {
+      "type": "string"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

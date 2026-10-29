@@ -38,7 +38,7 @@ resource "google_cloud_run_v2_service" "mock_api" {
       }
       env {
         name  = "FIRESTORE_DATABASE"
-        value = google_firestore_database.demo.name
+        value = google_firestore_database.default.name
       }
       env {
         name  = "STORE"
@@ -68,7 +68,7 @@ resource "google_cloud_run_v2_service" "mock_api" {
 
   depends_on = [
     google_project_service.apis,
-    google_firestore_database.demo,
+    google_firestore_database.default,
     google_project_iam_member.mock_api,
   ]
 }

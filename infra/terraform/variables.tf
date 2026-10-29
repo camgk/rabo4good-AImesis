@@ -91,3 +91,25 @@ variable "grant_legacy_cloudbuild_sa" {
   type        = bool
   default     = true
 }
+
+# ---------------------------------------------------------------------------
+# Shared settings from the Firestore setup (PR #3)
+# ---------------------------------------------------------------------------
+
+variable "zone" {
+  description = "Primary GCP zone for zonal resources."
+  type        = string
+  default     = "europe-west1-b"
+}
+
+variable "location_id" {
+  description = "Location of the Firestore database (e.g. europe-west1, eur3)."
+  type        = string
+  default     = "europe-west1"
+}
+
+variable "environment" {
+  description = "Deployment environment name."
+  type        = string
+  default     = "dev"
+}

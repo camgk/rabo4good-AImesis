@@ -97,7 +97,7 @@ step "Terraform phase 1: APIs, Artifact Registry, Firestore, service accounts, I
 tf_apply_resilient "$LOG_DIR/phase1.log" $TF_COMMON_VARS -var "image_tag=${TAG}" \
   -target=google_project_service.apis \
   -target=google_artifact_registry_repository.aimesis \
-  -target=google_firestore_database.demo \
+  -target=google_firestore_database.default \
   -target=google_service_account.mock_api \
   -target=google_service_account.web \
   -target=google_project_iam_member.mock_api \

@@ -11,7 +11,7 @@ project `qwiklabs-gcp-00-cc29ec8bfdd9` (region `europe-west1`).
 |---|---|---|
 | Project services | run, artifactregistry, firestore, cloudbuild, compute, iam, iamcredentials, logging, aiplatform, storage | `disable_on_destroy = false` |
 | Artifact Registry (Docker) | `aimesis` | `europe-west1-docker.pkg.dev/<project>/aimesis/<image>:<tag>` |
-| Firestore (native) | `aimesis-demo` | Named database, so it never clashes with `(default)`. Deleted on destroy. |
+| Firestore (native) | `(default)` | The team database from PR #3 (patients, passports, episodes), adopted with an import block. Kept on destroy (`deletion_policy = ABANDON`). Demo records are tagged `demo`. |
 | Service account | `aimesis-mock-api` | `roles/datastore.user`, `roles/logging.logWriter` |
 | Service account | `aimesis-web` | No roles (static nginx) |
 | IAM for builds | compute default SA (+ legacy `<number>@cloudbuild` SA) | `cloudbuild.builds.builder`, `artifactregistry.writer`, `logging.logWriter`, `storage.objectViewer`, so `gcloud builds submit` works in a fresh project |
@@ -110,7 +110,7 @@ Same for the api: `-var deploy_api=true -var api_image=$REG/api:v1`.
 
 - `agent` runs as `aimesis-agent` with `roles/aiplatform.user`, env
   `GOOGLE_CLOUD_LOCATION=global` and `GOOGLE_GENAI_USE_VERTEXAI=TRUE`, 300 s timeout for SSE.
-- `api` runs as `aimesis-api` with `roles/datastore.user` and env `FIRESTORE_DATABASE=aimesis-demo`.
+- `api` runs as `aimesis-api` with `roles/datastore.user` and env `FIRESTORE_DATABASE=(default)`.
 
 To keep them on, set `deploy_agent = true` and `agent_image = "..."` in
 `env/dev.tfvars`. Otherwise the next `deploy.sh` run removes them again.
@@ -160,7 +160,7 @@ within or near the free tier at demo volumes.
 infra/scripts/destroy.sh            # asks you to type the project id
 ```
 
-This deletes the Cloud Run services, the `aimesis-demo` database with all its
+This deletes the Cloud Run services (the Firestore database and its data are kept) and all its
 data, the registry with all images, the service accounts and the IAM grants. The
 state and build buckets stay; the script prints the command to remove them.
 

@@ -13,3 +13,8 @@ deploy_api   = false
 team_members = []
 
 allow_public = true
+
+# Shared settings (Firestore "(default)" database, PR #3)
+zone        = "europe-west1-b"
+location_id = "europe-west1"
+environment = "dev"

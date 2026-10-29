@@ -68,14 +68,14 @@ resource "google_cloud_run_v2_service" "api" {
       }
       env {
         name  = "FIRESTORE_DATABASE"
-        value = google_firestore_database.demo.name
+        value = google_firestore_database.default.name
       }
     }
   }
 
   depends_on = [
     google_project_service.apis,
-    google_firestore_database.demo,
+    google_firestore_database.default,
     google_project_iam_member.api,
   ]
 }

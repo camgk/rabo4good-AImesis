@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Tear down everything Terraform created (Cloud Run, Firestore aimesis-demo
+# Tear down everything Terraform created (Cloud Run, Firestore data stays: the (default) database is abandoned, not deleted
 # incl. its data, registry + images, service accounts, IAM grants).
 # Leaves the state/build buckets and enabled APIs in place.
 # Usage: infra/scripts/destroy.sh [--yes]
@@ -23,7 +23,7 @@ done
 resolve_config
 
 printf '\n%sThis destroys the AImesis demo in project %s:%s\n' "$C_BOLD" "$PROJECT_ID" "$C_RESET"
-info "Cloud Run services, Firestore database 'aimesis-demo' (all data), Artifact Registry 'aimesis' (all images),"
+info "Cloud Run services, the Firestore database is kept (deletion_policy ABANDON), Artifact Registry 'aimesis' (all images),"
 info "service accounts and IAM grants. Buckets gs://${STATE_BUCKET} and gs://${BUILD_BUCKET} are kept."
 if [ "$ASSUME_YES" != "1" ]; then
   printf '\nType the project id to confirm: '
