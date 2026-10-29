@@ -1,6 +1,7 @@
 import 'package:aimesis_a2ui_catalog/aimesis_a2ui_catalog.dart';
 import 'package:aimesis_client/aimesis_client.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../platform/browser.dart';
@@ -109,9 +110,9 @@ class _PassportTabState extends State<PassportTab> {
               ),
               const SizedBox(width: 8),
               FilledButton.icon(
-                onPressed: printPage,
+                onPressed: () => context.go('/patients/${widget.ws.patientId}/passport/print?lang=$_lang'),
                 icon: const Icon(Icons.print_rounded),
-                label: const Text('Print'),
+                label: const Text('Print view'),
               ),
             ]),
           ],
@@ -134,9 +135,12 @@ class _PassportTabState extends State<PassportTab> {
 
 /// The printable one-page passport. Always rendered light (paper).
 class PassportCard extends StatelessWidget {
-  const PassportCard({super.key, required this.passport, required this.lang});
+  const PassportCard({super.key, required this.passport, required this.lang, this.flat = false});
   final Passport passport;
   final String lang;
+
+  /// No shadow / rounded border (print view).
+  final bool flat;
 
   String t(String key) => (_ui[lang] ?? _ui['en']!)[key] ?? key;
 
@@ -153,9 +157,9 @@ class PassportCard extends StatelessWidget {
           child: Container(
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: const Color(0xFFD5DDDB)),
-              boxShadow: const [BoxShadow(color: Color(0x22000000), blurRadius: 18, offset: Offset(0, 6))],
+              borderRadius: BorderRadius.circular(flat ? 0 : 6),
+              border: flat ? null : Border.all(color: const Color(0xFFD5DDDB)),
+              boxShadow: flat ? null : const [BoxShadow(color: Color(0x22000000), blurRadius: 18, offset: Offset(0, 6))],
             ),
             child: Stack(
               children: [
@@ -252,8 +256,10 @@ class PassportCard extends StatelessWidget {
                 child: const Row(mainAxisSize: MainAxisSize.min, children: [
                   Icon(Icons.verified_rounded, size: 16, color: Color(0xFF14532D)),
                   SizedBox(width: 6),
-                  Text('Signed off · oncologist + pharmacist',
-                      style: TextStyle(color: Color(0xFF14532D), fontWeight: FontWeight.w700, fontSize: 12.5)),
+                  Flexible(
+                    child: Text('Signed off · oncologist + pharmacist',
+                        style: TextStyle(color: Color(0xFF14532D), fontWeight: FontWeight.w700, fontSize: 12.5)),
+                  ),
                 ]),
               )
             : PlanStatusChip(p.status, dense: true),
@@ -294,8 +300,9 @@ class PassportCard extends StatelessWidget {
             borderRadius: BorderRadius.vertical(top: Radius.circular(7)),
           ),
           child: Row(children: [
-            Text(d.label.isEmpty ? 'Day ${d.day}' : d.label, style: const TextStyle(fontWeight: FontWeight.w800)),
-            const Spacer(),
+            Expanded(
+              child: Text(d.label.isEmpty ? 'Day ${d.day}' : d.label, style: const TextStyle(fontWeight: FontWeight.w800)),
+            ),
             if (d.date != null) Text(d.date!, style: const TextStyle(fontSize: 12, color: Color(0xFF5B6B68))),
           ]),
         ),
@@ -341,7 +348,9 @@ class PassportCard extends StatelessWidget {
           Row(children: [
             const Icon(Icons.warning_amber_rounded, color: Color(0xFFB45309)),
             const SizedBox(width: 6),
-            Text(t('warning'), style: const TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF78350F))),
+            Expanded(
+              child: Text(t('warning'), style: const TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF78350F))),
+            ),
           ]),
           const SizedBox(height: 6),
           for (final w in passport.warningSigns)
@@ -368,8 +377,10 @@ class PassportCard extends StatelessWidget {
         Row(children: [
           const Icon(Icons.call_rounded, size: 20, color: Color(0xFF0F766E)),
           const SizedBox(width: 6),
-          SelectableText(passport.wardPhone.isEmpty ? '—' : passport.wardPhone,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+          Flexible(
+            child: SelectableText(passport.wardPhone.isEmpty ? '—' : passport.wardPhone,
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+          ),
         ]),
         if (code != null && code.isNotEmpty) ...[
           const Divider(height: 22),

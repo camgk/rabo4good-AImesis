@@ -1,0 +1,463 @@
+openapi: 3.1.0
+info:
+  title: AImesis mock API
+  version: 0.1.0
+  description: |
+    Demo stand-in REST API (backend/mock_api) with MOCK rules until backend/api + backend/agent are ready.
+    Advisory only — requires clinician sign-off. Demo data, not for clinical use.
+    All JSON is camelCase. Errors are always `{"error": "message"}`.
+servers:
+  - url: http://localhost:8080
+security:
+  - bearer: []
+
+paths:
+  /healthz:
+    get:
+      security: []
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { type: object, properties: { ok: { type: boolean } }, required: [ok] } } } }
+  /auth/demo-accounts:
+    get:
+      security: []
+      summary: Demo accounts for the login quick-pick (password hint "aimesis-demo")
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/DemoAccount" } } } } }
+  /auth/login:
+    post:
+      security: []
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/LoginRequest" } } }
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/LoginResponse" } } } }
+        "401": { $ref: "#/components/responses/Error" }
+  /me:
+    get:
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/Account" } } } }
+        "401": { $ref: "#/components/responses/Error" }
+  /patients:
+    get:
+      summary: Patients visible to the caller (family roles see only their patientIds)
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/PatientSummary" } } } } }
+        "401": { $ref: "#/components/responses/Error" }
+  /patients/{id}:
+    parameters: [{ $ref: "#/components/parameters/PatientId" }]
+    get:
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/Patient" } } } }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /patients/{id}/plan:
+    parameters: [{ $ref: "#/components/parameters/PatientId" }]
+    get:
+      summary: Plan recomputed from patient + riskFactors + current-cycle episodes (clinicians)
+      responses:
+        "200": { $ref: "#/components/responses/Plan" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /patients/{id}/risk-factors:
+    parameters: [{ $ref: "#/components/parameters/PatientId" }]
+    put:
+      summary: Update risk factors (oncologist, nurse). Resets status to draft and clears sign-offs.
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/RiskFactors" } } }
+      responses:
+        "200": { $ref: "#/components/responses/Plan" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /patients/{id}/plan/submit:
+    parameters: [{ $ref: "#/components/parameters/PatientId" }]
+    post:
+      summary: Oncologist sign-off; status → awaiting_pharmacist (409 if plan refused)
+      responses:
+        "200": { $ref: "#/components/responses/Plan" }
+        "403": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+  /patients/{id}/plan/approve:
+    parameters: [{ $ref: "#/components/parameters/PatientId" }]
+    post:
+      summary: Pharmacist sign-off; status → approved (409 unless awaiting_pharmacist)
+      requestBody:
+        required: false
+        content: { application/json: { schema: { type: object, properties: { comment: { type: string } } } } }
+      responses:
+        "200": { $ref: "#/components/responses/Plan" }
+        "403": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+  /patients/{id}/plan/return:
+    parameters: [{ $ref: "#/components/parameters/PatientId" }]
+    post:
+      summary: Pharmacist returns plan with comment; status → returned
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [comment], properties: { comment: { type: string, minLength: 1 } } } } }
+      responses:
+        "200": { $ref: "#/components/responses/Plan" }
+        "403": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /patients/{id}/passport:
+    parameters:
+      - { $ref: "#/components/parameters/PatientId" }
+      - { name: lang, in: query, required: false, description: Defaults to the patient's language, schema: { type: string, enum: [nl, fr, en] } }
+    get:
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/Passport" } } } }
+        "400": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /patients/{id}/episodes:
+    parameters: [{ $ref: "#/components/parameters/PatientId" }]
+    get:
+      summary: Episodes, newest first
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/Episode" } } } } }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/EpisodeCreate" } } }
+      responses:
+        "201": { description: Created, content: { application/json: { schema: { $ref: "#/components/schemas/Episode" } } } }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /pairing:
+    post:
+      summary: Family pairs with a patient by code; adds it to the account's patientIds
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [code], properties: { code: { type: string } } } } }
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/PatientSummary" } } } }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /resources:
+    get:
+      security: []
+      parameters:
+        - { name: lang, in: query, required: false, schema: { type: string, enum: [nl, fr, en, de] } }
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/Resource" } } } } }
+  /admin/reset:
+    post:
+      security: []
+      summary: Wipe episodes + plan state and reseed everything
+      parameters:
+        - { name: X-Demo-Reset, in: header, required: true, description: Must equal TOKEN_SECRET, schema: { type: string } }
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { type: object, properties: { ok: { type: boolean } } } } } }
+        "403": { $ref: "#/components/responses/Error" }
+
+components:
+  securitySchemes:
+    bearer: { type: http, scheme: bearer, bearerFormat: JWT }
+  parameters:
+    PatientId: { name: id, in: path, required: true, schema: { type: string, examples: [casus-1] } }
+  responses:
+    Error:
+      description: Error
+      content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+    Plan:
+      description: Plan
+      content: { application/json: { schema: { $ref: "#/components/schemas/Plan" } } }
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties: { error: { type: string } }
+    Tier: { type: string, enum: [minimal, low, moderate, high] }
+    Role: { type: string, enum: [oncologist, nurse, pharmacist, parent, patient] }
+    Route: { type: string, enum: [oral_tablet, oral_liquid, ng_tube, iv] }
+    PlanStatus: { type: string, enum: [draft, awaiting_pharmacist, approved, returned] }
+    Lang: { type: string, enum: [nl, fr, en] }
+
+    DemoAccount:
+      type: object
+      required: [email, role, displayName]
+      properties:
+        email: { type: string }
+        role: { $ref: "#/components/schemas/Role" }
+        displayName: { type: string }
+    Account:
+      type: object
+      required: [id, email, role, displayName, patientIds]
+      properties:
+        id: { type: string }
+        email: { type: string }
+        role: { $ref: "#/components/schemas/Role" }
+        displayName: { type: string }
+        patientIds: { type: array, items: { type: string } }
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties: { email: { type: string }, password: { type: string } }
+    LoginResponse:
+      type: object
+      required: [token, account]
+      properties: { token: { type: string }, account: { $ref: "#/components/schemas/Account" } }
+
+    PatientSummary:
+      type: object
+      required: [id, alias, age, sex, diagnosis, protocol, cycle, cycleStart, overallTier, planStatus, language]
+      properties:
+        id: { type: string }
+        alias: { type: string }
+        age: { type: integer }
+        sex: { type: string }
+        diagnosis: { type: string }
+        protocol: { type: string }
+        cycle: { type: string }
+        cycleStart: { type: string, format: date }
+        overallTier: { $ref: "#/components/schemas/Tier" }
+        planStatus: { $ref: "#/components/schemas/PlanStatus" }
+        language: { $ref: "#/components/schemas/Lang" }
+    Patient:
+      allOf:
+        - $ref: "#/components/schemas/PatientSummary"
+        - type: object
+          required: [diagnosisGroup, chemo, activeMeds, history, riskFactors, pairingCode]
+          properties:
+            weightKg: { type: [number, "null"] }
+            heightCm: { type: [number, "null"] }
+            bsaM2: { type: [number, "null"] }
+            diagnosisGroup: { type: string, examples: [solid, ALL, brain_tumour] }
+            chemo: { type: array, items: { $ref: "#/components/schemas/ChemoRow" } }
+            activeMeds: { type: array, items: { type: string } }
+            history: { type: array, items: { $ref: "#/components/schemas/HistoryEntry" } }
+            riskFactors: { $ref: "#/components/schemas/RiskFactors" }
+            pairingCode: { type: string }
+    ChemoRow:
+      type: object
+      required: [drug, doseMgM2, days]
+      properties:
+        drug: { type: string }
+        doseMgM2: { type: number }
+        days: { type: array, items: { type: integer } }
+    HistoryEntry:
+      type: object
+      required: [cycle, nauseaDays, vomitingDays, note]
+      properties:
+        cycle: { type: string }
+        date: { type: [string, "null"] }
+        antiemetics: { type: [string, "null"] }
+        nauseaDays: { type: array, items: { type: integer } }
+        vomitingDays: { type: array, items: { type: integer } }
+        note: { type: string }
+    RiskFactors:
+      type: object
+      required: [canSwallowTablets, preferredRoute, anticipatory]
+      properties:
+        canSwallowTablets: { type: boolean }
+        preferredRoute: { $ref: "#/components/schemas/Route" }
+        anticipatory: { type: boolean }
+        priorNauseaNote: { type: [string, "null"] }
+
+    Plan:
+      type: object
+      required: [patientId, status, refused, refusalReasons, drugTiers, dayTiers, overallTier, combinationRules,
+                 dexamethasone, antiemetics, breakthrough, alternatives, stepUps, interactions, uzaVsPogo,
+                 episodesSummary, signoffs, comments, advisory]
+      properties:
+        patientId: { type: string }
+        status: { $ref: "#/components/schemas/PlanStatus" }
+        refused: { type: boolean, description: "true = refuse rather than guess (missing BSA, unknown drug); no doses" }
+        refusalReasons: { type: array, items: { type: string } }
+        unknownDrugs: { type: array, items: { type: string } }
+        drugTiers: { type: array, items: { $ref: "#/components/schemas/DrugTier" } }
+        dayTiers: { type: array, items: { $ref: "#/components/schemas/DayTier" } }
+        overallTier: { $ref: "#/components/schemas/Tier" }
+        combinationRules: { type: array, items: { $ref: "#/components/schemas/RuleRef" } }
+        dexamethasone: { $ref: "#/components/schemas/DexStatus" }
+        antiemetics: { type: array, items: { $ref: "#/components/schemas/AntiemeticLine" } }
+        breakthrough: { type: array, items: { $ref: "#/components/schemas/BreakthroughLine" } }
+        alternatives: { type: array, items: { $ref: "#/components/schemas/Alternative" } }
+        stepUps: { type: array, items: { $ref: "#/components/schemas/StepUp" } }
+        interactions: { type: array, items: { $ref: "#/components/schemas/Interaction" } }
+        uzaVsPogo: { type: array, items: { $ref: "#/components/schemas/PogoRow" } }
+        episodesSummary: { $ref: "#/components/schemas/EpisodesSummary" }
+        signoffs: { $ref: "#/components/schemas/Signoffs" }
+        comments: { type: array, items: { $ref: "#/components/schemas/PlanComment" } }
+        advisory: { type: string, const: "Advisory only — requires clinician sign-off. Demo data, not for clinical use." }
+    DrugTier:
+      type: object
+      required: [drug, tier, rule, source]
+      properties:
+        drug: { type: string }
+        doseMgM2: { type: [number, "null"] }
+        tier: { $ref: "#/components/schemas/Tier" }
+        rule: { type: string }
+        source: { type: string }
+    DayTier:
+      type: object
+      required: [day, tier, drugs]
+      properties:
+        day: { type: integer }
+        tier: { $ref: "#/components/schemas/Tier" }
+        drugs: { type: array, items: { type: string } }
+    RuleRef:
+      type: object
+      required: [rule, source]
+      properties: { rule: { type: string }, source: { type: string } }
+    DexStatus:
+      type: object
+      required: [blocked, source]
+      properties:
+        blocked: { type: boolean }
+        reason: { type: [string, "null"] }
+        source: { type: string }
+    AntiemeticLine:
+      type: object
+      required: [drug, doseMg, unit, frequency, route, days, formula, steps, source, notes]
+      properties:
+        drug: { type: string }
+        doseMg: { type: [number, "null"] }
+        unit: { type: string, examples: [mg] }
+        frequency: { type: string, examples: ["3x/d", "1x/d (evening)"] }
+        route: { $ref: "#/components/schemas/Route" }
+        days: { type: array, items: { type: integer } }
+        formula: { type: string }
+        steps: { type: array, items: { type: string } }
+        source: { type: string }
+        notes: { type: array, items: { type: string } }
+    BreakthroughLine:
+      type: object
+      required: [drug, doseMg, unit, frequency, route, formula, source, notes]
+      properties:
+        drug: { type: string }
+        doseMg: { type: [number, "null"] }
+        unit: { type: string }
+        frequency: { type: string }
+        route: { $ref: "#/components/schemas/Route" }
+        formula: { type: string }
+        source: { type: string }
+        notes: { type: array, items: { type: string } }
+    Alternative:
+      type: object
+      required: [title, detail, source]
+      properties: { title: { type: string }, detail: { type: string }, source: { type: string } }
+    StepUp:
+      type: object
+      required: [title, reason, source]
+      properties: { title: { type: string }, reason: { type: string }, source: { type: string } }
+    Interaction:
+      type: object
+      required: [severity, drugs, message, source]
+      properties:
+        severity: { type: string, enum: [critical, warning, info] }
+        drugs: { type: array, items: { type: string } }
+        message: { type: string }
+        alternative: { type: [string, "null"] }
+        source: { type: string }
+    PogoRow:
+      type: object
+      required: [item, uzaTier, pogoTier, differs, note]
+      properties:
+        item: { type: string }
+        uzaTier: { $ref: "#/components/schemas/Tier" }
+        pogoTier: { $ref: "#/components/schemas/Tier" }
+        differs: { type: boolean }
+        note: { type: string }
+    EpisodesSummary:
+      type: object
+      required: [currentCycle, priorNauseaDays]
+      properties:
+        currentCycle:
+          type: array
+          items:
+            type: object
+            required: [day, nausea, vomiting]
+            properties: { day: { type: integer }, nausea: { type: integer }, vomiting: { type: integer } }
+        priorNauseaDays: { type: array, items: { type: integer } }
+    Signoff:
+      type: object
+      required: [by, at]
+      properties: { by: { type: string }, at: { type: string, format: date-time } }
+    Signoffs:
+      type: object
+      required: [oncologist, pharmacist]
+      properties:
+        oncologist: { oneOf: [{ $ref: "#/components/schemas/Signoff" }, { type: "null" }] }
+        pharmacist: { oneOf: [{ $ref: "#/components/schemas/Signoff" }, { type: "null" }] }
+    PlanComment:
+      type: object
+      required: [by, role, at, text]
+      properties:
+        by: { type: string }
+        role: { $ref: "#/components/schemas/Role" }
+        at: { type: string, format: date-time }
+        text: { type: string }
+
+    Passport:
+      type: object
+      required: [patientId, alias, lang, title, overallTier, status, signedOff, days, warningSigns, wardPhone, resources, pairingCode, disclaimer]
+      properties:
+        patientId: { type: string }
+        alias: { type: string }
+        lang: { $ref: "#/components/schemas/Lang" }
+        title: { type: string }
+        overallTier: { $ref: "#/components/schemas/Tier" }
+        status: { $ref: "#/components/schemas/PlanStatus" }
+        signedOff: { type: boolean, description: approved with both sign-offs }
+        days:
+          type: array
+          items:
+            type: object
+            required: [day, label, items]
+            properties:
+              day: { type: integer }
+              label: { type: string, examples: ["Dag 1", "Jour 1", "Day 1"] }
+              date: { type: [string, "null"], format: date }
+              items:
+                type: array
+                items:
+                  type: object
+                  required: [time, medicine, amount, route]
+                  properties:
+                    time: { type: string, examples: ["08:00"] }
+                    medicine: { type: string }
+                    amount: { type: string, examples: ["7,6 mg"] }
+                    route: { type: string }
+                    note: { type: [string, "null"] }
+        warningSigns: { type: array, items: { type: string } }
+        wardPhone: { type: string }
+        resources: { type: array, items: { $ref: "#/components/schemas/Resource" }, maxItems: 5 }
+        pairingCode: { type: string }
+        disclaimer: { type: string }
+
+    EpisodeCreate:
+      type: object
+      required: [type]
+      properties:
+        type: { type: string, enum: [nausea, vomiting] }
+        severity: { type: [integer, "null"], minimum: 1, maximum: 5 }
+        at: { type: [string, "null"], format: date-time, description: Defaults to now }
+    Episode:
+      type: object
+      required: [id, patientId, type, at, cycleDay, loggedBy, loggedByRole]
+      properties:
+        id: { type: string }
+        patientId: { type: string }
+        type: { type: string, enum: [nausea, vomiting] }
+        severity: { type: [integer, "null"] }
+        at: { type: string, format: date-time }
+        cycleDay: { type: integer, description: "days since cycleStart + 1 (1 if before cycleStart)" }
+        loggedBy: { type: string, description: account id }
+        loggedByRole: { $ref: "#/components/schemas/Role" }
+
+    Resource:
+      type: object
+      required: [institution, title, format, language, url, effort, effortNote]
+      properties:
+        institution: { type: string }
+        title: { type: string }
+        format: { type: string }
+        language: { type: string, enum: [nl, fr, en, de] }
+        url: { type: string, format: uri }
+        effort: { type: string, enum: [low, medium, high] }
+        effortNote: { type: string }

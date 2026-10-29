@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import 'pages/about/about_page.dart';
 import 'pages/login/login_page.dart';
+import 'pages/passport/passport_print_page.dart';
 import 'pages/patient/patient_workspace_page.dart';
 import 'pages/pharmacist_queue/pharmacist_queue_page.dart';
 import 'pages/worklist/worklist_page.dart';
@@ -54,6 +55,13 @@ GoRouter buildRouter(AppState state) {
     routes: [
       GoRoute(path: '/', redirect: (_, __) => '/worklist'),
       GoRoute(path: '/login', builder: (_, __) => const LoginPage()),
+      GoRoute(
+        path: '/patients/:id/passport/print',
+        builder: (_, s) => PassportPrintPage(
+          patientId: s.pathParameters['id']!,
+          lang: s.uri.queryParameters['lang'] ?? 'en',
+        ),
+      ),
       ShellRoute(
         builder: (context, s, child) => AppShell(location: s.matchedLocation, child: child),
         routes: [

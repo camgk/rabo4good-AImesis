@@ -119,7 +119,12 @@ void main() {
         for (final tab in WorkspaceTab.values) {
           await tester.tap(find.text(tab.label).last);
           await tester.pumpAndSettle();
-          expect(tester.takeException(), isNull, reason: '$id/${tab.path}');
+          final ex = tester.takeException();
+          if (ex != null) {
+            // ignore: avoid_print
+            print('[$id/${tab.path}] ${ex is FlutterError ? ex.toStringDeep() : ex}');
+          }
+          expect(ex, isNull, reason: '$id/${tab.path}');
           expect(find.textContaining('Advisory only'), findsWidgets, reason: '$id/${tab.path}');
         }
       }

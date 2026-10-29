@@ -1,7 +1,6 @@
 import 'package:aimesis_a2ui_catalog/aimesis_a2ui_catalog.dart';
 import 'package:aimesis_client/aimesis_client.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../state/app_scope.dart';
 import '../../state/app_state.dart';
@@ -59,10 +58,9 @@ class _LoginPageState extends State<LoginPage> {
     });
     final state = AppScope.read(context);
     try {
+      // The router's redirect moves us to `from` (or the worklist) once the
+      // session is set.
       await state.login(_email.text, _password.text);
-      if (!mounted) return;
-      final from = GoRouterState.of(context).uri.queryParameters['from'];
-      context.go(from != null && from.startsWith('/') ? from : '/worklist');
     } on FamilyAccountException catch (e) {
       setState(() {
         _error = e.message;
