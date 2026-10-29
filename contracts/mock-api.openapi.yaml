@@ -132,6 +132,48 @@ paths:
         "201": { description: Created, content: { application/json: { schema: { $ref: "#/components/schemas/Episode" } } } }
         "403": { $ref: "#/components/responses/Error" }
         "422": { $ref: "#/components/responses/Error" }
+  /cycles/evaluate:
+    post:
+      summary: >-
+        Stateless what-if (clinicians). Computes the plan for an ad-hoc patient (same engine as
+        GET /patients/{id}/plan, no episodes, nothing persisted) plus an optional Gemini (Vertex AI)
+        summary. AI failure never fails the request -- ai is null and aiError is set.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [patient]
+              properties:
+                patient:
+                  description: >-
+                    Patient in the GET /patients/{id} shape. id may be "NEW-...". tags, pairingCode,
+                    overallTier, planStatus are optional; bsaM2 may be null (Mosteller from heightCm/weightKg, 2 dp).
+                  allOf: [{ $ref: "#/components/schemas/Patient" }]
+      responses:
+        "200":
+          description: Plan + AI summary
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [plan, ai, aiError]
+                properties:
+                  plan: { $ref: "#/components/schemas/Plan" }
+                  ai:
+                    oneOf:
+                      - type: "null"
+                      - type: object
+                        required: [summary, familyExplanation, model]
+                        properties:
+                          summary: { type: string, description: "<=5 bullet sentences for the oncologist (English)" }
+                          familyExplanation: { type: string, description: "Plain language, in patient.language" }
+                          model: { type: string, examples: [gemini-2.5-flash] }
+                  aiError: { type: [string, "null"] }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
   /pairing:
     post:
       summary: Family pairs with a patient by code; adds it to the account's patientIds

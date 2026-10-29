@@ -89,7 +89,7 @@ class _NoInteractions extends StatelessWidget {
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text('No interactions found', style: TextStyle(color: fg, fontWeight: FontWeight.w700, fontSize: 15)),
-            Text('Screened against BCFI/CBIP (mock) interaction rules.', style: TextStyle(color: fg, fontSize: 12.5)),
+            Text('Screened against BCFI/CBIP interaction rules.', style: TextStyle(color: fg, fontSize: 12.5)),
           ]),
         ),
       ]),

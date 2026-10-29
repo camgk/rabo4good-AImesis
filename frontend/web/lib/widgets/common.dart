@@ -163,7 +163,6 @@ class SectionCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                if (story != null) StoryTag(story!),
                 if (trailing != null) ...[const SizedBox(width: 8), trailing!],
               ],
             ),
@@ -175,27 +174,14 @@ class SectionCard extends StatelessWidget {
   }
 }
 
-/// Small "Story N" tag linking a screen to the UZA user stories.
+/// Former "Story N" tag; intentionally renders nothing in the clinician UI.
 class StoryTag extends StatelessWidget {
   const StoryTag(this.label, {super.key});
   final String label;
 
+  // Story references are for the dev team only; never shown to clinicians.
   @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Tooltip(
-      message: 'UZA user story',
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-        decoration: BoxDecoration(
-          color: cs.secondaryContainer,
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Text(label,
-            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: cs.onSecondaryContainer)),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => const SizedBox.shrink();
 }
 
 /// Outlined chip for a patient tag (e.g. "demo").
@@ -220,7 +206,7 @@ class TagChip extends StatelessWidget {
   }
 }
 
-/// Muted source / rule citation line, e.g. "UZA v2 (mock rules)".
+/// Muted source / rule citation line, e.g. "UZA v2".
 class SourceLabel extends StatelessWidget {
   const SourceLabel(this.text, {super.key, this.icon = Icons.menu_book_outlined});
   final String text;
@@ -283,8 +269,12 @@ class PlanStatusChip extends StatelessWidget {
         children: [
           Icon(icon, size: dense ? 13 : 15, color: fg),
           const SizedBox(width: 5),
-          Text(PlanStatus.label(status),
-              style: TextStyle(color: fg, fontWeight: FontWeight.w600, fontSize: dense ? 12 : 13)),
+          Flexible(
+            child: Text(PlanStatus.label(status),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: fg, fontWeight: FontWeight.w600, fontSize: dense ? 12 : 13)),
+          ),
         ],
       ),
     );

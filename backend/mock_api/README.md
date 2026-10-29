@@ -4,19 +4,32 @@ Stand-in backend for the AImesis hackathon prototype (paediatric CINV decision s
 
 > **Advisory only — requires clinician sign-off.**
 
-It lets the Flutter apps (`frontend/web`, `frontend/ios`) run today. It implements the REST contract in
-`contracts/mock-api.openapi.yaml` with a small **mock** rules engine (`rules_mock.py`, every line labelled
-`UZA v2 (mock rules)`). It will be replaced by `backend/api` + `backend/agent` (real engine in `backend/rules`).
+It is the API the Flutter apps (`frontend/web`, `frontend/ios`) use. It implements the REST contract in
+`contracts/mock-api.openapi.yaml` and computes every plan with the **real UZA v2 rules engine**
+(`backend/rules`, package `aimesis_rules`) through the adapter `real_rules.py`:
 
-It is a standalone package: it is **not** part of the `backend/` uv workspace and imports nothing from it.
-It does share the Firestore **`(default)`** database with `backend/api` (same collections, same snake_case
+- `aimesis_rules`: emetogenicity per drug/day, combination rules, dexamethasone contraindication,
+  drug interactions, UZA vs POGO comparison.
+- `rules_mock.py` (name kept for the API contract): antiemetic doses and day schedules per the UZA v2
+  formulas (ondansetron 5 mg/m² max 8 mg, aprepitant, dexamethasone BSA split, olanzapine 0.1 mg/kg
+  floored to 0.5 mg, stop days, step-ups). Every line cites `UZA CINV beleid v2 (juli 2026)` or `POGO 250111`.
+- `ai_summary.py`: Gemini on Vertex AI writes a clinician summary and a family explanation of the
+  **computed** plan for `POST /cycles/evaluate`. It never calculates or adds doses; on any failure the
+  endpoint still returns the plan with `aiError`.
+
+`POST /cycles/evaluate` (clinician roles) takes `{"patient": <Patient>}` (same shape as `GET /patients/{id}`;
+optional fields may be null, BSA is computed with Mosteller when missing), stores nothing, and returns
+`{"plan", "ai", "aiError"}`. The web app's new-cycle flow uses it.
+
+It shares the Firestore **`(default)`** database with `backend/api` (same collections, same snake_case
 documents — see below and `docs/firestore-integration.md`).
 
 ## Run locally
 
 ```bash
 cd backend/mock_api
-pip install -e '.[dev]'
+pip install -e ../rules -e '.[dev]'          # the real rules engine is a dependency
+gcloud auth application-default login         # once, for Gemini (Vertex AI) locally; optional
 STORE=memory LOAD_DEMO_ON_START=true uvicorn aimesis_mock_api.main:app --port 8080
 python3 -m pytest -q                                   # rules + API + demo-data tests (memory store)
 python3 scripts/e2e_check.py http://localhost:8080     # end-to-end role check against a running API
@@ -32,6 +45,12 @@ python3 scripts/e2e_check.py http://localhost:8080     # end-to-end role check a
 | `GOOGLE_CLOUD_PROJECT` | from ADC | GCP project for Firestore. |
 | `TOKEN_SECRET` | `dev-secret` | HS256 JWT secret (12 h tokens). Set a real one on Cloud Run. |
 | `PORT` | `8080` | Listen port (Docker / Cloud Run). |
+| `GOOGLE_CLOUD_LOCATION` | `global` | Vertex AI location for Gemini. |
+| `AIMESIS_GEMINI_MODEL` | `gemini-2.5-flash` | Gemini model for the cycle summary. |
+| `AIMESIS_AI_DISABLED` | unset | `1` = skip Gemini (tests); the plan is still returned. |
+
+On Cloud Run the service account `aimesis-mock-api` needs `roles/aiplatform.user` (in `infra/terraform/iam.tf`).
+The Docker build context is `backend/rules` + `backend/mock_api` (assembled by `infra/scripts/deploy.sh`).
 
 The service never seeds itself and has no reset endpoint. Demo data is loaded / cleared by scripts.
 

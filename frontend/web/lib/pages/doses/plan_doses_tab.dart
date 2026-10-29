@@ -236,7 +236,7 @@ class _DoseTableState extends State<DoseTable> {
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(cap(l.drug), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14.5)),
                 if (mock)
-                  Text('mock dose', style: TextStyle(fontSize: 11.5, color: cs.tertiary, fontWeight: FontWeight.w600)),
+                  Text('indicative dose', style: TextStyle(fontSize: 11.5, color: cs.tertiary, fontWeight: FontWeight.w600)),
               ]),
             ),
             Expanded(

@@ -106,14 +106,16 @@ void main() {
       final calls = <String>[];
       await pumpLoggedIn(tester, 'oncologist', calls, size);
 
-      expect(find.text('Worklist'), findsWidgets);
+      expect(find.text('Patients'), findsWidgets);
       expect(find.text('Casus 1'), findsOneWidget);
 
       for (final id in cases.keys) {
         final alias = (cases[id]['patient'] as Map)['alias'] as String;
-        await tester.tap(find.text('Worklist').first);
+        await tester.tap(find.text('Patients').first);
         await tester.pumpAndSettle();
         await tester.tap(find.text(alias).first);
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Open plan'));
         await tester.pumpAndSettle();
         expect(find.text('Overall emetogenicity'.toUpperCase()), findsOneWidget, reason: id);
         for (final tab in WorkspaceTab.values) {
@@ -133,10 +135,10 @@ void main() {
     });
   }
 
-  testWidgets('worklist shows tag chips and filters by tag', (tester) async {
+  testWidgets('patients page shows tag chips and filters by tag', (tester) async {
     addTearDown(tester.view.reset);
     await pumpLoggedIn(tester, 'oncologist', [], const Size(1280, 900));
-    final filter = find.byKey(const Key('worklist-tag-filter'));
+    final filter = find.byKey(const Key('patients-tag-filter'));
     expect(filter, findsOneWidget);
     expect(find.descendant(of: filter, matching: find.widgetWithText(FilterChip, 'All')), findsOneWidget);
     expect(find.descendant(of: filter, matching: find.widgetWithText(FilterChip, 'demo')), findsOneWidget);
@@ -158,6 +160,8 @@ void main() {
     // Patient header shows the tags instead of a "Demo data" chip.
     await tester.tap(find.text('Casus 1').first);
     await tester.pumpAndSettle();
+    await tester.tap(find.text('Open plan'));
+    await tester.pumpAndSettle();
     expect(find.text('Demo data'), findsNothing);
     expect(find.text('demo'), findsOneWidget);
     expect(find.text('Advisory only — requires clinician sign-off.'), findsWidgets);
@@ -167,6 +171,8 @@ void main() {
     addTearDown(tester.view.reset);
     await pumpLoggedIn(tester, 'nurse', [], const Size(1280, 900));
     await tester.tap(find.text('Casus 4 · interactions').first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Open plan'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Safety gates').last);
     await tester.pumpAndSettle();
@@ -181,6 +187,8 @@ void main() {
     await pumpLoggedIn(tester, 'oncologist', calls, const Size(1280, 900));
     await tester.tap(find.text('Casus 1').first);
     await tester.pumpAndSettle();
+    await tester.tap(find.text('Open plan'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Sign-off').last);
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.text('Submit for pharmacist check'));
@@ -193,9 +201,11 @@ void main() {
   testWidgets('dose line expands to show the calculation', (tester) async {
     addTearDown(tester.view.reset);
     await pumpLoggedIn(tester, 'pharmacist', [], const Size(1280, 900));
-    await tester.tap(find.text('Worklist').first);
+    await tester.tap(find.text('Patients').first);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Casus 1').first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Open plan'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Plan & doses').last);
     await tester.pumpAndSettle();

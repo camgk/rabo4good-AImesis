@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'common.dart';
 
-/// Dense, clickable patient table used by the worklist and pharmacist queue.
+/// Dense, clickable patient table used by the patient list and pharmacist queue.
 class PatientTable extends StatelessWidget {
   const PatientTable({super.key, required this.patients, required this.onOpen, this.actionLabel});
 
@@ -125,7 +125,10 @@ class PatientTable extends StatelessWidget {
             ),
             Expanded(
               flex: 3,
-              child: Align(alignment: Alignment.centerLeft, child: PlanStatusChip(p.planStatus, dense: true)),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: p.planStatus == null ? Text('No cycle yet', style: sub) : PlanStatusChip(p.planStatus, dense: true),
+              ),
             ),
             SizedBox(
               width: 40,

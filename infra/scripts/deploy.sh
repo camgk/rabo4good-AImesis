@@ -165,6 +165,19 @@ web_context() {
   echo "$ctx"
 }
 
+# mock_api_context : temp build context with backend/rules (aimesis_rules, the
+# real engine) next to backend/mock_api; mock_api/Dockerfile goes at the root.
+# (backend/ itself has another service's Dockerfile, so it can't be the context.)
+mock_api_context() {
+  local ctx
+  ctx="$(mktemp -d "${TMPDIR:-/tmp}/aimesis-mockapi.XXXXXX")"
+  rsync -a --exclude '.venv' --exclude '__pycache__' --exclude 'build' --exclude '*.egg-info' \
+    --exclude '.pytest_cache' --exclude '.fuse_hidden*' "$REPO_ROOT/backend/rules" "$REPO_ROOT/backend/mock_api" "$ctx/"
+  cp "$REPO_ROOT/backend/mock_api/Dockerfile" "$ctx/Dockerfile"
+  printf '.gcloudignore\n' >"$ctx/.gcloudignore"
+  echo "$ctx"
+}
+
 flutter_build() {
   local app_dir="$1"
   shift
@@ -177,8 +190,9 @@ if [ "$SKIP_BUILD" != "1" ]; then
 
   if wants api; then
     [ -f "$REPO_ROOT/backend/mock_api/Dockerfile" ] || die "backend/mock_api/Dockerfile missing."
-    info "mock-api: Cloud Build from backend/mock_api"
-    cloud_build "$REPO_ROOT/backend/mock_api" "$REGISTRY/mock-api:$TAG"
+    info "mock-api: Cloud Build from temp context (backend/mock_api + backend/rules)"
+    CTX="$(mock_api_context)"
+    cloud_build "$CTX" "$REGISTRY/mock-api:$TAG"
   fi
 
   if wants web || wants family; then

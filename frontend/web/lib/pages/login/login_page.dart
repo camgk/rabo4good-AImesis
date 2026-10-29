@@ -69,7 +69,7 @@ class _LoginPageState extends State<LoginPage> {
     });
     final state = AppScope.read(context);
     try {
-      // The router's redirect moves us to `from` (or the worklist) once the
+      // The router's redirect moves us to `from` (or the patient list) once the
       // session is set.
       await state.login(_email.text, _password.text);
     } on FamilyAccountException catch (e) {

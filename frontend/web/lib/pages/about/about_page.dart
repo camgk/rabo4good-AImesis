@@ -69,15 +69,14 @@ class AboutPage extends StatelessWidget {
                 contentPadding: EdgeInsets.zero,
                 leading: Icon(t.icon, color: cs.primary),
                 title: Text(t.label),
-                trailing: StoryTag(t.story),
               ),
             const SizedBox(height: 8),
             Align(
               alignment: Alignment.centerLeft,
               child: FilledButton.tonalIcon(
-                onPressed: () => context.go('/worklist'),
+                onPressed: () => context.go('/patients'),
                 icon: const Icon(Icons.people_alt_outlined),
-                label: const Text('Open the worklist'),
+                label: const Text('Open patients'),
               ),
             ),
           ]),

@@ -6,7 +6,11 @@ import 'pages/login/login_page.dart';
 import 'pages/passport/passport_print_page.dart';
 import 'pages/patient/patient_workspace_page.dart';
 import 'pages/pharmacist_queue/pharmacist_queue_page.dart';
-import 'pages/worklist/worklist_page.dart';
+import 'onboarding/onboarding_models.dart';
+import 'pages/onboarding/onboarding_page.dart';
+import 'pages/onboarding/patient_cycles_page.dart';
+import 'pages/onboarding/patient_form_page.dart';
+import 'pages/patients/patients_page.dart';
 import 'shell/app_shell.dart';
 import 'state/app_state.dart';
 
@@ -33,7 +37,7 @@ enum WorkspaceTab {
 
 GoRouter buildRouter(AppState state) {
   return GoRouter(
-    initialLocation: '/worklist',
+    initialLocation: '/patients',
     refreshListenable: state,
     redirect: (context, s) {
       final loggingIn = s.matchedLocation == '/login';
@@ -41,19 +45,21 @@ GoRouter buildRouter(AppState state) {
       if (!state.isLoggedIn) {
         if (loggingIn) return null;
         final from = s.uri.toString();
-        return from == '/' || from == '/worklist'
+        return from == '/' || from == '/patients'
             ? '/login'
             : Uri(path: '/login', queryParameters: {'from': from}).toString();
       }
+      final home = (state.account?.isPharmacist ?? false) ? '/pharmacist' : '/patients';
       if (loggingIn) {
         final from = s.uri.queryParameters['from'];
-        return (from != null && from.startsWith('/') && !from.startsWith('/login')) ? from : '/worklist';
+        return (from != null && from.startsWith('/') && !from.startsWith('/login')) ? from : home;
       }
-      if (s.matchedLocation == '/') return '/worklist';
+      if (s.matchedLocation == '/') return home;
       return null;
     },
     routes: [
-      GoRoute(path: '/', redirect: (_, __) => '/worklist'),
+      GoRoute(
+          path: '/', redirect: (_, __) => (state.account?.isPharmacist ?? false) ? '/pharmacist' : '/patients'),
       GoRoute(path: '/login', builder: (_, __) => const LoginPage()),
       GoRoute(
         path: '/patients/:id/passport/print',
@@ -66,9 +72,11 @@ GoRouter buildRouter(AppState state) {
         builder: (context, s, child) => AppShell(location: s.matchedLocation, child: child),
         routes: [
           GoRoute(
-            path: '/worklist',
-            pageBuilder: (_, __) => const NoTransitionPage(child: WorklistPage()),
+            path: '/patients',
+            pageBuilder: (_, __) => const NoTransitionPage(child: PatientsPage()),
           ),
+          // Old links and bookmarks.
+          GoRoute(path: '/worklist', redirect: (_, __) => '/patients'),
           GoRoute(
             path: '/pharmacist',
             pageBuilder: (_, __) => const NoTransitionPage(child: PharmacistQueuePage()),
@@ -78,11 +86,44 @@ GoRouter buildRouter(AppState state) {
             pageBuilder: (_, __) => const NoTransitionPage(child: AboutPage()),
           ),
           GoRoute(
-            path: '/patients/:id',
+            path: '/onboarding/:id',
             redirect: (_, s) => s.uri.pathSegments.length == 2
-                ? '/patients/${s.pathParameters['id']}/${WorkspaceTab.regimen.path}'
+                ? '/onboarding/${s.pathParameters['id']}/${OnboardingStage.treatment.path}'
                 : null,
             routes: [
+              GoRoute(
+                path: ':step',
+                pageBuilder: (_, s) => NoTransitionPage(
+                  key: ValueKey('onboarding-${s.pathParameters['id']}'),
+                  child: OnboardingPage(
+                    cycleId: s.pathParameters['id']!,
+                    step: OnboardingStage.fromPath(s.pathParameters['step']),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          GoRoute(
+            path: '/patients/new',
+            pageBuilder: (_, __) => const NoTransitionPage(child: PatientFormPage()),
+          ),
+          GoRoute(
+            path: '/patients/:id',
+            // The patient's home: profile and every cycle. The current
+            // cycle's plan lives one level down at /patients/:id/:tab.
+            pageBuilder: (_, s) => NoTransitionPage(
+              key: ValueKey('profile-${s.pathParameters['id']}'),
+              child: PatientCyclesPage(patientId: s.pathParameters['id']!),
+            ),
+            routes: [
+              GoRoute(path: 'cycles', redirect: (_, s) => '/patients/${s.pathParameters['id']}'),
+              GoRoute(
+                path: 'edit',
+                pageBuilder: (_, s) => NoTransitionPage(
+                  key: ValueKey('edit-${s.pathParameters['id']}'),
+                  child: PatientFormPage(patientId: s.pathParameters['id']),
+                ),
+              ),
               GoRoute(
                 path: ':tab',
                 pageBuilder: (_, s) => NoTransitionPage(
@@ -105,7 +146,7 @@ GoRouter buildRouter(AppState state) {
           const SizedBox(height: 12),
           Text('Page not found: ${s.uri}'),
           const SizedBox(height: 12),
-          FilledButton(onPressed: () => context.go('/worklist'), child: const Text('Back to worklist')),
+          FilledButton(onPressed: () => context.go('/patients'), child: const Text('Back to patients')),
         ]),
       ),
     ),

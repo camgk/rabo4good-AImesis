@@ -6,6 +6,7 @@ import '../../state/app_scope.dart';
 import '../../widgets/common.dart';
 import '../../widgets/page_frame.dart';
 import '../../widgets/patient_table.dart';
+import '../../onboarding/onboarding_store.dart';
 
 /// Loads `GET /patients` and refetches when a plan changes elsewhere.
 class PatientsLoader extends StatefulWidget {
@@ -57,42 +58,57 @@ class _PatientsLoaderState extends State<PatientsLoader> {
   }
 }
 
-class WorklistPage extends StatefulWidget {
-  const WorklistPage({super.key});
+class PatientsPage extends StatefulWidget {
+  const PatientsPage({super.key});
 
   @override
-  State<WorklistPage> createState() => _WorklistPageState();
+  State<PatientsPage> createState() => _PatientsPageState();
 }
 
-class _WorklistPageState extends State<WorklistPage> {
+class _PatientsPageState extends State<PatientsPage> {
   /// Selected tag filter; null = all patients.
   String? _tag;
 
   @override
   Widget build(BuildContext context) {
     return PatientsLoader(
-      builder: (context, all, reload) {
+      builder: (context, apiPatients, reload) => ListenableBuilder(
+        listenable: AppScope.of(context).onboarding,
+        builder: (context, _) {
+        final all = withOnboarded(apiPatients, AppScope.of(context).onboarding);
         final tags = (all.expand((p) => p.tags).toSet().toList()..sort());
         final tag = (_tag != null && tags.contains(_tag)) ? _tag : null;
         final patients = tag == null ? all : all.where((p) => p.hasTag(tag)).toList();
         final awaiting = patients.where((p) => p.planStatus == PlanStatus.awaitingPharmacist).length;
         final high = patients.where((p) => p.overallTier == Tier.high).length;
+        final app = AppScope.of(context);
+        final acc = app.account;
+        final canOnboard = acc != null && (acc.isOncologist || acc.isNurse);
         return PageFrame(
-          title: 'Worklist',
+          title: 'Patients',
           subtitle: 'Patients starting or in a chemotherapy cycle',
           actions: [
             IconButton(tooltip: 'Refresh', onPressed: reload, icon: const Icon(Icons.refresh_rounded)),
+            if (canOnboard) ...[
+              const SizedBox(width: 8),
+              FilledButton.icon(
+                key: const Key('new-patient'),
+                onPressed: () => context.go('/patients/new'),
+                icon: const Icon(Icons.person_add_alt_1_rounded),
+                label: const Text('New patient'),
+              ),
+            ],
           ],
           children: [
             Wrap(spacing: 12, runSpacing: 12, children: [
-              _Stat(label: 'Patients', value: '${patients.length}', icon: Icons.people_alt_outlined),
+              _Stat(label: 'Total', value: '${patients.length}', icon: Icons.people_alt_outlined),
               _Stat(label: 'High emetogenic', value: '$high', icon: Icons.local_fire_department_outlined),
               _Stat(label: 'Awaiting pharmacist', value: '$awaiting', icon: Icons.hourglass_top_rounded),
             ]),
             if (tags.isNotEmpty) ...[
               const SizedBox(height: 16),
               Wrap(
-                key: const Key('worklist-tag-filter'),
+                key: const Key('patients-tag-filter'),
                 spacing: 8,
                 runSpacing: 8,
                 crossAxisAlignment: WrapCrossAlignment.center,
@@ -120,19 +136,61 @@ class _WorklistPageState extends State<WorklistPage> {
                 icon: Icons.inbox_outlined,
                 title: 'No patients',
                 message: tag == null
-                    ? 'There are no patients on the worklist yet.'
+                    ? 'There are no patients yet.'
                     : 'No patients tagged "$tag".',
               )
             else
               PatientTable(
                 patients: patients,
-                onOpen: (p) => context.go('/patients/${p.id}/regimen'),
+                onOpen: (p) => context.go('/patients/${p.id}'),
               ),
           ],
         );
-      },
+        },
+      ),
     );
   }
+}
+
+/// API patients plus patients created here, as one list. Rows get an
+/// "in progress" tag while a cycle is being onboarded, and new patients a
+/// "new" tag.
+List<PatientSummary> withOnboarded(List<PatientSummary> api, OnboardingStore store) {
+  bool open(String id) => store.patient(id)?.inProgress != null;
+  PatientSummary tagged(PatientSummary p, List<String> extra) => PatientSummary(
+        id: p.id,
+        alias: p.alias,
+        age: p.age,
+        sex: p.sex,
+        diagnosis: p.diagnosis,
+        protocol: p.protocol,
+        cycle: p.cycle,
+        cycleStart: p.cycleStart,
+        overallTier: p.overallTier,
+        planStatus: p.planStatus,
+        language: p.language,
+        tags: [...p.tags, ...extra],
+      );
+  final created = [
+    for (final r in store.localPatients)
+      PatientSummary(
+        id: r.id,
+        alias: r.displayName,
+        age: r.profile.age,
+        sex: r.profile.sex,
+        diagnosis: r.profile.diagnosis.isEmpty ? null : r.profile.diagnosis,
+        protocol: (r.latest?.intake.protocol.isEmpty ?? true) ? null : r.latest!.intake.protocol,
+        cycle: r.latest == null ? null : (r.latest!.intake.cycle.isEmpty ? '${r.numberOf(r.latest!)}' : r.latest!.intake.cycle),
+        cycleStart: r.latest?.intake.cycleStart?.toIso8601String().substring(0, 10),
+        planStatus: r.latest == null ? null : (r.latest!.isSent ? PlanStatus.awaitingPharmacist : PlanStatus.draft),
+        language: r.profile.language,
+        tags: ['new', if (open(r.id)) 'in progress'],
+      ),
+  ];
+  return [
+    ...created,
+    for (final p in api) open(p.id) ? tagged(p, const ['in progress']) : p,
+  ];
 }
 
 class _Stat extends StatelessWidget {

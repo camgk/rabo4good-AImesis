@@ -2,19 +2,36 @@ import 'package:aimesis_client/aimesis_client.dart';
 import 'package:flutter/foundation.dart';
 
 import '../config.dart';
+import '../onboarding/onboarding_store.dart';
+import '../onboarding/suggestion_engine.dart';
 import '../platform/browser.dart';
 import 'patient_workspace.dart';
 
 /// App-wide session state: config, API client, current account and the
 /// per-patient workspace cache (so switching tabs doesn't refetch).
 class AppState extends ChangeNotifier {
-  AppState({required this.config, AimesisApi? api})
-      : api = api ?? AimesisApi(baseUrl: config.apiUrl);
+  AppState({
+    required this.config,
+    AimesisApi? api,
+    OnboardingStore? onboarding,
+    SuggestionEngine? suggestionEngine,
+  })  : api = api ?? AimesisApi(baseUrl: config.apiUrl),
+        onboarding = onboarding ?? OnboardingStore(),
+        _engineOverride = suggestionEngine;
 
   static const _tokenKey = 'aimesis.web.token';
 
   final AppConfig config;
   final AimesisApi api;
+
+  /// New patients being onboarded (kept in this browser tab for now).
+  final OnboardingStore onboarding;
+
+  final SuggestionEngine? _engineOverride;
+
+  /// Runs the models during onboarding: `POST /cycles/evaluate` by default;
+  /// tests pass [PlaceholderSuggestionEngine].
+  late final SuggestionEngine suggestionEngine = _engineOverride ?? ApiSuggestionEngine(api);
 
   Account? _account;
   Account? get account => _account;
@@ -25,7 +42,7 @@ class AppState extends ChangeNotifier {
 
   final Map<String, PatientWorkspace> _workspaces = {};
 
-  /// Bumped whenever a plan changes, so lists (worklist, queue) can refresh.
+  /// Bumped whenever a plan changes, so lists (patients, queue) can refresh.
   int _plansVersion = 0;
   int get plansVersion => _plansVersion;
 

@@ -12,11 +12,11 @@ project `qwiklabs-gcp-00-cc29ec8bfdd9` (region `europe-west1`).
 | Project services | run, artifactregistry, firestore, cloudbuild, compute, iam, iamcredentials, logging, aiplatform, storage | `disable_on_destroy = false` |
 | Artifact Registry (Docker) | `aimesis` | `europe-west1-docker.pkg.dev/<project>/aimesis/<image>:<tag>` |
 | Firestore (native) | `(default)` | The team database from PR #3 (patients, passports, episodes), adopted with an import block. Kept on destroy (`deletion_policy = ABANDON`). Demo records are tagged `demo`. |
-| Service account | `aimesis-mock-api` | `roles/datastore.user`, `roles/logging.logWriter` |
+| Service account | `aimesis-mock-api` | `roles/datastore.user`, `roles/logging.logWriter`, `roles/aiplatform.user` (Gemini cycle summary) |
 | Service account | `aimesis-web` | No roles (static nginx) |
 | IAM for builds | compute default SA (+ legacy `<number>@cloudbuild` SA) | `cloudbuild.builds.builder`, `artifactregistry.writer`, `logging.logWriter`, `storage.objectViewer`, so `gcloud builds submit` works in a fresh project |
 | IAM for teammates | `var.team_members` | `run.developer`, `datastore.user`, `artifactregistry.writer`, `logging.viewer` |
-| Cloud Run | `mock-api` | `backend/mock_api` (FastAPI + Firestore + mock rules). Min 1 instance, 1 vCPU / 512 Mi |
+| Cloud Run | `mock-api` | `backend/mock_api` (FastAPI + Firestore + UZA v2 rules engine `backend/rules` + Gemini on Vertex AI). Min 1 instance, 1 vCPU / 1 Gi; env `GOOGLE_CLOUD_LOCATION=global`, `AIMESIS_GEMINI_MODEL=gemini-2.5-flash` |
 | Cloud Run | `web` | Care-team Flutter web app on nginx. Min 1, 512 Mi. `API_URL` = mock-api URL |
 | Cloud Run | `family-web` | Family app (`frontend/ios`) built as Flutter web, phone-width fallback. Min 1 |
 | Cloud Run | `api`, `agent` | Teammates' real services. **Off by default** (`deploy_api`, `deploy_agent`) |
@@ -52,7 +52,7 @@ What it does:
    runs `terraform init` against `gs://<project>-tfstate`.
 2. Terraform phase 1 (`-target`): APIs, registry, Firestore, service accounts, IAM.
 3. Builds and pushes images with Cloud Build, tagged `<git sha>-<UTC timestamp>`:
-   - `mock-api` from `backend/mock_api`
+   - `mock-api` from `backend/mock_api` + `backend/rules` (temp build context)
    - `web`: `flutter build web --release` in `frontend/web`, then the nginx image from `frontend/web/Dockerfile`
    - `family-web`: `flutter build web --release` in `frontend/ios`, packed with the same nginx Dockerfile
 4. Terraform phase 2: all Cloud Run services and public access.
