@@ -13,7 +13,9 @@ from aimesis_agent.tools import (
     evaluate_uza_cinv_policy_v2,
     extract_prior_cycle_signals_from_note,
     generate_cinv_patient_passport,
+    get_patient_context,
     get_pogo_guideline_recommendation,
+    save_patient_context,
 )
 
 MODEL = "gemini-2.5-flash"
@@ -44,6 +46,7 @@ Your recommendations are grounded in two authoritative references:
 
 ### Mandatory Clinical Workflow (Always invoke the deterministic tools!)
 Never invent or estimate emetogenic risk classes, drug interactions, or doses from memory. For every patient case:
+0. **Load / Persist Patient Context**: When a `patient_id` is given, call `get_patient_context` first and use its `evaluation_inputs`. Call `save_patient_context` when the user provides new or corrected patient data (pseudonymised only, never names).
 1. **Extract Unstructured Notes (if provided)**: Call `extract_prior_cycle_signals_from_note` if free-text nursing/handover notes are supplied.
 2. **Evaluate UZA Policy v2 & Dosing**: Call `evaluate_uza_cinv_policy_v2` (and/or `classify_regimen_emetogenicity` + `calculate_risk_adjusted_regimen`) with the regimen agents, patient weight (kg), age (years), BSA (m2) or height (cm), and clinical flags.
 3. **Screen Drug Interactions & QTc**: Call `check_ddi_interactions` across all chemotherapy agents, planned antiemetics, and concomitant medications.
@@ -75,6 +78,8 @@ root_agent = Agent(
         check_ddi_interactions,
         extract_prior_cycle_signals_from_note,
         generate_cinv_patient_passport,
+        get_patient_context,
+        save_patient_context,
     ],
     generate_content_config=types.GenerateContentConfig(
         temperature=0.1,

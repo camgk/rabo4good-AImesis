@@ -23,6 +23,11 @@ from aimesis_rules import (
 
 from aimesis_agent.a2ui.surfaces import build_clinical_plan_surfaces
 from aimesis_agent.notes_extraction import extract_prior_cycle_signals_from_note
+from aimesis_agent.patient_store import (
+    PatientValidationError,
+    mosteller_bsa,
+    patient_store,
+)
 
 
 def classify_regimen_emetogenicity(
@@ -204,6 +209,92 @@ def generate_cinv_patient_passport(
     )
 
 
+def get_patient_context(patient_id: str) -> Dict[str, Any]:
+    """Load a pseudonymised patient's clinical context (age, weight, BSA,
+    diagnosis, planned chemo regimen, prior-cycle CINV history, allergies,
+    preferred formulation) from the patient database.
+
+    Also returns `evaluation_inputs`: arguments ready to pass to
+    `evaluate_uza_cinv_policy_v2`.
+    """
+    record = patient_store.get(patient_id)
+    if record is None:
+        return {"found": False, "patient_id": patient_id}
+
+    regimen = record.get("chemo_regimen") or []
+    history = record.get("history_previous_cycles") or {}
+    all_days = [d for item in regimen for d in item.get("day_numbers") or []]
+    evaluation_inputs = {
+        "drug_list": [item["drug_name"] for item in regimen],
+        "patient_age_years": record.get("age_years"),
+        "patient_weight_kg": record.get("weight_kg"),
+        "bsa_m2": record.get("bsa_m2"),
+        "drug_doses_mg_m2": {
+            item["drug_name"]: item["dose_mg_per_m2"]
+            for item in regimen
+            if item.get("dose_mg_per_m2") is not None
+        },
+        "drug_days": {item["drug_name"]: item.get("day_numbers") or [] for item in regimen},
+        "chemo_duration_days": (max(all_days) - min(all_days) + 1) if all_days else 1,
+        "can_swallow_tablets": record.get("preferred_formulation") == "oral_tablet",
+        "prior_breakthrough_cinv": bool(history.get("had_refractory_cinv", False)),
+        "anticipatory_vomiting": bool(history.get("anticipatory_nausea", False)),
+    }
+    return {"found": True, "patient": record, "evaluation_inputs": evaluation_inputs}
+
+
+def save_patient_context(
+    patient_id: str,
+    age_years: Optional[float] = None,
+    weight_kg: Optional[float] = None,
+    bsa_m2: Optional[float] = None,
+    height_cm: Optional[float] = None,
+    chemo_regimen: Optional[List[Dict[str, Any]]] = None,
+    display_pseudonym: Optional[str] = None,
+    diagnosis: Optional[str] = None,
+    protocol_name: Optional[str] = None,
+    current_cycle: Optional[int] = None,
+    history_previous_cycles: Optional[Dict[str, Any]] = None,
+    allergies_and_contraindications: Optional[List[str]] = None,
+    preferred_formulation: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Create or update a pseudonymised patient's clinical context. Only the
+    provided fields are changed; omitted fields keep their stored value.
+
+    `chemo_regimen` items: {"drug_name": str, "dose_mg_per_m2": float,
+    "day_numbers": [int], "infusion_duration_hours": float (optional)}.
+    `history_previous_cycles`: {"had_refractory_cinv": bool,
+    "prior_episode_count": int, "anticipatory_nausea": bool, "notes": str}.
+    `preferred_formulation`: oral_liquid | oral_tablet | iv | orodispersible.
+    BSA is derived via Mosteller when `height_cm` and weight are given.
+    Never store names or other direct identifiers.
+    """
+    if bsa_m2 is None and height_cm and height_cm > 0:
+        weight = weight_kg or (patient_store.get(patient_id) or {}).get("weight_kg")
+        if weight:
+            bsa_m2 = mosteller_bsa(height_cm, weight)
+
+    updates = {
+        "patient_id": patient_id,
+        "age_years": age_years,
+        "weight_kg": weight_kg,
+        "bsa_m2": bsa_m2,
+        "chemo_regimen": chemo_regimen,
+        "display_pseudonym": display_pseudonym,
+        "diagnosis": diagnosis,
+        "protocol_name": protocol_name,
+        "current_cycle": current_cycle,
+        "history_previous_cycles": history_previous_cycles,
+        "allergies_and_contraindications": allergies_and_contraindications,
+        "preferred_formulation": preferred_formulation,
+    }
+    try:
+        record = patient_store.upsert(updates)
+    except PatientValidationError as exc:
+        return {"saved": False, "patient_id": patient_id, "errors": str(exc)}
+    return {"saved": True, "patient": record}
+
+
 __all__ = [
     "calculate_risk_adjusted_regimen",
     "check_ddi_interactions",
@@ -211,5 +302,7 @@ __all__ = [
     "evaluate_uza_cinv_policy_v2",
     "extract_prior_cycle_signals_from_note",
     "generate_cinv_patient_passport",
+    "get_patient_context",
     "get_pogo_guideline_recommendation",
+    "save_patient_context",
 ]
