@@ -29,7 +29,7 @@ def get_firestore_client() -> Any:
             "Please run: pip install google-cloud-firestore"
         )
 
-    project_id = os.getenv("GCP_PROJECT", DEFAULT_PROJECT_ID)
+    project_id = os.getenv("GOOGLE_CLOUD_PROJECT") or os.getenv("GCP_PROJECT", DEFAULT_PROJECT_ID)
     database = os.getenv("FIRESTORE_DATABASE", DEFAULT_DATABASE_NAME)
 
     return firestore.Client(project=project_id, database=database)

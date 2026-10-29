@@ -36,7 +36,7 @@
       "type": "number",
       "minimum": 0.1,
       "maximum": 3.0,
-      "description": "Body surface area in m² (Mosteller formula)"
+      "description": "Current BSA snapshot in m². Dose calculations select the latest dated bsa_measurements observation when present."
     },
     "diagnosis": {
       "type": "string",
@@ -69,7 +69,7 @@
           },
           "dose_mg_per_m2": {
             "type": "number",
-            "description": "Dose per m² BSA"
+            "description": "Dose per mÂ² BSA"
           },
           "day_numbers": {
             "type": "array",
@@ -81,6 +81,16 @@
           "infusion_duration_hours": {
             "type": "number",
             "description": "Duration of infusion in hours"
+          },
+          "route": {
+            "type": "string",
+            "description": "Actual chemotherapy administration route, used by Story 1 classification.",
+            "enum": [
+              "IV",
+              "PO",
+              "IT",
+              "ITT"
+            ]
           }
         }
       }
@@ -247,6 +257,43 @@
     "updated_at": {
       "type": "string",
       "format": "date-time"
+    },
+    "bsa_measured_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Measurement time of the current BSA snapshot, with timezone."
+    },
+    "bsa_measurements": {
+      "type": "array",
+      "description": "Append-only BSA observations. Latest measurement time wins; equal timestamps with different values require correction.",
+      "items": {
+        "type": "object",
+        "required": [
+          "bsa_m2",
+          "measured_at"
+        ],
+        "properties": {
+          "bsa_m2": {
+            "type": "number",
+            "minimum": 0.1,
+            "maximum": 3
+          },
+          "measured_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "source": {
+            "type": "string"
+          },
+          "time_basis": {
+            "type": "string",
+            "enum": [
+              "measurement",
+              "recorded"
+            ]
+          }
+        }
+      }
     }
   }
 }
