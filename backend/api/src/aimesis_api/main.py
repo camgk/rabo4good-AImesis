@@ -12,6 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from aimesis_api.episodes.routes import router as episodes_router
 from aimesis_api.passport.routes import router as passport_router
+from aimesis_api.regimens.routes import router as regimens_router
 
 load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 load_dotenv()
@@ -43,6 +44,7 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    app.include_router(regimens_router)
     app.include_router(episodes_router)
     app.include_router(passport_router)
 

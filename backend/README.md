@@ -151,3 +151,43 @@ curl http://localhost:8000/agui/catalog
 # Run all unit and golden dataset tests
 python -m pytest rules/tests agent/tests api/tests
 ```
+
+
+## Story 1 — Regimen risk assessment
+
+The unified image now includes an independent workbench at **`/regimens`**.
+It determines risk and baseline prophylaxis without requiring patient biometrics,
+Gemini credentials, Firestore, or the Flutter mock API. The ADK classification
+tool uses the same deterministic rules.
+
+From the repository root, build and run on a free host port:
+
+```bash
+docker build -f backend/Dockerfile -t aimesis-backend ./backend
+docker run --rm --name aimesis-story1 -p 8002:8000 -e USE_FIRESTORE=false aimesis-backend
+```
+
+Open <http://localhost:8002/regimens>. Load any of the three official cases or
+enter drugs, doses (mg/m²), routes and treatment days. Results show individual,
+daily and overall risk, combination rules, baseline strategy and source citations.
+The no-credentials launch supports deterministic Story 1; Gemini chat still needs
+the credential mount described above. An older running image must be rebuilt and
+its container recreated before this page is available.
+
+Programmatic access (also exposed by the standalone API service):
+
+```bash
+curl -X POST http://localhost:8002/regimens/classify \
+  -H 'Content-Type: application/json' \
+  -d '{"drugs":[{"drug":"ifosfamide","days":[1,2]},{"drug":"etoposide","days":[2,3]}]}'
+```
+
+This returns Moderate on day 1, High on day 2 (combination exception), Low on day
+3, and an overall High tier. `GET /regimens/policy` lists the active UZA agents.
+Missing/unknown clinical inputs return a structured refusal, not a guessed tier.
+Malformed input returns HTTP 422. Exactly 200 mg/m² cytarabine is flagged for
+clinical review because the supplied UZA table leaves that boundary unspecified.
+
+These outputs are baseline strategies, not patient-specific prescriptions.
+Patient personalization, doses, interactions and approvals remain separate steps.
+See `docs/clinical-rules.md` and `docs/open-questions.md` for scope and assumptions.

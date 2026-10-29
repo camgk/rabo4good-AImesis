@@ -23,6 +23,8 @@ class CreateEpisodeRequest(BaseModel):
     indication: str = "solid_tumor"
     chemo_duration_days: int = 1
     drug_doses_mg_m2: Dict[str, float] = Field(default_factory=dict)
+    drug_days: Dict[str, List[int]] = Field(default_factory=dict)
+    drug_routes: Dict[str, str] = Field(default_factory=dict)
     can_swallow_tablets: bool = True
     prior_breakthrough_cinv: bool = False
     uza_evaluation: Optional[Dict[str, Any]] = None
@@ -53,6 +55,8 @@ def create_episode(req: CreateEpisodeRequest) -> Dict[str, Any]:
             patient_weight_kg=req.patient_weight_kg,
             bsa_m2=req.bsa_m2,
             drug_doses_mg_m2=req.drug_doses_mg_m2 or None,
+            drug_days=req.drug_days or None,
+            drug_routes=req.drug_routes or None,
             indication=req.indication,
             can_swallow_tablets=req.can_swallow_tablets,
             prior_breakthrough_cinv=req.prior_breakthrough_cinv,

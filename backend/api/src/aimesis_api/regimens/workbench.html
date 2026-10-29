@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AImesis · Regimen risk assessment</title>
+<style>
+:root{font-family:system-ui,sans-serif;color:#193b40;background:#f3f7f6;line-height:1.5}*{box-sizing:border-box}body{margin:0}main{max-width:1120px;margin:auto;padding:32px 24px 64px}header{margin-bottom:24px}h1{font-size:2rem;margin:.3em 0}h2{font-size:1.25rem;margin-top:0}.eyebrow{color:#326e71;font-weight:700;letter-spacing:.08em;font-size:.8rem}.banner{background:#fff4d5;padding:12px 18px;border-left:4px solid #ae7110;border-radius:5px}section{background:white;padding:24px;margin:24px 0;border:1px solid #d4e2df;border-radius:12px}.muted{color:#536c70;font-size:.9rem}.toolbar{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0}button{font:inherit;cursor:pointer;border:1px solid #b8d0cb;border-radius:6px;padding:9px 14px;background:white;color:#193b40}button:hover{background:#e6f0ed}button.primary{background:#176e64;color:white;border-color:#176e64}button:disabled{opacity:.6;cursor:wait}button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #d1a33a;outline-offset:2px}.drug-row{display:grid;grid-template-columns:2fr 1fr .8fr 1.3fr auto;gap:12px;align-items:end;padding:16px 0;border-bottom:1px solid #e3ece9}label{display:block;font-size:.9rem;font-weight:600}input,select{display:block;width:100%;margin-top:6px;padding:10px;border:1px solid #aabfba;border-radius:5px;font:inherit}table{border-collapse:collapse;width:100%;text-align:left}th,td{padding:12px;border-bottom:1px solid #dce8e4;vertical-align:top}th{font-size:.85rem;color:#526e71}.table-wrap{overflow-x:auto}.tier{display:inline-block;font-weight:700;border-radius:6px;padding:3px 10px;background:#e1efeb}.tier.High{background:#fce5df;color:#8a2e1e}.tier.Moderate{background:#fff0cd;color:#775000}.tier.Low{background:#e0eff6;color:#1a5574}.tier.Minimal{background:#e2f0e7;color:#24593b}.result-top{display:flex;gap:16px;align-items:center;flex-wrap:wrap}.error{background:#fff0eb;color:#782a1e;border-left:4px solid #b14a31;padding:16px;border-radius:4px}.baseline{background:#edf5f2;padding:16px;border-radius:8px;margin:16px 0}#status{min-height:1.5em}small{display:block;margin-top:4px}[hidden]{display:none!important}@media(max-width:760px){.drug-row{grid-template-columns:1fr 1fr}.drug-row label:first-child{grid-column:1/-1}main{padding:20px 12px}section{padding:16px}h1{font-size:1.6rem}}
+</style>
+</head>
+<body><main>
+<header><div class="eyebrow">AIMESIS · STORY 1</div><h1>Regimen risk assessment</h1>
+<p>Identify the nausea and vomiting risk of a chemotherapy regimen and its baseline preventive strategy.</p>
+<div class="banner">Advisory only — requires clinician sign-off</div></header>
+<section aria-labelledby="treatment-title"><h2 id="treatment-title">Chemotherapy treatment</h2>
+<p>Enter each cytostatic, its administration route and treatment days. Doses are required when the UZA classification depends on dose. Enter the dose in mg/m² from the chemotherapy order, not an absolute mg amount or cycle total.</p>
+<div class="toolbar" aria-label="Load a supplied example"><button type="button" data-example="0">Case 1 · RAPID COJEC B4</button><button type="button" data-example="1">Case 2 · ALL day 8</button><button type="button" data-example="2">Case 3 · Five-day IE</button></div>
+<form id="regimen-form"><div id="drugs"></div><datalist id="drug-options"></datalist>
+<div class="toolbar"><button type="button" id="add-drug">+ Add drug</button><button class="primary" type="submit" id="assess">Assess regimen</button></div>
+<p class="muted">Treatment days are positive integers separated by commas, such as 1,2,3,4,5. Omitted days default to day 1. This assessment does not need patient age, weight or BSA.</p></form>
+<div id="status" role="status" aria-live="polite">Loading the UZA drug list…</div></section>
+<section id="results" hidden aria-labelledby="result-title" aria-live="polite"><h2 id="result-title">Assessment</h2><div id="result-content"></div></section>
+<p class="muted" id="policy-source">Source: UZA Anti-emetica beleid CINV v2 (Juli 2026), pages 1–2.</p>
+</main>
+<script>
+'use strict';
+const rows=document.getElementById('drugs'),status=document.getElementById('status'),results=document.getElementById('results'),content=document.getElementById('result-content');
+const base=window.location.pathname.replace(/\/$/,'');
+let rowId=0,policy=[],revision=0;
+const examples=[
+ [{drug:'vincristine',route:'IV',days:[1]},{drug:'cisplatin',route:'IV',days:[1]}],
+ [{drug:'vincristine',route:'IV',days:[8]},{drug:'daunorubicin',route:'IV',days:[8]}],
+ [{drug:'ifosfamide',dose_mg_m2:1800,route:'IV',days:[1,2,3,4,5]},{drug:'etoposide',dose_mg_m2:100,route:'IV',days:[1,2,3,4,5]}]
+];
+function node(tag,text,parent,cls){const el=document.createElement(tag);if(text!==undefined)el.textContent=text;if(cls)el.className=cls;if(parent)parent.append(el);return el;}
+function tier(value,parent){return node('span',value,parent,'tier '+value);}
+function invalidate(){revision++;results.hidden=true;status.textContent='Treatment changed. Assess again to update the result.';}
+function addDrug(value={}){
+ const id=++rowId,row=node('div',undefined,rows,'drug-row');
+ row.innerHTML=`<label for="name-${id}">Drug<input id="name-${id}" class="name" list="drug-options" required placeholder="Select or enter a drug" autocomplete="off"></label><label for="dose-${id}">Dose (mg/m²)<input id="dose-${id}" class="dose" type="number" step="any" min="0.000001" placeholder="If required"></label><label for="route-${id}">Route<select id="route-${id}" class="route"><option>IV</option><option>PO</option><option>IT</option><option>ITT</option></select></label><label for="days-${id}">Treatment days<input id="days-${id}" class="days" placeholder="1" value="1"></label><button class="remove" type="button" aria-label="Remove drug">Remove</button>`;
+ row.querySelector('.name').value=value.drug||'';row.querySelector('.dose').value=value.dose_mg_m2??'';row.querySelector('.route').value=value.route||'IV';row.querySelector('.days').value=(value.days||[1]).join(',');
+ row.querySelector('.remove').onclick=()=>{row.remove();invalidate();};
+ row.addEventListener('input',invalidate);row.addEventListener('change',invalidate);
+ row.querySelector('.name').addEventListener('change',()=>{const entry=policy.find(x=>x.name===row.querySelector('.name').value.trim().toLowerCase());row.querySelector('.dose').placeholder=entry?.dose_required?'Required':'Optional';});
+}
+function table(headers,parent){const wrap=node('div',undefined,parent,'table-wrap'),t=node('table',undefined,wrap),head=node('tr',undefined,node('thead',undefined,t));headers.forEach(x=>node('th',x,head));return node('tbody',undefined,t);}
+function render(data){
+ content.replaceChildren();results.hidden=false;
+ if(data.refused){const alert=node('div',undefined,content,'error');node('strong','Assessment needs more information or clinical review',alert);const list=node('ul',undefined,alert);data.refusal_reasons.forEach(r=>node('li',r.message+' ('+r.citation+')',list));}
+ else{
+  const top=node('div',undefined,content,'result-top');node('strong','Overall risk',top);tier(data.overall_tier,top);node('p',data.overall_rationale,content);
+  const baseline=node('div',undefined,content,'baseline');node('strong','Baseline preventive strategy',baseline);node('p',data.baseline_prophylaxis_summary,baseline);node('small','This baseline still requires patient-specific contraindication, age and interaction checks. No individual medication doses are calculated here.',baseline);
+ }
+ if(data.per_drug.length){node('h3','Individual drugs',content);const body=table(['Drug','Dose / route / days','Risk','Source rule'],content);for(const d of data.per_drug){const tr=node('tr',undefined,body);node('td',d.input_name+' → '+d.canonical_name,tr);node('td',(d.dose_mg_m2===null?'Dose not required':d.dose_mg_m2+' mg/m²')+' · '+d.route+' · '+d.days.join(', '),tr);tier(d.tier,node('td',undefined,tr));node('td',d.rule_citation,tr);}}
+ if(!data.refused){node('h3','Risk on each treatment day',content);node('p','Only chemotherapy administration days are shown.',content,'muted');const body=table(['Day','Risk','Baseline strategy / combination exception'],content);for(const [day,value] of Object.entries(data.per_day_tier)){const tr=node('tr',undefined,body);node('td',day,tr);tier(value,node('td',undefined,tr));const cell=node('td',data.per_day_baseline_prophylaxis[day],tr);if(data.per_day_combination_rules[day])node('small',data.per_day_combination_rules[day],cell);}}
+ node('p',data.advisory_status+' · '+data.citation,content,'muted');results.scrollIntoView({behavior:'smooth',block:'start'});
+}
+document.getElementById('add-drug').onclick=()=>{addDrug();invalidate();};
+document.querySelectorAll('[data-example]').forEach(b=>b.onclick=()=>{rows.replaceChildren();examples[Number(b.dataset.example)].forEach(addDrug);invalidate();});
+document.getElementById('regimen-form').onsubmit=async event=>{
+ event.preventDefault();const submittedRevision=revision;const button=document.getElementById('assess');results.hidden=true;
+ try{
+  const drugs=[...rows.children].map(row=>{
+   const raw=row.querySelector('.days').value.trim()||'1';const parts=raw.split(',').map(x=>x.trim());
+   if(parts.some(x=>!/^\d+$/.test(x)||!Number.isSafeInteger(Number(x))||Number(x)<1))throw new Error('Treatment days must be positive whole numbers separated by commas.');
+   const dose=row.querySelector('.dose').value;
+   return {drug:row.querySelector('.name').value.trim(),dose_mg_m2:dose===''?null:Number(dose),route:row.querySelector('.route').value,days:parts.map(Number)};
+  });
+  button.disabled=true;status.textContent='Assessing regimen…';
+  const response=await fetch(base+'/classify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({drugs})});const data=await response.json();
+  if(!response.ok)throw new Error('Check the drug names, doses and days. '+(Array.isArray(data.detail)?data.detail.map(x=>x.msg).join('; '):'Assessment could not be completed.'));
+  if(revision!==submittedRevision){status.textContent='Treatment changed. Assess again to update the result.';return;}
+  render(data);status.textContent=data.refused?'Assessment requires review.':'Assessment complete.';
+ }catch(error){status.textContent=error.message;}finally{button.disabled=false;}
+};
+addDrug();
+fetch(base+'/policy').then(r=>{if(!r.ok)throw new Error();return r.json();}).then(data=>{policy=data.drugs;const list=document.getElementById('drug-options');policy.forEach(d=>{const option=node('option');option.value=d.name;list.append(option);});status.textContent='Ready. Enter a regimen or load one of the supplied cases.';}).catch(()=>{status.textContent='The drug list could not be loaded. You can still enter drug names manually.';});
+</script></body></html>

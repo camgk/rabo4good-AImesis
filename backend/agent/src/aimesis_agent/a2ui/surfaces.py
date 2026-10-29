@@ -44,6 +44,9 @@ def build_clinical_plan_surfaces(
         "props": {
             "overall_tier": uza_eval["overall_tier"],
             "per_day_tier": uza_eval.get("per_day_tier", {}),
+            "per_day_combination_rules": uza_eval.get("per_day_combination_rules", {}),
+            "per_day_baseline_prophylaxis": uza_eval.get("per_day_baseline_prophylaxis", {}),
+            "overall_rationale": uza_eval.get("overall_rationale", ""),
             "per_drug_details": uza_eval.get("per_drug_details", []),
             "combination_elevated": uza_eval.get("combination_elevated", False),
             "combination_rule_applied": uza_eval.get("combination_rule_applied"),

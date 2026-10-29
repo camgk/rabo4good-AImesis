@@ -7,7 +7,8 @@ and #3 (Refuse rather than guess when a drug is unknown or a required dose thres
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Set, Tuple
+import math
+from typing import Dict, List, Optional, Set, Tuple
 
 from .models import (
     ADVISORY_LABEL,
@@ -18,7 +19,6 @@ from .models import (
     RefusalReason,
     RegimenClassification,
     TIER_RANK,
-    UZA_POLICY_CITATION,
 )
 
 # Canonical drug aliases (NL / EN / brand / protocol abbreviations)
@@ -63,6 +63,15 @@ DRUG_ALIASES: Dict[str, str] = {
     "triple it/itt": "triple_it",
     "itt": "triple_it",
     "vcr": "vincristine",
+    "vinc": "vincristine",
+    "cisplatinum": "cisplatin",
+    "cddp": "cisplatin",
+    "dauno": "daunorubicin",
+    "etoposid": "etoposide",
+    "bleomycine": "bleomycin",
+    "mitoxantron": "mitoxantrone",
+    "doxorubicin liposomal": "liposomal_doxorubicin",
+    "doxorubicin (liposomal)": "liposomal_doxorubicin",
     "gemtuzumab": "gemtuzumab_ozogamicin",
     "gemtuzumab ozogamicin": "gemtuzumab_ozogamicin",
     "5-fu": "fluorouracil",
@@ -79,8 +88,6 @@ UZA_FIXED_TIER_DRUGS: Dict[str, Tuple[EmetogenicTier, str]] = {
     "dacarbazine": (EmetogenicTier.HIGH, "UZA v2 p.1 · HOOG EMETOGEEN: Dacarbazine"),
     "doxorubicin": (EmetogenicTier.HIGH, "UZA v2 p.1 · HOOG EMETOGEEN: Doxorubicine"),
     "melphalan": (EmetogenicTier.HIGH, "UZA v2 p.1 · HOOG EMETOGEEN: Melphalan IV"),
-    "carmustine": (EmetogenicTier.HIGH, "UZA v2 p.1 / POGO · HOOG EMETOGEEN: Carmustine"),
-    "epirubicin": (EmetogenicTier.HIGH, "UZA v2 p.1 · Anthracycline (Epirubicine)"),
     # MATIG EMETOGEEN (30-90%)
     "arsenic_trioxide": (EmetogenicTier.MODERATE, "UZA v2 p.1 · MATIG EMETOGEEN: Arseentrioxide"),
     "azacitidine": (EmetogenicTier.MODERATE, "UZA v2 p.1 · MATIG EMETOGEEN: Azacitidine IV"),
@@ -92,7 +99,6 @@ UZA_FIXED_TIER_DRUGS: Dict[str, Tuple[EmetogenicTier, str]] = {
     "ifosfamide": (EmetogenicTier.MODERATE, "UZA v2 p.1 · MATIG EMETOGEEN: Ifosfamide (alleen)"),
     "irinotecan": (EmetogenicTier.MODERATE, "UZA v2 p.1 · MATIG EMETOGEEN: Irinotecan"),
     "lomustine": (EmetogenicTier.MODERATE, "UZA v2 p.1 · MATIG EMETOGEEN: Lomustine"),
-    "oxaliplatin": (EmetogenicTier.MODERATE, "UZA v2 / POGO · MATIG EMETOGEEN: Oxaliplatine"),
     # LAAG EMETOGEEN (10-30%)
     "asparaginase": (EmetogenicTier.LOW, "UZA v2 p.1 · LAAG EMETOGEEN: Asparaginase/Pegasparaginase"),
     "pegaspargase": (EmetogenicTier.LOW, "UZA v2 p.1 · LAAG EMETOGEEN: Asparaginase/Pegasparaginase"),
@@ -110,8 +116,6 @@ UZA_FIXED_TIER_DRUGS: Dict[str, Tuple[EmetogenicTier, str]] = {
     "vinblastine": (EmetogenicTier.LOW, "UZA v2 p.1 · LAAG EMETOGEEN: Vinblastine"),
     "vincristine": (EmetogenicTier.LOW, "UZA v2 p.1 · LAAG EMETOGEEN: Vincristine"),
     "vinorelbine": (EmetogenicTier.LOW, "UZA v2 p.1 · LAAG EMETOGEEN: Vinorelbine"),
-    "paclitaxel": (EmetogenicTier.LOW, "UZA v2 / POGO · LAAG EMETOGEEN: Paclitaxel"),
-    "fluorouracil": (EmetogenicTier.LOW, "UZA v2 / POGO · LAAG EMETOGEEN: Fluorouracil"),
     # MINIMAAL EMETOGEEN (<10%)
     "bevacizumab": (EmetogenicTier.MINIMAL, "UZA v2 p.1 · MINIMAAL EMETOGEEN: Bevacizumab"),
     "bleomycin": (EmetogenicTier.MINIMAL, "UZA v2 p.1 · MINIMAAL EMETOGEEN: Bleomycine"),
@@ -122,7 +126,6 @@ UZA_FIXED_TIER_DRUGS: Dict[str, Tuple[EmetogenicTier, str]] = {
     "nelarabine": (EmetogenicTier.MINIMAL, "UZA v2 p.1 · MINIMAAL EMETOGEEN: Nelarabine"),
     "rituximab": (EmetogenicTier.MINIMAL, "UZA v2 p.1 · MINIMAAL EMETOGEEN: Rituximab"),
     "thioguanine": (EmetogenicTier.MINIMAL, "UZA v2 p.1 · MINIMAAL EMETOGEEN: Thioguanine"),
-    "mercaptopurine": (EmetogenicTier.MINIMAL, "UZA v2 / POGO · MINIMAAL EMETOGEEN: Mercaptopurine"),
 }
 
 DOSE_DEPENDENT_DRUGS: Set[str] = {
@@ -146,7 +149,7 @@ BASELINE_PROPHYLAXIS_BY_TIER: Dict[EmetogenicTier, str] = {
         "[UZA v2 p.1 · HOOG EMETOGEEN]"
     ),
     EmetogenicTier.MODERATE: (
-        "Ondansetron (2x/d) + Dexamethasone OF Aprepitant "
+        "Ondansetron (2x/d) + (Dexamethasone OR Aprepitant) "
         "[UZA v2 p.1 · MATIG EMETOGEEN]"
     ),
     EmetogenicTier.LOW: "Ondansetron (1x/d) [UZA v2 p.1 · LAAG EMETOGEEN]",
@@ -155,7 +158,7 @@ BASELINE_PROPHYLAXIS_BY_TIER: Dict[EmetogenicTier, str] = {
 
 
 def normalize_drug_name(name: str) -> str:
-    cleaned = name.strip().lower()
+    cleaned = " ".join(name.strip().lower().split())
     return DRUG_ALIASES.get(cleaned, cleaned)
 
 
@@ -168,8 +171,35 @@ def classify_single_drug_uza_v2(
 ) -> Tuple[Optional[DrugClassification], Optional[RefusalReason]]:
     """Classifies a single cytostatic per UZA v2 page 1."""
     norm = normalize_drug_name(drug_name)
-    norm_route = (route or "IV").strip().upper()
-    day_list = days or [1]
+    norm_route = (route or "").strip().upper()
+    day_list = [1] if days is None else days
+
+    def refuse(field: str, message: str):
+        return None, RefusalReason(field=field, message=message, citation="UZA v2 p.1")
+
+    if not norm:
+        return refuse("drug_list", "Provide a chemotherapy drug name.")
+    if not day_list or any(type(day) is not int or day < 1 for day in day_list):
+        return refuse(f"drug_days.{norm}", "Treatment days must be a non-empty list of positive integers.")
+    day_list = sorted(set(day_list))
+    if dose_mg_m2 is not None and (
+        isinstance(dose_mg_m2, bool)
+        or not isinstance(dose_mg_m2, (int, float))
+        or not math.isfinite(dose_mg_m2)
+        or dose_mg_m2 <= 0
+    ):
+        return refuse(f"drug_doses_mg_m2.{norm}", "Dose must be a finite positive number in mg/m².")
+    if norm_route not in {"IV", "PO", "IT", "ITT"}:
+        return refuse(f"drug_routes.{norm}", "Provide a supported route: IV, PO, IT or ITT.")
+    if norm_route in {"IT", "ITT"} and norm not in {"methotrexate", "triple_it"}:
+        return refuse(f"drug_routes.{norm}", "This intrathecal drug/route is not classified by the supplied UZA table.")
+    iv_only = {"melphalan", "azacitidine", "mitoxantrone", "cyclophosphamide", "cytarabine", "dactinomycin", "thiotepa"}
+    if norm in iv_only and norm_route != "IV":
+        return refuse(f"drug_routes.{norm}", "The implemented UZA rule covers IV administration only; verify this route with the clinical team.")
+    if norm == "triple_it" and norm_route not in {"IT", "ITT"}:
+        return refuse(f"drug_routes.{norm}", "Triple IT/ITT requires an intrathecal route (IT or ITT).")
+    if norm == "methotrexate" and norm_route == "PO" and dose_mg_m2 is not None and dose_mg_m2 >= 250:
+        return refuse(f"drug_routes.{norm}", "UZA's methotrexate rules at ≥250 mg/m² specify IV; verify an oral regimen with the clinical team.")
 
     if norm in DOSE_DEPENDENT_DRUGS:
         # Intrathecal methotrexate is Low regardless of mg/m2
@@ -188,31 +218,16 @@ def classify_single_drug_uza_v2(
             )
 
         if dose_mg_m2 is None:
-            if strict_missing_dose:
-                return (
-                    None,
-                    RefusalReason(
-                        field=f"drug_doses_mg_m2.{norm}",
-                        message=(
-                            f"Refused to guess tier for dose-dependent cytostatic '{drug_name}' "
-                            f"({norm}). Please provide dose in mg/m² per UZA v2 p.1."
-                        ),
-                        citation="UZA v2 p.1 · Dose-dependent emetogenicity threshold",
-                    ),
-                )
-            # Non-strict compatibility mode
-            default_tier = EmetogenicTier.MODERATE
-            return (
-                DrugClassification(
-                    input_name=drug_name,
-                    canonical_name=norm,
-                    tier=default_tier,
-                    dose_mg_m2=None,
-                    route=norm_route,
-                    days=day_list,
-                    rule_citation=f"UZA v2 p.1 · {norm} (dose unspecified -> Moderate baseline)",
-                ),
-                None,
+            # Retain the legacy keyword for callers, but never guess a clinical tier.
+            return refuse(
+                f"drug_doses_mg_m2.{norm}",
+                f"Provide the dose in mg/m² for dose-dependent cytostatic '{drug_name}'.",
+            )
+
+        if norm == "cytarabine" and dose_mg_m2 == 200:
+            return refuse(
+                f"drug_doses_mg_m2.{norm}",
+                "Exactly 200 mg/m² cytarabine is ambiguous: UZA prints <200 for Low and >200 for Moderate. Clinical review is required.",
             )
 
         if norm == "cyclophosphamide":
@@ -368,30 +383,36 @@ def classify_regimen_uza_v2(
             per_drug=classifications,
         )
 
-    all_canonical = {c.canonical_name for c in classifications}
-    combo_elevated, combo_rule = evaluate_combination_rule(all_canonical)
-
     # Calculate per-day emetogenicity tiers
     all_days: Set[int] = set()
     for c in classifications:
         all_days.update(c.days)
 
     per_day_tier: Dict[int, EmetogenicTier] = {}
+    per_day_combination_rules: Dict[int, str] = {}
     for day in sorted(all_days):
         day_drugs = [c for c in classifications if day in c.days]
         day_names = {c.canonical_name for c in day_drugs}
-        day_combo, _ = evaluate_combination_rule(day_names)
+        day_combo, day_rule = evaluate_combination_rule(day_names)
         if day_combo:
             per_day_tier[day] = EmetogenicTier.HIGH
+            assert day_rule is not None
+            per_day_combination_rules[day] = day_rule
         else:
             max_day_rank = max(TIER_RANK[c.tier] for c in day_drugs)
             per_day_tier[day] = RANK_TO_TIER[max_day_rank]
 
-    max_rank = max(TIER_RANK[c.tier] for c in classifications)
-    if combo_elevated:
-        max_rank = TIER_RANK[EmetogenicTier.HIGH]
-
-    overall_tier = RANK_TO_TIER[max_rank]
+    overall_tier = max(per_day_tier.values(), key=TIER_RANK.__getitem__)
+    combo_elevated = bool(per_day_combination_rules)
+    combo_rule = "; ".join(
+        f"Day {day}: {rule}" for day, rule in per_day_combination_rules.items()
+    ) or None
+    peak_days = [str(day) for day, tier in per_day_tier.items() if tier == overall_tier]
+    rationale = (
+        f"Overall {overall_tier.value} is the highest daily tier (day(s) {', '.join(peak_days)}). "
+        "Each day uses the highest individual drug tier, with only the named UZA combination exceptions. "
+        "UZA v2 p.1–2."
+    )
 
     return RegimenClassification(
         refused=False,
@@ -400,6 +421,9 @@ def classify_regimen_uza_v2(
         overall_tier=overall_tier,
         combination_elevated=combo_elevated,
         combination_rule_applied=combo_rule,
+        per_day_combination_rules=per_day_combination_rules,
+        per_day_baseline_prophylaxis={day: BASELINE_PROPHYLAXIS_BY_TIER[tier] for day, tier in per_day_tier.items()},
+        overall_rationale=rationale,
         baseline_prophylaxis_summary=BASELINE_PROPHYLAXIS_BY_TIER[overall_tier],
         citation="UZA Anti-emetica beleid CINV v2 (Juli 2026) p.1",
         advisory_status=ADVISORY_LABEL,

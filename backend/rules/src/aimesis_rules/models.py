@@ -7,7 +7,7 @@ from enum import Enum
 from typing import Any, Dict, List, Optional
 
 try:
-    from pydantic import BaseModel as _PydanticBaseModel, Field as _PydanticField
+    from pydantic import BaseModel as _PydanticBaseModel, Field as _PydanticField, field_validator as _field_validator
 
     _HAS_PYDANTIC = True
 except ImportError:  # pragma: no cover - pure stdlib fallback before pip/uv install
@@ -59,10 +59,17 @@ if _HAS_PYDANTIC:
         citation: str = UZA_POLICY_CITATION
 
     class ChemoDrugInput(_PydanticBaseModel):
-        drug: str
-        dose_mg_m2: Optional[float] = None
-        route: str = "IV"
-        days: List[int] = _PydanticField(default_factory=lambda: [1])
+        drug: str = _PydanticField(min_length=1, strict=True)
+        dose_mg_m2: Optional[float] = _PydanticField(default=None, gt=0, allow_inf_nan=False, strict=True)
+        route: str = _PydanticField(default="IV", strict=True)
+        days: List[int] = _PydanticField(default_factory=lambda: [1], min_length=1)
+
+        @_field_validator("days", mode="before")
+        @classmethod
+        def validate_days(cls, value):
+            if not isinstance(value, list) or any(type(day) is not int or day < 1 for day in value):
+                raise ValueError("Treatment days must be positive integers.")
+            return value
 
     class DrugClassification(_PydanticBaseModel):
         input_name: str
@@ -82,6 +89,9 @@ if _HAS_PYDANTIC:
         overall_tier: Optional[EmetogenicTier] = None
         combination_elevated: bool = False
         combination_rule_applied: Optional[str] = None
+        per_day_combination_rules: Dict[int, str] = _PydanticField(default_factory=dict)
+        per_day_baseline_prophylaxis: Dict[int, str] = _PydanticField(default_factory=dict)
+        overall_rationale: str = ""
         baseline_prophylaxis_summary: str = ""
         citation: str = f"{UZA_POLICY_CITATION} p.1"
         advisory_status: str = ADVISORY_LABEL
@@ -163,6 +173,9 @@ else:
         overall_tier: Optional[EmetogenicTier] = None
         combination_elevated: bool = False
         combination_rule_applied: Optional[str] = None
+        per_day_combination_rules: Dict[int, str] = field(default_factory=dict)
+        per_day_baseline_prophylaxis: Dict[int, str] = field(default_factory=dict)
+        overall_rationale: str = ""
         baseline_prophylaxis_summary: str = ""
         citation: str = f"{UZA_POLICY_CITATION} p.1"
         advisory_status: str = ADVISORY_LABEL
