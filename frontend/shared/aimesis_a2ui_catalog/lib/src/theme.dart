@@ -6,7 +6,7 @@ abstract final class AimesisTheme {
 
   /// Advisory text required on every clinician screen.
   static const String advisoryText =
-      'Advisory only — requires clinician sign-off. Demo data, not for clinical use.';
+      'Advisory only — requires clinician sign-off.';
 
   static ThemeData light() => _build(Brightness.light);
   static ThemeData dark() => _build(Brightness.dark);

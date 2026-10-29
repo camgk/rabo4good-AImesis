@@ -371,7 +371,7 @@ class PlanComment {
 /// Computed antiemetic plan (`GET /patients/{id}/plan`).
 class Plan {
   static const String defaultAdvisory =
-      'Advisory only — requires clinician sign-off. Demo data, not for clinical use.';
+      'Advisory only — requires clinician sign-off.';
 
   final String patientId;
   final String status;

@@ -18,6 +18,9 @@ class PatientSummary {
   final String? planStatus;
   final String? language;
 
+  /// Free-form labels, e.g. `["demo"]` for demo patients.
+  final List<String> tags;
+
   const PatientSummary({
     required this.id,
     required this.alias,
@@ -30,6 +33,7 @@ class PatientSummary {
     this.overallTier,
     this.planStatus,
     this.language,
+    this.tags = const [],
   });
 
   factory PatientSummary.fromJson(Map<String, dynamic> json) => PatientSummary(
@@ -44,6 +48,7 @@ class PatientSummary {
         overallTier: strOrNull(json['overallTier']),
         planStatus: strOrNull(json['planStatus']),
         language: strOrNull(json['language']),
+        tags: strList(json['tags']),
       );
 
   Map<String, dynamic> toJson() => {
@@ -58,12 +63,15 @@ class PatientSummary {
         'overallTier': overallTier,
         'planStatus': planStatus,
         'language': language,
+        'tags': tags,
       };
 
   DateTime? get cycleStartDate => cycleStart == null ? null : DateTime.tryParse(cycleStart!);
   int get tierRank => Tier.rank(overallTier);
   String get tierLabel => Tier.label(overallTier);
   String get planStatusLabel => PlanStatus.label(planStatus);
+
+  bool hasTag(String tag) => tags.contains(tag);
 }
 
 /// Previous-cycle history entry.
@@ -180,6 +188,7 @@ class Patient extends PatientSummary {
     super.overallTier,
     super.planStatus,
     super.language,
+    super.tags,
     this.weightKg,
     this.heightCm,
     this.bsaM2,
@@ -206,6 +215,7 @@ class Patient extends PatientSummary {
       overallTier: s.overallTier,
       planStatus: s.planStatus,
       language: s.language,
+      tags: s.tags,
       weightKg: dblOrNull(json['weightKg']),
       heightCm: dblOrNull(json['heightCm']),
       bsaM2: dblOrNull(json['bsaM2']),

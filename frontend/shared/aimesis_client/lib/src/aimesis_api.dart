@@ -47,9 +47,10 @@ class AimesisApi extends ApiCore with EpisodesApi, PassportApi {
 
   // ---- patients ----------------------------------------------------------
 
-  /// `GET /patients` (filtered by role).
-  Future<List<PatientSummary>> patients() async =>
-      asList(await getJson('/patients'), PatientSummary.fromJson);
+  /// `GET /patients` (filtered by role); [tag] adds `?tag=` (e.g. `demo`).
+  Future<List<PatientSummary>> patients({String? tag}) async => asList(
+      await getJson('/patients', query: (tag == null || tag.isEmpty) ? null : {'tag': tag}),
+      PatientSummary.fromJson);
 
   /// `GET /patients/{id}`
   Future<Patient> patient(String id) async =>

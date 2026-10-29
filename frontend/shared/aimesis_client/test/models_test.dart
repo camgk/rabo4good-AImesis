@@ -5,18 +5,18 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:test/test.dart';
 
-const _advisory = 'Advisory only — requires clinician sign-off. Demo data, not for clinical use.';
+const _advisory = 'Advisory only — requires clinician sign-off.';
 
 final Map<String, dynamic> accountJson = {
   'id': 'acc-onc',
   'email': 'oncologist@demo.aimesis.app',
   'role': 'oncologist',
   'displayName': 'Oncologist (demo)',
-  'patientIds': ['casus-1', 'casus-2', 'casus-3', 'casus-4'],
+  'patientIds': ['PAT-2026-0001', 'PAT-2026-0002', 'PAT-2026-0003', 'PAT-2026-0004'],
 };
 
 final Map<String, dynamic> patientJson = {
-  'id': 'casus-1',
+  'id': 'PAT-2026-0001',
   'alias': 'Casus 1',
   'age': 16,
   'sex': 'F',
@@ -48,10 +48,11 @@ final Map<String, dynamic> patientJson = {
   ],
   'riskFactors': {'canSwallowTablets': true, 'preferredRoute': 'oral_tablet', 'anticipatory': false},
   'pairingCode': 'C1-NBL2',
+  'tags': ['demo'],
 };
 
 final Map<String, dynamic> planJson = {
-  'patientId': 'casus-3',
+  'patientId': 'PAT-2026-0003',
   'status': 'awaiting_pharmacist',
   'refused': false,
   'refusalReasons': <String>[],
@@ -141,7 +142,7 @@ final Map<String, dynamic> planJson = {
 };
 
 final Map<String, dynamic> passportJson = {
-  'patientId': 'casus-1',
+  'patientId': 'PAT-2026-0001',
   'alias': 'Casus 1',
   'lang': 'nl',
   'title': 'CINV-paspoort',
@@ -173,12 +174,12 @@ final Map<String, dynamic> passportJson = {
     }
   ],
   'pairingCode': 'C1-NBL2',
-  'disclaimer': 'Demodata, niet voor klinisch gebruik.',
+  'disclaimer': 'Dit schema is opgesteld door je zorgteam. Bel de afdeling als je je zorgen maakt.',
 };
 
 final Map<String, dynamic> episodeJson = {
   'id': 'ep-1',
-  'patientId': 'casus-1',
+  'patientId': 'PAT-2026-0001',
   'type': 'nausea',
   'severity': 3,
   'at': '2026-10-29T09:30:00Z',
@@ -225,6 +226,19 @@ void main() {
       final back = Patient.fromJson(_rt(p.toJson()));
       expect(back.chemo.length, 2);
       expect(back.riskFactors.canSwallowTablets, isTrue);
+      expect(p.tags, ['demo']);
+      expect(p.hasTag('demo'), isTrue);
+      expect(back.tags, ['demo']);
+      expect(p.toJson()['tags'], ['demo']);
+    });
+
+    test('PatientSummary tags', () {
+      final s = PatientSummary.fromJson({'id': 'PAT-2026-0002', 'alias': 'Casus 2', 'tags': ['demo', 'ward-a']});
+      expect(s.tags, ['demo', 'ward-a']);
+      expect(PatientSummary.fromJson(_rt(s.toJson())).tags, ['demo', 'ward-a']);
+      final none = PatientSummary.fromJson({'id': 'PAT-2026-0003', 'alias': 'Casus 3', 'tags': null});
+      expect(none.tags, isEmpty);
+      expect(none.hasTag('demo'), isFalse);
     });
 
     test('Patient tolerates missing optional fields', () {
@@ -234,6 +248,7 @@ void main() {
       expect(p.history, isEmpty);
       expect(p.hasAnthropometrics, isFalse);
       expect(p.riskFactors.preferredRoute, 'oral_tablet');
+      expect(p.tags, isEmpty);
     });
 
     test('Plan', () {
@@ -273,7 +288,7 @@ void main() {
 
     test('Plan tolerates a refused / minimal payload', () {
       final plan = Plan.fromJson({
-        'patientId': 'casus-x',
+        'patientId': 'PAT-2026-9999',
         'refused': true,
         'refusalReasons': ['BSA missing'],
         'overallTier': null,
@@ -333,13 +348,15 @@ void main() {
               headers: {'content-type': 'application/json'});
         }
         if (req.url.path == '/patients') {
+          final tag = req.url.queryParameters['tag'];
           return http.Response(
               jsonEncode([
-                {'id': 'casus-1', 'alias': 'Casus 1', 'overallTier': 'high'}
+                {'id': 'PAT-2026-0001', 'alias': 'Casus 1', 'overallTier': 'high', 'tags': ['demo']},
+                if (tag == null) {'id': 'PAT-2026-0005', 'alias': 'Patient 5', 'overallTier': 'low'},
               ]),
               200);
         }
-        if (req.url.path == '/patients/casus-1/passport') {
+        if (req.url.path == '/patients/PAT-2026-0001/passport') {
           expect(req.url.queryParameters['lang'], 'fr');
           return _json(passportJson, 200);
         }
@@ -356,10 +373,18 @@ void main() {
       expect(seen.first.headers.containsKey('Authorization'), isFalse);
 
       final pts = await api.patients();
-      expect(pts.single.alias, 'Casus 1');
+      expect(pts, hasLength(2));
+      expect(pts.first.alias, 'Casus 1');
+      expect(pts.first.tags, ['demo']);
+      expect(pts.last.tags, isEmpty);
+      expect(seen.last.url.hasQuery, isFalse);
       expect(seen.last.headers['Authorization'], 'Bearer tok-123');
 
-      final pp = await api.passport('casus-1', 'fr');
+      final demo = await api.patients(tag: 'demo');
+      expect(seen.last.url.queryParameters['tag'], 'demo');
+      expect(demo.single.id, 'PAT-2026-0001');
+
+      final pp = await api.passport('PAT-2026-0001', 'fr');
       expect(pp.title, 'CINV-paspoort');
 
       api.logout();
@@ -390,7 +415,7 @@ void main() {
         client: MockClient((req) async => http.Response('Forbidden', 403)),
       );
       await expectLater(
-          api.submitPlan('casus-1'),
+          api.submitPlan('PAT-2026-0001'),
           throwsA(isA<ApiException>()
               .having((e) => e.status, 'status', 403)
               .having((e) => e.message, 'message', 'Forbidden')));
@@ -406,7 +431,7 @@ void main() {
             return _json(episodeJson, 201);
           }
           if (req.url.path == '/pairing') {
-            return _json({'id': 'casus-2', 'alias': 'Casus 2'}, 200);
+            return _json({'id': 'PAT-2026-0002', 'alias': 'Casus 2'}, 200);
           }
           if (req.url.path == '/resources') {
             return _json(passportJson['resources'], 200);
@@ -415,20 +440,20 @@ void main() {
         }),
       )..token = 't';
 
-      await api.updateRiskFactors('casus-1', const RiskFactors(canSwallowTablets: false, preferredRoute: 'oral_liquid'));
-      await api.submitPlan('casus-1');
-      await api.approvePlan('casus-1', comment: 'ok');
-      await api.returnPlan('casus-1', 'fix route');
-      final ep = await api.logEpisode('casus-1', 'vomiting', severity: 4);
+      await api.updateRiskFactors('PAT-2026-0001', const RiskFactors(canSwallowTablets: false, preferredRoute: 'oral_liquid'));
+      await api.submitPlan('PAT-2026-0001');
+      await api.approvePlan('PAT-2026-0001', comment: 'ok');
+      await api.returnPlan('PAT-2026-0001', 'fix route');
+      final ep = await api.logEpisode('PAT-2026-0001', 'vomiting', severity: 4);
       final pair = await api.pair(' C2-ALL8 ');
       final res = await api.resources(lang: 'nl');
 
-      expect(ep.patientId, 'casus-1');
-      expect(pair.id, 'casus-2');
+      expect(ep.patientId, 'PAT-2026-0001');
+      expect(pair.id, 'PAT-2026-0002');
       expect(res.single.language, 'nl');
-      expect(calls[0], startsWith('PUT /patients/casus-1/risk-factors'));
+      expect(calls[0], startsWith('PUT /patients/PAT-2026-0001/risk-factors'));
       expect(calls[0], contains('"preferredRoute":"oral_liquid"'));
-      expect(calls[1], startsWith('POST /patients/casus-1/plan/submit'));
+      expect(calls[1], startsWith('POST /patients/PAT-2026-0001/plan/submit'));
       expect(calls[2], contains('"comment":"ok"'));
       expect(calls[3], contains('"comment":"fix route"'));
       expect(calls[4], contains('"type":"vomiting"'));
