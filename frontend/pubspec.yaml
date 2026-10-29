@@ -1,0 +1,12 @@
+name: aimesis_frontend_workspace
+description: Dart pub workspace root for the AImesis frontends (web, iOS) and shared packages.
+publish_to: none
+
+environment:
+  sdk: ^3.6.0
+
+workspace:
+  - web
+  - ios
+  - shared/aimesis_client
+  - shared/aimesis_a2ui_catalog

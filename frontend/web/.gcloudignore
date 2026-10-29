@@ -1,0 +1,19 @@
+# Upload only what the Dockerfile needs. build/web is INCLUDED (prebuilt by
+# `flutter build web --release` before `gcloud builds submit`).
+.gcloudignore
+.git
+.gitignore
+.dart_tool/
+.idea/
+.vscode/
+*.iml
+.packages
+.flutter-plugins
+.flutter-plugins-dependencies
+/lib/
+/test/
+/web/
+pubspec.lock
+/build/*
+!/build/web/
+!/build/web/**

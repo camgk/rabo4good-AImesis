@@ -1,0 +1,7 @@
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+*.tfplan
+# Written by infra/scripts when an org-policy fallback kicks in
+local.auto.tfvars

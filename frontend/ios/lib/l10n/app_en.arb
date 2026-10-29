@@ -1,0 +1,181 @@
+{
+  "@@locale": "en",
+  "appTitle": "AImesis",
+  "forFamilies": "For families",
+  "welcomeIntro": "Log how your child feels with one tap, and keep the medicine plan close by.",
+  "emailLabel": "Email",
+  "passwordLabel": "Password",
+  "signIn": "Sign in",
+  "demoAccounts": "Demo accounts",
+  "demoPasswordHint": "Demo password: {password}",
+  "@demoPasswordHint": {
+    "placeholders": {
+      "password": {
+        "type": "String"
+      }
+    }
+  },
+  "clinicianNotAllowed": "This app is for families; the care team uses the AImesis web app.",
+  "loginFailed": "Could not sign in. Check your email and password.",
+  "networkError": "No connection to AImesis. Check your internet and try again.",
+  "language": "Language",
+  "roleParent": "Parent",
+  "rolePatient": "Teen",
+  "pairTitle": "Connect your child",
+  "pairIntro": "Type the code you got from the ward. You can find it on the Passport.",
+  "pairCodeLabel": "Code from the ward",
+  "pairCodeHint": "e.g. {example}",
+  "@pairCodeHint": {
+    "placeholders": {
+      "example": {
+        "type": "String"
+      }
+    }
+  },
+  "pairButton": "Connect",
+  "pairSuccess": "{alias} is now connected",
+  "@pairSuccess": {
+    "placeholders": {
+      "alias": {
+        "type": "String"
+      }
+    }
+  },
+  "pairFailed": "That code doesn't work. Please check it with the ward.",
+  "navToday": "Today",
+  "navLog": "Log",
+  "navHistory": "History",
+  "navPassport": "Passport",
+  "settings": "Settings",
+  "dayOfCycle": "Day {day} of cycle {cycle}",
+  "@dayOfCycle": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      },
+      "cycle": {
+        "type": "String"
+      }
+    }
+  },
+  "todayMedicines": "Today's medicines",
+  "medicinesSubtitle": "Medicines against feeling sick, from your Passport",
+  "noMedicinesToday": "No sickness medicines planned for today.",
+  "planRunsDays": "The plan covers days {days}.",
+  "@planRunsDays": {
+    "placeholders": {
+      "days": {
+        "type": "String"
+      }
+    }
+  },
+  "next": "Next",
+  "given": "Given",
+  "markGiven": "Tick when given",
+  "howFeelingTeen": "How are you feeling?",
+  "howFeelingParent": "How is {alias} feeling?",
+  "@howFeelingParent": {
+    "placeholders": {
+      "alias": {
+        "type": "String"
+      }
+    }
+  },
+  "logSickTeen": "I feel sick",
+  "logVomitedTeen": "I vomited",
+  "logSickParent": "Feeling sick",
+  "logVomitedParent": "Vomited",
+  "oneTapHint": "One tap is enough. The care team sees every log.",
+  "severityTitle": "How bad is it?",
+  "severityOptional": "Optional — already saved when you close this.",
+  "severity1": "A little",
+  "severity2": "Some",
+  "severity3": "Quite bad",
+  "severity4": "Bad",
+  "severity5": "Very bad",
+  "skip": "Skip",
+  "savingIn": "Saving in {seconds} s",
+  "@savingIn": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "loggedAt": "Logged at {time} — the care team will see this",
+  "@loggedAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "savedOffline": "Saved on phone, will send when online",
+  "pendingCount": "{count, plural, =1{1 log waiting to send} other{{count} logs waiting to send}}",
+  "@pendingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sendNow": "Send now",
+  "loggedToday": "Logged today",
+  "nothingLoggedToday": "Nothing logged today.",
+  "historyEmpty": "No logs yet. When your child feels sick, tap Log.",
+  "dayN": "Day {day}",
+  "@dayN": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "nausea": "Feeling sick",
+  "vomiting": "Vomited",
+  "severityShort": "{value}/5",
+  "@severityShort": {
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
+  "waitingToSend": "Waiting to send",
+  "loggedByYou": "by you",
+  "loggedByCareTeam": "by the care team",
+  "loggedByFamily": "by family",
+  "scheduleTitle": "Medicine schedule",
+  "warningSignsTitle": "Call the ward if…",
+  "callWard": "Call the ward",
+  "resourcesTitle": "Good to read",
+  "noResources": "No extra reading in this language yet.",
+  "openLink": "Open",
+  "linkCopied": "Link copied",
+  "numberCopied": "Number copied",
+  "signedOffYes": "Checked by the care team",
+  "signedOffNo": "Not yet checked by the care team. Ask the ward before following this plan.",
+  "account": "Account",
+  "child": "Child",
+  "addChild": "Connect another child",
+  "logOut": "Log out",
+  "retry": "Try again",
+  "errorLoading": "Something went wrong while loading.",
+  "chooseLanguage": "Choose your language",
+  "server": "Server",
+  "ageYears": "{age} years",
+  "@ageYears": {
+    "placeholders": {
+      "age": {
+        "type": "int"
+      }
+    }
+  },
+  "cancel": "Cancel",
+  "close": "Close",
+  "pairingCodeLabel": "Pairing code",
+  "showDay": "Show day",
+  "today": "today",
+  "perDayTitle": "Logs per day of the cycle",
+  "sentToCareTeam": "The care team sees these logs and uses them to plan the next cycle."
+}
