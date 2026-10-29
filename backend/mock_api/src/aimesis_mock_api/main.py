@@ -8,6 +8,8 @@ Advisory only — requires clinician sign-off.
 
 from __future__ import annotations
 
+from datetime import date
+
 import logging
 import os
 from contextlib import asynccontextmanager
@@ -119,6 +121,19 @@ def evaluate_patient(raw: dict) -> tuple[Patient, Plan]:
     data.setdefault("overallTier", "minimal")
     data.setdefault("planStatus", "draft")
     data.setdefault("riskFactors", {})
+    # Optional in the cycle flow: fill the fields the stored-patient model requires.
+    for key, default in (
+        ("cycleStart", date.today().isoformat()),
+        ("cycle", ""),
+        ("protocol", ""),
+        ("language", "nl"),
+        ("sex", ""),
+        ("diagnosisGroup", ""),
+        ("activeMeds", []),
+        ("history", []),
+    ):
+        if data.get(key) is None:
+            data[key] = default
     if data.get("bsaM2") in (None, "", 0) and data.get("heightCm") and data.get("weightKg"):
         data["bsaM2"] = round((float(data["heightCm"]) * float(data["weightKg"]) / 3600) ** 0.5, 2)
     try:

@@ -77,3 +77,18 @@ def test_evaluate_requires_clinician(client):
 def test_evaluate_rejects_bad_body(client):
     r = client.post("/cycles/evaluate", json={"nope": 1}, headers=_auth(client))
     assert r.status_code in (400, 422)
+
+
+def test_evaluate_accepts_null_optional_fields(client):
+    """The web cycle flow leaves start date, protocol and sex optional."""
+    body = {"patient": {
+        "id": "NEW-X", "alias": "Casus 9", "age": 7, "sex": None, "diagnosis": "Ewing sarcoma",
+        "diagnosisGroup": None, "protocol": None, "cycle": "Cycle 1", "cycleStart": None,
+        "language": "nl", "weightKg": 22, "heightCm": 120, "bsaM2": None,
+        "chemo": [{"drug": "ifosfamide", "doseMgM2": 1800, "days": [1, 2, 3]}],
+        "activeMeds": [], "history": [],
+        "riskFactors": {"canSwallowTablets": True, "preferredRoute": "oral_tablet", "anticipatory": False},
+    }}
+    r = client.post("/cycles/evaluate", json=body, headers=_auth(client))
+    assert r.status_code == 200, r.text
+    assert r.json()["plan"]["overallTier"] in ("moderate", "high")
