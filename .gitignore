@@ -48,3 +48,23 @@ xcuserdata/
 *.tfstate.*
 crash.log
 tfplan
+
+# From main (merged)
+.eggs/
+dist/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+node_modules/
+.next/
+.turbo/
+.vite/
+coverage/
+*.tsbuildinfo
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.env.*
+!.env.example
+service-account*.json

@@ -1,0 +1,61 @@
+{
+  "cases": [
+    {
+      "case_id": "casus_1",
+      "title": "Casus 1 — 16yo Girl with Neuroblastoma (HR-NBL2 RAPID COJEC Cycle B4)",
+      "patient_age_years": 16.0,
+      "patient_weight_kg": 52.0,
+      "bsa_m2": 1.54,
+      "indication": "High-Risk Neuroblastoma (HR-NBL2 RAPID COJEC Cycle B4)",
+      "drug_list": ["vincristine", "cisplatin"],
+      "drug_doses_mg_m2": {
+        "vincristine": 1.5,
+        "cisplatin": 80.0
+      },
+      "chemo_duration_days": 1,
+      "can_swallow_tablets": true,
+      "prior_breakthrough_cinv": true,
+      "prior_ondansetron_2xd_on_hec": true,
+      "anticipatory_vomiting": false,
+      "concomitant_meds": []
+    },
+    {
+      "case_id": "casus_2",
+      "title": "Casus 2 — 2yo Boy with ALL (ALLTogether1 Induction B Day 8)",
+      "patient_age_years": 2.0,
+      "patient_weight_kg": 12.5,
+      "bsa_m2": 0.56,
+      "indication": "Acute Lymphoblastic Leukemia (ALL - ALLTogether1 Induction B)",
+      "drug_list": ["vincristine", "daunorubicin"],
+      "drug_doses_mg_m2": {
+        "vincristine": 1.5,
+        "daunorubicin": 25.0
+      },
+      "chemo_duration_days": 1,
+      "can_swallow_tablets": false,
+      "prior_breakthrough_cinv": false,
+      "prior_ondansetron_2xd_on_hec": false,
+      "anticipatory_vomiting": false,
+      "concomitant_meds": []
+    },
+    {
+      "case_id": "casus_3",
+      "title": "Casus 3 — Ewing Sarcoma (iEuroEwing 5-Day IE Cycle #3)",
+      "patient_age_years": 13.0,
+      "patient_weight_kg": 44.0,
+      "bsa_m2": 1.38,
+      "indication": "Ewing Sarcoma (iEuroEwing IE Cycle #3)",
+      "drug_list": ["ifosfamide", "etoposide"],
+      "drug_doses_mg_m2": {
+        "ifosfamide": 1800.0,
+        "etoposide": 100.0
+      },
+      "chemo_duration_days": 5,
+      "can_swallow_tablets": true,
+      "prior_breakthrough_cinv": true,
+      "prior_ondansetron_2xd_on_hec": false,
+      "anticipatory_vomiting": false,
+      "concomitant_meds": []
+    }
+  ]
+}

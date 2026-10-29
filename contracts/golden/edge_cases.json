@@ -1,0 +1,51 @@
+{
+  "edge_cases": [
+    {
+      "case_id": "edge_olanzapine_floor_rounding",
+      "description": "18.9 kg child on HEC -> Olanzapine 0.1 mg/kg = 1.89 mg rounded DOWN to 1.5 mg",
+      "patient_age_years": 6.0,
+      "patient_weight_kg": 18.9,
+      "bsa_m2": 0.76,
+      "indication": "osteosarcoma",
+      "drug_list": ["cisplatin", "doxorubicin"],
+      "drug_doses_mg_m2": {"cisplatin": 60.0, "doxorubicin": 37.5},
+      "expected_olanzapine_mg": 1.5
+    },
+    {
+      "case_id": "edge_brain_tumor_no_dex",
+      "description": "Brain tumor with Cyclophosphamide 1800 mg/m2 -> High tier + GEEN Dexamethasone",
+      "patient_age_years": 9.0,
+      "patient_weight_kg": 28.0,
+      "bsa_m2": 1.02,
+      "indication": "brain_tumor (medulloblastoma)",
+      "drug_list": ["cyclophosphamide"],
+      "drug_doses_mg_m2": {"cyclophosphamide": 1800.0},
+      "expected_tier": "High",
+      "expected_dexamethasone_contraindicated": true
+    },
+    {
+      "case_id": "edge_refuse_unknown_drug",
+      "description": "Unknown cytostatic -> Refuse rather than guess",
+      "patient_age_years": 8.0,
+      "patient_weight_kg": 25.0,
+      "bsa_m2": 0.92,
+      "indication": "solid_tumor",
+      "drug_list": ["experimental_unknown_drug_xyz"],
+      "drug_doses_mg_m2": {},
+      "strict_validation": true,
+      "expected_refused": true
+    },
+    {
+      "case_id": "edge_refuse_missing_cyclophosphamide_dose",
+      "description": "Dose-dependent drug without dose_mg_m2 in strict mode -> Refuse rather than guess",
+      "patient_age_years": 8.0,
+      "patient_weight_kg": 25.0,
+      "bsa_m2": 0.92,
+      "indication": "solid_tumor",
+      "drug_list": ["cyclophosphamide"],
+      "drug_doses_mg_m2": {},
+      "strict_validation": true,
+      "expected_refused": true
+    }
+  ]
+}
