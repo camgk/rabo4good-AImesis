@@ -113,11 +113,9 @@ void main() {
         final alias = (cases[id]['patient'] as Map)['alias'] as String;
         await tester.tap(find.text('Worklist').first);
         await tester.pumpAndSettle();
-        await tester.ensureVisible(find.text(alias).first);
-        await tester.pumpAndSettle();
         await tester.tap(find.text(alias).first);
         await tester.pumpAndSettle();
-        expect(find.text('Overall emetogenicity'), findsOneWidget, reason: id);
+        expect(find.text('Overall emetogenicity'.toUpperCase()), findsOneWidget, reason: id);
         for (final tab in WorkspaceTab.values) {
           await tester.tap(find.text(tab.label).last);
           await tester.pumpAndSettle();
@@ -172,7 +170,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Safety gates').last);
     await tester.pumpAndSettle();
-    expect(find.text('Critical'), findsOneWidget);
+    expect(find.text('CRITICAL'), findsOneWidget);
     expect(find.text('Voriconazole + Vincristine'), findsOneWidget);
     expect(find.text('Dexamethasone blocked'), findsOneWidget);
   });
@@ -203,7 +201,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('How was this calculated?').first);
     await tester.pumpAndSettle();
-    expect(find.text('Formula'), findsOneWidget);
+    expect(find.text('FORMULA'), findsOneWidget);
     expect(find.text('Hide calculation'), findsOneWidget);
     expect(find.textContaining('1.52 m² × 5 mg/m²'), findsWidgets);
   });

@@ -1,4 +1,3 @@
-import 'package:aimesis_a2ui_catalog/aimesis_a2ui_catalog.dart';
 import 'package:flutter/material.dart';
 
 /// Standard scrollable page body with a title row and max width.
@@ -21,9 +20,8 @@ class PageFrame extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final gutter = GovukLayout.isTablet(context) ? GovukLayout.gutter : GovukLayout.gutterHalf;
     return SingleChildScrollView(
-      padding: EdgeInsets.fromLTRB(gutter, GovukSpacing.of(context, 6), gutter, GovukSpacing.of(context, 8)),
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 40),
       child: Align(
         alignment: Alignment.topLeft,
         child: ConstrainedBox(
@@ -36,21 +34,18 @@ class PageFrame extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Semantics(
-                        header: true,
-                        child: Text(title, style: GovukType.style(context, GovukType.p36, bold: true, color: theme.colorScheme.onSurface)),
-                      ),
+                      Text(title, style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
                       if (subtitle != null) ...[
-                        const SizedBox(height: GovukSpacing.s2),
+                        const SizedBox(height: 4),
                         Text(subtitle!,
-                            style: GovukType.style(context, GovukType.p19, color: theme.colorScheme.onSurfaceVariant)),
+                            style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
                       ],
                     ]),
                   ),
                   ...actions,
                 ],
               ),
-              const SizedBox(height: GovukSpacing.s6),
+              const SizedBox(height: 20),
               ...children,
             ],
           ),

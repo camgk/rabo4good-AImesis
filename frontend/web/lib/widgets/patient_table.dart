@@ -18,31 +18,34 @@ class PatientTable extends StatelessWidget {
     final cs = theme.colorScheme;
     return LayoutBuilder(builder: (context, c) {
       final narrow = c.maxWidth < 900;
-      // GOV.UK table: bold sentence-case headers, 1px rules, no card.
-      final header = GovukType.style(context, GovukType.p19, bold: true, color: cs.onSurface);
+      final header = TextStyle(
+          fontSize: 11.5, fontWeight: FontWeight.w700, letterSpacing: 0.5, color: cs.onSurfaceVariant);
       Widget headerRow() => Container(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
-            decoration: BoxDecoration(border: Border(bottom: BorderSide(color: cs.outlineVariant))),
-            child: Semantics(
-              header: true,
-              child: Row(children: [
-                Expanded(flex: 3, child: Text('Patient', style: header)),
-                Expanded(flex: 4, child: Text('Diagnosis and protocol', style: header)),
-                if (!narrow) Expanded(flex: 2, child: Text('Cycle', style: header)),
-                Expanded(flex: 2, child: Text('Tier', style: header)),
-                Expanded(flex: 3, child: Text('Plan status', style: header)),
-                const SizedBox(width: 40),
-              ]),
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
+            child: Row(children: [
+              Expanded(flex: 3, child: Text('PATIENT', style: header)),
+              Expanded(flex: 4, child: Text('DIAGNOSIS · PROTOCOL', style: header)),
+              if (!narrow) Expanded(flex: 2, child: Text('CYCLE', style: header)),
+              Expanded(flex: 2, child: Text('TIER', style: header)),
+              Expanded(flex: 3, child: Text('PLAN STATUS', style: header)),
+              const SizedBox(width: 40),
+            ]),
           );
-      return Material(
-        color: Colors.transparent,
+      return Card(
+        margin: EdgeInsets.zero,
+        elevation: 0,
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(color: cs.outlineVariant),
+        ),
         child: Column(
           children: [
             headerRow(),
             for (var i = 0; i < patients.length; i++) ...[
+              if (i > 0) Divider(height: 1, color: cs.outlineVariant),
               _row(context, patients[i], narrow),
-              Divider(height: 1, color: cs.outlineVariant),
             ],
           ],
         ),
@@ -53,23 +56,32 @@ class PatientTable extends StatelessWidget {
   Widget _row(BuildContext context, PatientSummary p, bool narrow) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
-    final sub = GovukType.style(context, GovukType.p16, color: cs.onSurfaceVariant);
+    final sub = TextStyle(fontSize: 12.5, color: cs.onSurfaceVariant);
     final ageSex = [
       if (p.age != null) '${p.age} y',
       if (p.sex != null && p.sex!.isNotEmpty) p.sex!,
       if (p.language != null) p.language!.toUpperCase(),
     ].join(' · ');
-    return GovukFocusRing(
+    return InkWell(
       onTap: () => onOpen(p),
-      outline: true,
-      semanticLabel: '${actionLabel ?? 'Open patient'} ${p.alias}',
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
             Expanded(
               flex: 3,
               child: Row(children: [
+                CircleAvatar(
+                  radius: 17,
+                  backgroundColor: cs.primaryContainer,
+                  child: Text(
+                    p.alias.replaceAll(RegExp(r'[^0-9]'), '').isEmpty
+                        ? p.alias.characters.first
+                        : p.alias.replaceAll(RegExp(r'[^0-9]'), '').substring(0, 1),
+                    style: TextStyle(color: cs.onPrimaryContainer, fontWeight: FontWeight.w700),
+                  ),
+                ),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Wrap(
@@ -77,12 +89,7 @@ class PatientTable extends StatelessWidget {
                       runSpacing: 2,
                       crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
-                        Text(p.alias,
-                            style: GovukType.style(context, GovukType.p19, bold: true, color: GovukColours.link).copyWith(
-                              color: Theme.of(context).brightness == Brightness.dark ? GovukColours.darkLink : GovukColours.link,
-                              decoration: TextDecoration.underline,
-                              decorationColor: Theme.of(context).brightness == Brightness.dark ? GovukColours.darkLink : GovukColours.link,
-                            )),
+                        Text(p.alias, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14.5)),
                         for (final t in p.tags) TagChip(t, dense: true),
                       ],
                     ),
@@ -94,7 +101,7 @@ class PatientTable extends StatelessWidget {
             Expanded(
               flex: 4,
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(p.diagnosis ?? '—'),
+                Text(p.diagnosis ?? '—', style: const TextStyle(fontWeight: FontWeight.w500)),
                 Text([p.protocol ?? '', if (narrow && p.cycle != null) 'cycle ${p.cycle}'].where((s) => s.isNotEmpty).join(' · '),
                     style: sub, overflow: TextOverflow.ellipsis),
               ]),
@@ -103,7 +110,7 @@ class PatientTable extends StatelessWidget {
               Expanded(
                 flex: 2,
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(p.cycle ?? '—'),
+                  Text(p.cycle ?? '—', style: const TextStyle(fontWeight: FontWeight.w500)),
                   if (p.cycleStart != null) Text('from ${p.cycleStart}', style: sub),
                 ]),
               ),

@@ -1,4 +1,3 @@
-import 'package:aimesis_a2ui_catalog/aimesis_a2ui_catalog.dart';
 import 'package:aimesis_client/aimesis_client.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -26,9 +25,6 @@ class _SignoffTabState extends State<SignoffTab> {
   final _comment = TextEditingController();
   bool _busy = false;
 
-  /// GOV.UK success notification after submit / approve / return.
-  String? _notice;
-
   @override
   void dispose() {
     _comment.dispose();
@@ -41,7 +37,7 @@ class _SignoffTabState extends State<SignoffTab> {
     try {
       await widget.ws.mutate(call);
       _comment.clear();
-      if (mounted) setState(() => _notice = done);
+      messenger.showSnackBar(SnackBar(behavior: SnackBarBehavior.floating, content: Text(done)));
     } catch (e) {
       messenger.showSnackBar(SnackBar(behavior: SnackBarBehavior.floating, content: Text(errorMessage(e))));
     } finally {
@@ -62,22 +58,14 @@ class _SignoffTabState extends State<SignoffTab> {
         _actions(context, acc, plan, id),
       ]);
       final right = _comments(context, plan);
-      final Widget body = wide
-          ? Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Expanded(flex: 6, child: left),
-              const SizedBox(width: 16),
-              Expanded(flex: 5, child: right),
-            ])
-          : Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [left, const SizedBox(height: 16), right]);
-      if (_notice == null) return body;
-      return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        GovukNotificationBanner.success(
-          heading: _notice,
-          onDismiss: () => setState(() => _notice = null),
-        ),
-        const SizedBox(height: GovukSpacing.s6),
-        body,
-      ]);
+      if (wide) {
+        return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Expanded(flex: 6, child: left),
+          const SizedBox(width: 16),
+          Expanded(flex: 5, child: right),
+        ]);
+      }
+      return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [left, const SizedBox(height: 16), right]);
     });
   }
 
@@ -136,7 +124,7 @@ class _SignoffTabState extends State<SignoffTab> {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: steps[i].returned
-                          ? GovukColours.orange
+                          ? const Color(0xFFEA580C)
                           : steps[i].done
                               ? cs.primary
                               : cs.surfaceContainerHighest,
@@ -214,7 +202,7 @@ class _SignoffTabState extends State<SignoffTab> {
           onChanged: (_) => setState(() {}),
         ),
         const SizedBox(height: 14),
-        Wrap(spacing: GovukSpacing.s3, runSpacing: GovukSpacing.s3, children: [
+        Wrap(spacing: 10, runSpacing: 10, alignment: WrapAlignment.end, children: [
           Tooltip(
             message: submitWhy(),
             child: FilledButton.icon(
@@ -237,15 +225,16 @@ class _SignoffTabState extends State<SignoffTab> {
           ),
           Tooltip(
             message: canReview ? 'Approve (pharmacist sign-off)' : reviewWhy(),
-            child: GovukButton(
-              label: 'Approve',
-              icon: Icons.verified_rounded,
+            child: FilledButton.icon(
+              style: FilledButton.styleFrom(backgroundColor: const Color(0xFF15803D), foregroundColor: Colors.white),
               onPressed: canReview && !_busy
                   ? () => _run('Plan approved — Passport is now signed off', (api) {
                         final c = _comment.text.trim();
                         return api.approvePlan(id, comment: c.isEmpty ? null : c);
                       })
                   : null,
+              icon: const Icon(Icons.verified_rounded),
+              label: const Text('Approve'),
             ),
           ),
         ]),

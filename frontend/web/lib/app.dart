@@ -30,9 +30,8 @@ class _AimesisWebAppState extends State<AimesisWebApp> {
       child: MaterialApp.router(
         title: 'AImesis — Care team',
         debugShowCheckedModeBanner: false,
-        // GOV.UK Design System patterns + AImesis brand layer.
-        theme: GovukTheme.light(),
-        darkTheme: GovukTheme.dark(),
+        theme: AimesisTheme.light(),
+        darkTheme: AimesisTheme.dark(),
         themeMode: ThemeMode.system,
         routerConfig: _router,
       ),

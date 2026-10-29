@@ -1,4 +1,3 @@
-import 'package:aimesis_a2ui_catalog/aimesis_a2ui_catalog.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -101,23 +100,25 @@ class _TabStrip extends StatelessWidget {
       case WorkspaceTab.safety:
         final crit = plan.interactions.where((i) => i.isCritical).length;
         final warn = plan.interactions.where((i) => i.isWarning).length;
-        if (crit > 0) return _dot(GovukTagColour.red, '$crit critical');
-        if (warn > 0) return _dot(GovukTagColour.orange, '$warn');
-        if (plan.dexamethasone.blocked) return _dot(GovukTagColour.orange, '!');
+        if (crit > 0) return _dot(const Color(0xFFDC2626), '$crit');
+        if (warn > 0) return _dot(const Color(0xFFD97706), '$warn');
+        if (plan.dexamethasone.blocked) return _dot(const Color(0xFFD97706), '!');
         return null;
       case WorkspaceTab.plan:
-        return plan.refused ? _dot(GovukTagColour.red, 'refused') : null;
+        return plan.refused ? _dot(const Color(0xFFDC2626), '!') : null;
       case WorkspaceTab.evidence:
         final n = plan.uzaVsPogo.where((r) => r.differs).length;
-        return n > 0 ? _dot(GovukTagColour.purple, '$n') : null;
+        return n > 0 ? _dot(const Color(0xFF7C3AED), '$n') : null;
       default:
         return null;
     }
   }
 
-  Widget _dot(GovukTagColour c, String text) => Padding(
-        padding: const EdgeInsets.only(left: 6),
-        child: GovukTag(text, colour: c, small: true),
+  Widget _dot(Color c, String text) => Container(
+        margin: const EdgeInsets.only(left: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+        decoration: BoxDecoration(color: c, borderRadius: BorderRadius.circular(999)),
+        child: Text(text, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
       );
 
   @override
@@ -129,7 +130,7 @@ class _TabStrip extends StatelessWidget {
         color: cs.surface,
         border: Border(bottom: BorderSide(color: cs.outlineVariant)),
       ),
-      padding: EdgeInsets.symmetric(horizontal: GovukLayout.isTablet(context) ? GovukSpacing.s6 : GovukSpacing.s3),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: LayoutBuilder(builder: (context, c) {
         final showIcons = c.maxWidth >= 1250;
         return Wrap(
@@ -168,54 +169,40 @@ class _TabButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // GOV.UK tabs: unselected tabs are underlined links on a grey tab;
-    // the selected tab is a white box with borders joined to the panel.
     final cs = Theme.of(context).colorScheme;
-    final dark = Theme.of(context).brightness == Brightness.dark;
-    final link = dark ? GovukColours.darkLink : GovukColours.link;
+    final fg = selected ? cs.primary : cs.onSurfaceVariant;
     return Tooltip(
       message: tab.story,
       waitDuration: const Duration(milliseconds: 500),
-      child: Semantics(
-        selected: selected,
-        child: Padding(
-          padding: const EdgeInsets.only(right: 5, top: 10),
-          child: GovukFocusRing.builder(
-            onTap: onTap,
-            semanticLabel: 'Step $index: ${tab.label}',
-            builder: (context, focused, hovered) {
-              final fg = focused ? GovukColours.focusText : (selected ? cs.onSurface : link);
-              final label = Text(tab.label,
-                  style: GovukType.style(context, GovukType.p19, bold: selected, color: fg).copyWith(
-                    decoration: selected || focused ? TextDecoration.none : TextDecoration.underline,
-                    decorationColor: fg,
-                    decorationThickness: hovered ? 3 : 1.5,
-                  ));
-              final row = Row(mainAxisSize: MainAxisSize.min, children: [
-                Text('$index. ', style: GovukType.style(context, GovukType.p19, bold: selected, color: fg)),
-                if (showIcon) ...[
-                  Icon(tab.icon, size: 18, color: fg),
-                  const SizedBox(width: 6),
-                ],
-                label,
-                if (badge != null) badge!,
-              ]);
-              return Container(
-                padding: EdgeInsets.fromLTRB(15, selected ? 12 : 10, 15, selected ? 13 : 10),
-                decoration: BoxDecoration(
-                  color: selected ? cs.surface : (dark ? GovukColours.darkSurfaceHigh : GovukColours.lightGrey),
-                  border: selected
-                      ? Border(
-                          top: BorderSide(color: dark ? GovukColours.brandOnDark : GovukColours.brand, width: 5),
-                          left: BorderSide(color: cs.outlineVariant),
-                          right: BorderSide(color: cs.outlineVariant),
-                        )
-                      : null,
-                ),
-                child: focused ? GovukFocusedText(child: row) : row,
-              );
-            },
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(12, 12, 14, 10),
+          decoration: BoxDecoration(
+            border: Border(bottom: BorderSide(color: selected ? cs.primary : Colors.transparent, width: 3)),
           ),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            Container(
+              width: 20,
+              height: 20,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: selected ? cs.primary : cs.surfaceContainerHighest,
+              ),
+              child: Text('$index',
+                  style: TextStyle(
+                      fontSize: 11, fontWeight: FontWeight.w700, color: selected ? cs.onPrimary : cs.onSurfaceVariant)),
+            ),
+            const SizedBox(width: 8),
+            if (showIcon) ...[
+              Icon(tab.icon, size: 18, color: fg),
+              const SizedBox(width: 6),
+            ],
+            Text(tab.label,
+                style: TextStyle(color: fg, fontWeight: selected ? FontWeight.w700 : FontWeight.w500, fontSize: 13.5)),
+            if (badge != null) badge!,
+          ]),
         ),
       ),
     );
