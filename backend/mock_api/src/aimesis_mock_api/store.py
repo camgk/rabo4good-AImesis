@@ -1,135 +1,124 @@
-"""Storage for the mock API.
+"""Storage for the mock API: the shared Firestore `(default)` database layout.
 
-Two implementations of the same small interface:
-- FirestoreStore: named Firestore database (env FIRESTORE_DATABASE, default "aimesis-demo"),
-  project from env GOOGLE_CLOUD_PROJECT. Collections: accounts, patients, plan_state,
-  episodes (field patientId), resources.
-- MemoryStore: dicts in memory, used when env STORE=memory (local dev, tests).
+One implementation over a Firestore-like client:
+- FirestoreStore: google.cloud.firestore.Client (env GOOGLE_CLOUD_PROJECT, FIRESTORE_DATABASE default "(default)").
+- MemoryStore: the same code over aimesis_mock_api.fake_firestore.FakeFirestore (env STORE=memory; tests,
+  local dev). Starts empty; set LOAD_DEMO_ON_START=true (memory only) to load the demo dataset on start.
 
-Documents are plain camelCase dicts (the wire format).
+Documents are snake_case (see docs.py and contracts/schemas/*.schema.json). Queries use a single equality
+(or array_contains) filter only and sort in Python, so no composite indexes are needed.
 """
 
 from __future__ import annotations
 
-import copy
 import os
-import threading
-from abc import ABC, abstractmethod
+from typing import Any
 
-from . import seed
+from .docs import DEMO_TAG, account_internal
 
-COLLECTIONS = ("accounts", "patients", "plan_state", "episodes", "resources")
+DEFAULT_DATABASE = "(default)"
 
 
-class Store(ABC):
-    @abstractmethod
-    def get(self, collection: str, doc_id: str) -> dict | None: ...
+def _where(col, field: str, op: str, value: Any):
+    from google.cloud.firestore_v1.base_query import FieldFilter
 
-    @abstractmethod
-    def put(self, collection: str, doc_id: str, data: dict) -> None: ...
+    return col.where(filter=FieldFilter(field, op, value))
 
-    @abstractmethod
-    def list(self, collection: str) -> list[dict]: ...
 
-    @abstractmethod
-    def query(self, collection: str, field: str, value) -> list[dict]: ...
+class Store:
+    """Domain-level reads/writes against a Firestore(-like) client `db`."""
 
-    @abstractmethod
-    def wipe(self, collection: str) -> None: ...
+    def __init__(self, db) -> None:
+        self.db = db
 
-    @abstractmethod
-    def is_empty(self, collection: str) -> bool: ...
+    # ---- generic
+    def get(self, collection: str, doc_id: str) -> dict | None:
+        snap = self.db.collection(collection).document(doc_id).get()
+        return snap.to_dict() if snap.exists else None
 
-    # ---- convenience
-    def find_account_by_email(self, email: str) -> dict | None:
-        hits = self.query("accounts", "email", email.strip().lower())
-        return hits[0] if hits else None
+    def set(self, collection: str, doc_id: str, data: dict, merge: bool = False) -> None:
+        self.db.collection(collection).document(doc_id).set(data, merge=merge)
 
-    def seed(self) -> None:
-        """Wipe everything and write the demo seed."""
-        for c in COLLECTIONS:
-            self.wipe(c)
-        for a in seed.accounts():
-            self.put("accounts", a["id"], a)
-        for p in seed.patients():
-            self.put("patients", p["id"], p)
-        for s in seed.plan_states():
-            self.put("plan_state", s["patientId"], s)
-        for r in seed.resources():
-            self.put("resources", r["id"], r)
+    def update(self, collection: str, doc_id: str, data: dict) -> None:
+        self.db.collection(collection).document(doc_id).update(data)
+
+    def stream(self, collection: str) -> list[dict]:
+        return [s.to_dict() for s in self.db.collection(collection).stream()]
+
+    def where(self, collection: str, field: str, op: str, value: Any) -> list[dict]:
+        return [s.to_dict() for s in _where(self.db.collection(collection), field, op, value).stream()]
+
+    # ---- accounts (internal camelCase dicts, see docs.account_internal)
+    def account(self, account_id: str) -> dict | None:
+        doc = self.get("accounts", account_id)
+        return account_internal(doc) if doc else None
+
+    def account_by_email(self, email: str) -> dict | None:
+        hits = self.where("accounts", "email", "==", email.strip().lower())
+        return account_internal(hits[0]) if hits else None
+
+    def demo_accounts(self) -> list[dict]:
+        return [account_internal(d) for d in self.where("accounts", "tags", "array_contains", DEMO_TAG)]
+
+    def set_account_patients(self, account_id: str, patient_ids: list[str]) -> None:
+        self.update("accounts", account_id, {"patient_ids": list(patient_ids)})
+
+    # ---- patients (snake_case docs)
+    def patient(self, patient_id: str) -> dict | None:
+        return self.get("patients", patient_id)
+
+    def patients(self, tag: str | None = None) -> list[dict]:
+        rows = self.where("patients", "tags", "array_contains", tag) if tag else self.stream("patients")
+        return sorted(rows, key=lambda d: d.get("patient_id", ""))
+
+    def patient_ids(self) -> list[str]:
+        return [d["patient_id"] for d in self.patients()]
+
+    # ---- passports
+    def passport(self, passport_id: str) -> dict | None:
+        return self.get("passports", passport_id)
+
+    def save_passport(self, doc: dict) -> None:
+        # Keep top-level fields other services may have added; replace every field we own as a whole
+        # (a deep merge would leave stale sign-off names behind when a sign-off is withdrawn).
+        existing = self.passport(doc["passport_id"]) or {}
+        self.set("passports", doc["passport_id"], {**existing, **doc})
+
+    # ---- episodes
+    def episodes(self, patient_id: str) -> list[dict]:
+        rows = self.where("episodes", "patient_id", "==", patient_id)
+        return sorted(rows, key=lambda d: d.get("timestamp", ""), reverse=True)
+
+    def add_episode(self, doc: dict) -> None:
+        self.set("episodes", doc["episode_id"], doc)
+
+    # ---- reference data
+    def resources(self) -> list[dict]:
+        return sorted(self.stream("reference_resources"), key=lambda d: d.get("resource_id", ""))
 
 
 class MemoryStore(Store):
     def __init__(self) -> None:
-        self._data: dict[str, dict[str, dict]] = {c: {} for c in COLLECTIONS}
-        self._lock = threading.Lock()
+        from .fake_firestore import FakeFirestore
 
-    def get(self, collection, doc_id):
-        with self._lock:
-            d = self._data.setdefault(collection, {}).get(doc_id)
-            return copy.deepcopy(d) if d is not None else None
-
-    def put(self, collection, doc_id, data):
-        with self._lock:
-            self._data.setdefault(collection, {})[doc_id] = copy.deepcopy(data)
-
-    def list(self, collection):
-        with self._lock:
-            return [copy.deepcopy(v) for v in self._data.setdefault(collection, {}).values()]
-
-    def query(self, collection, field, value):
-        return [d for d in self.list(collection) if d.get(field) == value]
-
-    def wipe(self, collection):
-        with self._lock:
-            self._data[collection] = {}
-
-    def is_empty(self, collection):
-        with self._lock:
-            return not self._data.setdefault(collection, {})
+        super().__init__(FakeFirestore())
 
 
 class FirestoreStore(Store):
     def __init__(self, project: str | None = None, database: str | None = None) -> None:
         from google.cloud import firestore  # imported lazily so memory mode needs no credentials
 
-        self._db = firestore.Client(
-            project=project or os.environ.get("GOOGLE_CLOUD_PROJECT") or None,
-            database=database or os.environ.get("FIRESTORE_DATABASE", "aimesis-demo"),
+        super().__init__(
+            firestore.Client(
+                project=project or os.environ.get("GOOGLE_CLOUD_PROJECT") or None,
+                database=database or os.environ.get("FIRESTORE_DATABASE") or DEFAULT_DATABASE,
+            )
         )
 
-    def get(self, collection, doc_id):
-        snap = self._db.collection(collection).document(doc_id).get()
-        return snap.to_dict() if snap.exists else None
 
-    def put(self, collection, doc_id, data):
-        self._db.collection(collection).document(doc_id).set(data)
-
-    def list(self, collection):
-        return [s.to_dict() for s in self._db.collection(collection).stream()]
-
-    def query(self, collection, field, value):
-        from google.cloud.firestore_v1.base_query import FieldFilter
-
-        q = self._db.collection(collection).where(filter=FieldFilter(field, "==", value))
-        return [s.to_dict() for s in q.stream()]
-
-    def wipe(self, collection):
-        col = self._db.collection(collection)
-        while True:
-            docs = list(col.limit(400).stream())
-            if not docs:
-                break
-            batch = self._db.batch()
-            for d in docs:
-                batch.delete(d.reference)
-            batch.commit()
-
-    def is_empty(self, collection):
-        return not list(self._db.collection(collection).limit(1).stream())
+def is_memory() -> bool:
+    return os.environ.get("STORE", "").lower() == "memory"
 
 
 def make_store() -> Store:
-    if os.environ.get("STORE", "").lower() == "memory":
-        return MemoryStore()
-    return FirestoreStore()
+    return MemoryStore() if is_memory() else FirestoreStore()

@@ -20,7 +20,7 @@ Severity = Literal["critical", "warning", "info"]
 Lang = Literal["nl", "fr", "en"]
 EpisodeType = Literal["nausea", "vomiting"]
 
-ADVISORY = "Advisory only — requires clinician sign-off. Demo data, not for clinical use."
+ADVISORY = "Advisory only — requires clinician sign-off."
 
 
 class ApiModel(BaseModel):
@@ -82,6 +82,7 @@ class RiskFactors(ApiModel):
 class PatientSummary(ApiModel):
     id: str
     alias: str
+    tags: list[str] = Field(default_factory=list)
     age: int
     sex: str
     diagnosis: str

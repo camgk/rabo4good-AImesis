@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import hmac
 import os
 from datetime import datetime, timedelta, timezone
@@ -34,9 +35,11 @@ def issue_token(account: dict) -> str:
     return jwt.encode(payload, token_secret(), algorithm=ALGO)
 
 
-def check_password(stored_hash: str, password: str) -> bool:
-    from .seed import hash_password
+def hash_password(pw: str) -> str:
+    return hashlib.sha256(pw.encode("utf-8")).hexdigest()
 
+
+def check_password(stored_hash: str, password: str) -> bool:
     return hmac.compare_digest(stored_hash or "", hash_password(password))
 
 
@@ -61,12 +64,12 @@ def current_account(request: Request, authorization: str | None = Header(default
     except jwt.PyJWTError:
         raise ApiError(401, "Invalid token")
     store = request.app.state.store
-    acc = store.get("accounts", claims.get("sub", ""))
+    acc = store.account(claims.get("sub", ""))
     if acc is None:
         raise ApiError(401, "Account no longer exists — please log in again")
     if acc["role"] in CLINICIAN_ROLES:
         # Clinicians see every patient, including ones added later.
-        acc["patientIds"] = sorted(p["id"] for p in store.list("patients"))
+        acc["patientIds"] = store.patient_ids()
     return acc
 
 

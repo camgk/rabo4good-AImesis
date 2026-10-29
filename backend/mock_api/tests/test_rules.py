@@ -2,19 +2,15 @@
 
 import pytest
 
-from aimesis_mock_api import rules_mock, seed
+from aimesis_mock_api import demo_data, docs, rules_mock
 from aimesis_mock_api.models import Episode, Patient
 
 
-def patient(pid: str, **overrides) -> Patient:
-    doc = next(p for p in seed.patients() if p["id"] == pid)
-    data = {
-        **doc,
-        "riskFactors": seed.DEFAULT_RISK_FACTORS[pid],
-        "overallTier": "minimal",
-        "planStatus": "draft",
-        **overrides,
-    }
+def patient(casus: str, **overrides) -> Patient:
+    """Internal Patient for "casus-N", built from the demo patient doc exactly like the API does."""
+    pid = demo_data.CASUS_IDS[int(casus.rsplit("-", 1)[1])]
+    doc = next(p for p in demo_data.patients() if p["patient_id"] == pid)
+    data = {**docs.patient_internal(doc), "overallTier": "minimal", "planStatus": "draft", **overrides}
     return Patient.model_validate(data)
 
 
@@ -137,7 +133,7 @@ def test_two_moderates_same_day_is_high():
 def test_current_cycle_episode_triggers_stepup():
     p = patient("casus-2")
     ep = Episode(
-        id="e1", patient_id="casus-2", type="vomiting", at="2026-10-30T10:00:00Z",
+        id="e1", patient_id="PAT-2026-0002", type="vomiting", at="2026-10-30T10:00:00Z",
         cycle_day=2, logged_by="acc-parent2", logged_by_role="parent",
     )
     plan = rules_mock.compute_plan(p, [ep])

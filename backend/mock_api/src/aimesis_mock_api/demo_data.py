@@ -16,10 +16,10 @@ Safety rules of clear_demo_data():
 
 from __future__ import annotations
 
+import hashlib
 from typing import Any
 
 from . import docs, rules_mock
-from .auth import hash_password
 from .docs import DEMO_TAG, now_iso
 from .models import Patient
 
@@ -170,6 +170,11 @@ def patients() -> list[dict]:
             pairing_code="C4-DDI7",
         ),
     ]
+
+
+def hash_password(pw: str) -> str:
+    """sha256 hex, same as auth.hash_password (kept here so the scripts don't need fastapi/jwt)."""
+    return hashlib.sha256(pw.encode("utf-8")).hexdigest()
 
 
 def accounts() -> list[dict]:

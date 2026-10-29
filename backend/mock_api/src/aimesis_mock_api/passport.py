@@ -1,7 +1,7 @@
 """CINV Patient Passport builder (NL / FR / EN) for the mock API.
 
 Takes a computed Plan and turns it into a family-facing day-by-day schedule.
-Translations are hand-written demo strings; no LLM involved.
+Translations are hand-written strings; no LLM involved.
 """
 
 from __future__ import annotations
@@ -42,10 +42,7 @@ TEXT: dict[str, dict] = {
             "Bloed of donker 'koffiedik' in het braaksel",
             "Misselijkheid of braken blijft ondanks de extra medicatie",
         ],
-        "disclaimer": (
-            "Demo-gegevens, niet voor klinisch gebruik. Dit schema is pas geldig na ondertekening door "
-            "de oncoloog en de ziekenhuisapotheker. Bel bij twijfel altijd de afdeling."
-        ),
+        "disclaimer": "Dit schema werd opgesteld door uw zorgteam. Bel de afdeling als u zich zorgen maakt.",
     },
     "fr": {
         "title": "Passeport CINV · {alias}",
@@ -75,10 +72,7 @@ TEXT: dict[str, dict] = {
             "Du sang ou un aspect « marc de café » dans les vomissements",
             "Les nausées ou vomissements continuent malgré le traitement supplémentaire",
         ],
-        "disclaimer": (
-            "Données de démonstration, pas pour usage clinique. Ce schéma n'est valable qu'après signature "
-            "par l'oncologue et le pharmacien hospitalier. En cas de doute, appelez toujours le service."
-        ),
+        "disclaimer": "Ce schéma a été préparé par votre équipe soignante. Appelez le service si vous êtes inquiet.",
     },
     "en": {
         "title": "CINV Passport · {alias}",
@@ -108,10 +102,7 @@ TEXT: dict[str, dict] = {
             "Blood or dark 'coffee grounds' in the vomit",
             "Nausea or vomiting continues despite the extra medicine",
         ],
-        "disclaimer": (
-            "Demo data, not for clinical use. This schedule is only valid once signed off by the oncologist "
-            "and the hospital pharmacist. If in doubt, always call the ward."
-        ),
+        "disclaimer": "This schedule was prepared by your care team. Call the ward if you are worried.",
     },
 }
 

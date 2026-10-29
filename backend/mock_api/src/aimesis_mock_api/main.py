@@ -1,25 +1,24 @@
 """AImesis mock API — FastAPI app.
 
-Demo stand-in for backend/api + backend/agent so the Flutter frontends can run today.
+Stand-in for backend/api + backend/agent so the Flutter frontends can run today.
 Clinical logic comes from the MOCK rules in rules_mock.py (the real engine is backend/rules).
-Advisory only — requires clinician sign-off. Demo data, not for clinical use.
+Data lives in the shared Firestore `(default)` database (snake_case docs, see docs.py); the REST API is camelCase.
+Advisory only — requires clinician sign-off.
 """
 
 from __future__ import annotations
 
 import logging
 import os
-import uuid
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
 
-from fastapi import Depends, FastAPI, Header, Query, Request
+from fastapi import Depends, FastAPI, Query, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from . import rules_mock
+from . import docs, rules_mock
 from .auth import (
     CLINICIAN_ROLES,
     FAMILY_ROLES,
@@ -30,12 +29,11 @@ from .auth import (
     issue_token,
     public_account,
     require_roles,
-    token_secret,
 )
+from .docs import now_iso
 from .models import (
     ApproveRequest,
     DemoAccount,
-    Episode,
     EpisodeCreate,
     LoginRequest,
     LoginResponse,
@@ -51,16 +49,17 @@ from .models import (
     Signoffs,
 )
 from .passport import build_passport
-from .store import Store, make_store
+from .store import MemoryStore, Store, is_memory, make_store
 
 log = logging.getLogger("aimesis_mock_api")
 
 LANGS = ("nl", "fr", "en")
 RESOURCE_LANGS = ("nl", "fr", "en", "de")
+ROLE_ORDER = {"oncologist": 0, "nurse": 1, "pharmacist": 2, "patient": 3, "parent": 4}
 
 
-def now_iso() -> str:
-    return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+def _truthy(v: str | None) -> bool:
+    return (v or "").strip().lower() in ("1", "true", "yes", "on")
 
 
 # --------------------------------------------------------------------------- domain helpers
@@ -68,47 +67,48 @@ def _store(request: Request) -> Store:
     return request.app.state.store
 
 
-def load_state(store: Store, patient_id: str) -> dict:
-    st = store.get("plan_state", patient_id)
-    if st is None:
-        from .seed import DEFAULT_RISK_FACTORS
-
-        st = {
-            "patientId": patient_id,
-            "status": "draft",
-            "riskFactors": dict(DEFAULT_RISK_FACTORS.get(patient_id, RiskFactors().wire())),
-            "signoffs": {"oncologist": None, "pharmacist": None},
-            "comments": [],
-        }
-    return st
-
-
 def load_patient_doc(store: Store, patient_id: str) -> dict:
-    doc = store.get("patients", patient_id)
+    doc = store.patient(patient_id)
     if doc is None:
         raise ApiError(404, f"Patient '{patient_id}' not found")
     return doc
 
 
-def episodes_for(store: Store, patient_id: str) -> list[Episode]:
-    eps = [Episode.model_validate(e) for e in store.query("episodes", "patientId", patient_id)]
-    eps.sort(key=lambda e: e.at, reverse=True)
-    return eps
+def load_state(store: Store, patient_doc: dict) -> tuple[dict, dict | None]:
+    """(workflow state, raw passport doc or None) for the patient's current-cycle passport."""
+    pp = store.passport(docs.passport_id_for(patient_doc))
+    return docs.state_from_passport(pp, patient_doc), pp
+
+
+def build_from_doc(store: Store, doc: dict, state: dict | None = None) -> tuple[Patient, Plan, dict, dict | None]:
+    """Patient doc + passport state + episodes -> (Patient, recomputed Plan, state, passport doc)."""
+    existing = None
+    if state is None:
+        state, existing = load_state(store, doc)
+    internal = docs.patient_internal(doc)
+    patient = Patient.model_validate(
+        {**internal, "riskFactors": state["riskFactors"], "overallTier": "minimal", "planStatus": state["status"]}
+    )
+    episodes = [docs.episode_internal(e) for e in store.episodes(doc["patient_id"])]
+    plan = rules_mock.compute_plan(patient, episodes)
+    plan.status = state["status"]
+    plan.signoffs = Signoffs.model_validate(state.get("signoffs") or {})
+    plan.comments = [PlanComment.model_validate(c) for c in state.get("comments", [])]
+    patient.overall_tier = plan.overall_tier
+    return patient, plan, state, existing
 
 
 def build(store: Store, patient_id: str) -> tuple[Patient, Plan]:
-    """Load patient + state + episodes and recompute the plan."""
-    doc = load_patient_doc(store, patient_id)
-    st = load_state(store, patient_id)
-    patient = Patient.model_validate(
-        {**doc, "riskFactors": st["riskFactors"], "overallTier": "minimal", "planStatus": st["status"]}
-    )
-    plan = rules_mock.compute_plan(patient, episodes_for(store, patient_id))
-    plan.status = st["status"]
-    plan.signoffs = Signoffs.model_validate(st.get("signoffs") or {})
-    plan.comments = [PlanComment.model_validate(c) for c in st.get("comments", [])]
-    patient.overall_tier = plan.overall_tier
+    patient, plan, _, _ = build_from_doc(store, load_patient_doc(store, patient_id))
     return patient, plan
+
+
+def save_state(store: Store, patient_doc: dict, state: dict) -> Plan:
+    """Persist the workflow state as the passports/{passport_id} doc and return the recomputed plan."""
+    existing = store.passport(docs.passport_id_for(patient_doc))
+    patient, plan, _, _ = build_from_doc(store, patient_doc, state)
+    store.save_passport(docs.passport_doc(patient_doc, patient, plan, state, existing))
+    return plan
 
 
 def summary_of(patient: Patient) -> PatientSummary:
@@ -121,8 +121,7 @@ def cycle_day(at: str, cycle_start: str) -> int:
 
 
 def all_resources(store: Store) -> list[Resource]:
-    rows = sorted(store.list("resources"), key=lambda r: r.get("id", ""))
-    return [Resource.model_validate(r) for r in rows]
+    return [docs.resource_internal(r) for r in store.resources()]
 
 
 # --------------------------------------------------------------------------- app
@@ -131,19 +130,21 @@ async def lifespan(app: FastAPI):
     if getattr(app.state, "store", None) is None:
         app.state.store = make_store()
     store: Store = app.state.store
-    if os.environ.get("SEED_ON_START", "true").lower() in ("1", "true", "yes"):
-        if store.is_empty("accounts"):
-            log.info("Seeding demo data")
-            store.seed()
+    # Local dev only: the in-memory store starts empty; load the demo dataset with the same loader the
+    # scripts use. Never honoured against Firestore (use infra/scripts/demo-data.sh load there).
+    if isinstance(store, MemoryStore) and is_memory() and _truthy(os.environ.get("LOAD_DEMO_ON_START")):
+        from .demo_data import load_demo_data
+
+        log.info("LOAD_DEMO_ON_START: loading demo data into the memory store")
+        load_demo_data(store.db, log=log.info)
     yield
 
 
 def create_app(store: Store | None = None) -> FastAPI:
     app = FastAPI(
         title="AImesis mock API",
-        version="0.1.0",
-        description="Demo stand-in with MOCK rules. Advisory only — requires clinician sign-off. "
-        "Demo data, not for clinical use.",
+        version="0.2.0",
+        description="Stand-in API with MOCK rules. Advisory only — requires clinician sign-off.",
         lifespan=lifespan,
     )
     app.state.store = store
@@ -187,20 +188,19 @@ def create_app(store: Store | None = None) -> FastAPI:
 
     @app.get("/auth/demo-accounts")
     def demo_accounts(request: Request):
-        accs = sorted(_store(request).list("accounts"), key=lambda a: a["id"])
-        order = {"oncologist": 0, "nurse": 1, "pharmacist": 2, "patient": 3, "parent": 4}
-        accs.sort(key=lambda a: (order.get(a["role"], 9), a["id"]))
-        return [
-            DemoAccount(email=a["email"], role=a["role"], display_name=a["displayName"]).wire() for a in accs
-        ]
+        """Accounts tagged `demo` only (empty until demo data is loaded)."""
+        accs = _store(request).demo_accounts()
+        accs.sort(key=lambda a: (ROLE_ORDER.get(a["role"], 9), a["id"]))
+        return [DemoAccount(email=a["email"], role=a["role"], display_name=a["displayName"]).wire() for a in accs]
 
     @app.post("/auth/login")
     def login(body: LoginRequest, request: Request):
-        acc = _store(request).find_account_by_email(body.email)
+        store = _store(request)
+        acc = store.account_by_email(body.email)
         if acc is None or not check_password(acc.get("passwordHash", ""), body.password):
             raise ApiError(401, "Invalid email or password")
         if acc["role"] in CLINICIAN_ROLES:
-            acc["patientIds"] = sorted(p["id"] for p in _store(request).list("patients"))
+            acc["patientIds"] = store.patient_ids()
         return LoginResponse(token=issue_token(acc), account=public_account(acc)).wire()
 
     @app.get("/me")
@@ -209,13 +209,16 @@ def create_app(store: Store | None = None) -> FastAPI:
 
     # ---- patients
     @app.get("/patients")
-    def list_patients(request: Request, acc: dict = Depends(current_account)):
+    def list_patients(
+        request: Request, tag: str | None = Query(default=None), acc: dict = Depends(current_account)
+    ):
         store = _store(request)
+        allowed = set(acc.get("patientIds", []))
         out = []
-        for pid in sorted(acc.get("patientIds", [])):
-            if store.get("patients", pid) is None:
+        for doc in store.patients(tag=tag or None):
+            if doc["patient_id"] not in allowed:
                 continue
-            patient, _ = build(store, pid)
+            patient, _, _, _ = build_from_doc(store, doc)
             out.append(summary_of(patient).wire())
         return out
 
@@ -240,50 +243,46 @@ def create_app(store: Store | None = None) -> FastAPI:
         acc: dict = Depends(require_roles("oncologist", "nurse")),
     ):
         store = _store(request)
-        load_patient_doc(store, patient_id)
-        st = load_state(store, patient_id)
+        doc = load_patient_doc(store, patient_id)
+        st, _ = load_state(store, doc)
         st["riskFactors"] = body.model_dump(mode="json", by_alias=True, exclude_none=True)
         # Plan changed → back to draft, previous sign-offs no longer valid.
         st["status"] = "draft"
         st["signoffs"] = {"oncologist": None, "pharmacist": None}
-        store.put("plan_state", patient_id, st)
-        _, plan = build(store, patient_id)
-        return plan.wire()
+        return save_state(store, doc, st).wire()
 
     @app.post("/patients/{patient_id}/plan/submit")
     def submit_plan(patient_id: str, request: Request, acc: dict = Depends(require_roles("oncologist"))):
         store = _store(request)
-        _, plan = build(store, patient_id)
+        doc = load_patient_doc(store, patient_id)
+        _, plan, st, _ = build_from_doc(store, doc)
         if plan.refused:
             raise ApiError(409, "Plan is refused (missing data or unknown drug) and cannot be submitted")
-        st = load_state(store, patient_id)
         st["status"] = "awaiting_pharmacist"
         st["signoffs"] = {
             "oncologist": Signoff(by=acc["displayName"], at=now_iso()).wire(),
             "pharmacist": None,
         }
-        store.put("plan_state", patient_id, st)
-        return build(store, patient_id)[1].wire()
+        return save_state(store, doc, st).wire()
 
     def _pharmacist_decision(patient_id: str, request: Request, acc: dict, approve: bool, comment: str | None):
         store = _store(request)
-        load_patient_doc(store, patient_id)
-        st = load_state(store, patient_id)
+        doc = load_patient_doc(store, patient_id)
+        st, _ = load_state(store, doc)
         if st["status"] != "awaiting_pharmacist":
             raise ApiError(409, "Plan must be submitted by the oncologist first (status awaiting_pharmacist)")
         ts = now_iso()
         if approve:
             st["status"] = "approved"
-            st.setdefault("signoffs", {})["pharmacist"] = Signoff(by=acc["displayName"], at=ts).wire()
+            st["signoffs"] = {**st["signoffs"], "pharmacist": Signoff(by=acc["displayName"], at=ts).wire()}
         else:
             st["status"] = "returned"
-            st["signoffs"] = {**(st.get("signoffs") or {}), "pharmacist": None}
+            st["signoffs"] = {**st["signoffs"], "pharmacist": None}
         if comment:
             st.setdefault("comments", []).append(
                 PlanComment(by=acc["displayName"], role=acc["role"], at=ts, text=comment).wire()
             )
-        store.put("plan_state", patient_id, st)
-        return build(store, patient_id)[1].wire()
+        return save_state(store, doc, st).wire()
 
     @app.post("/patients/{patient_id}/plan/approve")
     def approve_plan(
@@ -322,43 +321,32 @@ def create_app(store: Store | None = None) -> FastAPI:
         ensure_patient_access(acc, patient_id)
         store = _store(request)
         load_patient_doc(store, patient_id)
-        return [e.wire() for e in episodes_for(store, patient_id)]
+        return [docs.episode_internal(e).wire() for e in store.episodes(patient_id)]
 
     @app.post("/patients/{patient_id}/episodes", status_code=201)
     def log_episode(patient_id: str, body: EpisodeCreate, request: Request, acc: dict = Depends(current_account)):
         ensure_patient_access(acc, patient_id)
         store = _store(request)
         doc = load_patient_doc(store, patient_id)
-        at = body.at or now_iso()
         try:
-            datetime.fromisoformat(at.replace("Z", "+00:00"))
+            at = docs.to_utc_iso(body.at) if body.at else now_iso()
         except ValueError:
             raise ApiError(422, "at must be an ISO-8601 timestamp")
-        ep = Episode(
-            id=f"ep-{uuid.uuid4().hex[:12]}",
-            patient_id=patient_id,
-            type=body.type,
-            severity=body.severity,
-            at=at,
-            cycle_day=cycle_day(at, doc["cycleStart"]),
-            logged_by=acc["id"],
-            logged_by_role=acc["role"],
-        )
-        store.put("episodes", ep.id, ep.wire())
-        return ep.wire()
+        ep = docs.episode_doc(doc, acc, body.type, body.severity, at, cycle_day(at, doc.get("cycle_start_date") or ""))
+        store.add_episode(ep)
+        return docs.episode_internal(ep).wire()
 
     # ---- pairing
     @app.post("/pairing")
     def pairing(body: PairingRequest, request: Request, acc: dict = Depends(require_roles(*FAMILY_ROLES))):
         store = _store(request)
         code = body.code.strip().upper()
-        hits = [p for p in store.list("patients") if p.get("pairingCode", "").upper() == code]
+        hits = [p for p in store.patients() if (p.get("pairing_code") or "").upper() == code]
         if not hits:
             raise ApiError(404, "Unknown pairing code")
-        pid = hits[0]["id"]
+        pid = hits[0]["patient_id"]
         if pid not in acc.get("patientIds", []):
-            acc["patientIds"] = list(acc.get("patientIds", [])) + [pid]
-            store.put("accounts", acc["id"], acc)
+            store.set_account_patients(acc["id"], list(acc.get("patientIds", [])) + [pid])
         patient, _ = build(store, pid)
         return summary_of(patient).wire()
 
@@ -372,14 +360,6 @@ def create_app(store: Store | None = None) -> FastAPI:
                 raise ApiError(400, "lang must be one of nl, fr, en, de")
             res = [r for r in res if r.language == lang]
         return [r.wire() for r in res]
-
-    # ---- admin
-    @app.post("/admin/reset")
-    def admin_reset(request: Request, x_demo_reset: str | None = Header(default=None)):
-        if not x_demo_reset or x_demo_reset != token_secret():
-            raise ApiError(403, "Missing or wrong X-Demo-Reset header")
-        _store(request).seed()
-        return {"ok": True}
 
     return app
 
