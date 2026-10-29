@@ -134,7 +134,7 @@ class AImesisTools:
         uza_tiers: Dict[str, str] = {}
         for d in drugs:
             dose = doses.get(d)
-            if d in {"cisplatin", "carboplatin", "dacarbazine", "carmustine", "ifosfamide", "doxorubicin", "epirubicin"}:
+            if d in {"cisplatin", "carboplatin", "dacarbazine", "carmustine", "doxorubicin", "epirubicin"}:
                 uza_tiers[d] = "High"
             elif d == "cyclophosphamide":
                 uza_tiers[d] = "High" if (dose is not None and dose > 1500.0) else "Moderate"

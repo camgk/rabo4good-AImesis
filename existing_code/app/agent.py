@@ -29,6 +29,11 @@ from typing import Any
 from google.adk.agents import Agent
 from google.adk.apps import App
 
+from mocks.data_products.tools import (
+    evaluate_uza_cinv_policy_v2,
+    generate_cinv_patient_passport,
+)
+
 MODEL = "gemini-2.5-flash"
 ADVISORY_LABEL = "Advisory Only — Requires Clinician Sign-Off"
 
@@ -989,6 +994,8 @@ root_agent = Agent(
         check_ddi_interactions,
         get_pogo_guideline_recommendation,
         calculate_risk_adjusted_regimen,
+        evaluate_uza_cinv_policy_v2,
+        generate_cinv_patient_passport,
     ],
 )
 

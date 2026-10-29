@@ -1,0 +1,21 @@
+[project]
+name = "aimesis-agent"
+version = "0.1.0"
+description = "ADK agent service with AG-UI endpoint and A2UI surface builder for AImesis"
+requires-python = ">=3.11,<3.14"
+dependencies = [
+    "aimesis-rules",
+    "fastapi>=0.115.0",
+    "uvicorn>=0.32.0",
+    "pydantic>=2.7.0",
+    "python-dotenv>=1.0.0",
+    "google-adk>=1.0.0",
+    "google-genai>=1.0.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/aimesis_agent"]
