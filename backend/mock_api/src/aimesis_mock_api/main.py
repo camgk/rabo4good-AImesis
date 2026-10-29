@@ -179,6 +179,8 @@ def create_app(store: Store | None = None) -> FastAPI:
         return JSONResponse({"error": "Internal server error"}, status_code=500)
 
     # ---- health + auth
+    # Cloud Run's front end reserves /healthz, so /health is the public check.
+    @app.get("/health")
     @app.get("/healthz")
     def healthz():
         return {"ok": True}

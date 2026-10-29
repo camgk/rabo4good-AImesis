@@ -21,7 +21,7 @@ const _ui = {
     'time': 'Uur',
     'medicine': 'Geneesmiddel',
     'amount': 'Dosis',
-    'route': 'Hoe',
+    'route': 'Toediening',
   },
   'fr': {
     'schedule': 'Schéma par jour',
@@ -32,7 +32,7 @@ const _ui = {
     'time': 'Heure',
     'medicine': 'Médicament',
     'amount': 'Dose',
-    'route': 'Comment',
+    'route': 'Voie',
   },
   'en': {
     'schedule': 'Daily schedule',
@@ -287,7 +287,7 @@ class PassportCard extends StatelessWidget {
   Widget _dayTable(BuildContext context, PassportDay d) {
     const head = TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF5B6B68));
     return Container(
-      width: 380,
+      width: 392,
       decoration: BoxDecoration(
         border: Border.all(color: const Color(0xFFD5DDDB)),
         borderRadius: BorderRadius.circular(8),
@@ -309,8 +309,8 @@ class PassportCard extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.fromLTRB(12, 6, 12, 2),
           child: Row(children: [
-            SizedBox(width: 52, child: Text(t('time'), style: head)),
-            Expanded(flex: 4, child: Text(t('medicine'), style: head)),
+            SizedBox(width: 48, child: Text(t('time'), style: head)),
+            Expanded(flex: 5, child: Text(t('medicine'), style: head)),
             Expanded(flex: 2, child: Text(t('amount'), style: head)),
             Expanded(flex: 3, child: Text(t('route'), style: head)),
           ]),
@@ -319,17 +319,17 @@ class PassportCard extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
             child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              SizedBox(width: 52, child: Text(it.time, style: const TextStyle(fontWeight: FontWeight.w700))),
+              SizedBox(width: 48, child: Text(it.time, style: const TextStyle(fontWeight: FontWeight.w700))),
               Expanded(
-                flex: 4,
+                flex: 5,
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text(it.medicine, style: const TextStyle(fontWeight: FontWeight.w600)),
                   if (it.note != null && it.note!.isNotEmpty)
                     Text(it.note!, style: const TextStyle(fontSize: 11.5, color: Color(0xFF5B6B68))),
                 ]),
               ),
-              Expanded(flex: 2, child: Text(it.amount)),
-              Expanded(flex: 3, child: Text(it.route)),
+              Expanded(flex: 2, child: Text(it.amount, style: const TextStyle(fontWeight: FontWeight.w600))),
+              Expanded(flex: 3, child: Text(it.route, style: const TextStyle(fontSize: 12.5))),
             ]),
           ),
         const SizedBox(height: 6),

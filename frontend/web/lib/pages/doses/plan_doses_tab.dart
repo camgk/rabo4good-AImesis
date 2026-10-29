@@ -183,8 +183,17 @@ class DoseTable extends StatefulWidget {
 class _DoseTableState extends State<DoseTable> {
   final Set<int> _open = {};
 
+  bool _narrow = false;
+
   @override
   Widget build(BuildContext context) {
+    return LayoutBuilder(builder: (context, c) {
+      _narrow = c.maxWidth < 900;
+      return _table(context);
+    });
+  }
+
+  Widget _table(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final header = TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, letterSpacing: 0.5, color: cs.onSurfaceVariant);
@@ -194,7 +203,7 @@ class _DoseTableState extends State<DoseTable> {
       ('FREQUENCY', 2),
       ('ROUTE', 2),
       if (widget.showDays) ('DAYS', 2),
-      ('', 3),
+      ('', _narrow ? 2 : 3),
     ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -239,13 +248,15 @@ class _DoseTableState extends State<DoseTable> {
             Expanded(flex: 2, child: Text(Route.label(l.route))),
             if (widget.showDays) Expanded(flex: 2, child: Text(formatDays(l.days))),
             Expanded(
-              flex: 3,
+              flex: _narrow ? 2 : 3,
               child: Align(
                 alignment: Alignment.centerRight,
                 child: TextButton.icon(
                   onPressed: () => setState(() => open ? _open.remove(i) : _open.add(i)),
                   icon: Icon(open ? Icons.expand_less_rounded : Icons.calculate_outlined, size: 18),
-                  label: Text(open ? 'Hide calculation' : 'How was this calculated?'),
+                  label: Text(open
+                      ? (_narrow ? 'Hide' : 'Hide calculation')
+                      : (_narrow ? 'How?' : 'How was this calculated?')),
                 ),
               ),
             ),

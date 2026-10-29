@@ -245,7 +245,7 @@ check() {
     SMOKE_OK=0
   fi
 }
-check "mock-api /healthz" "$MOCK_API_URL/healthz"
+check "mock-api /health" "$MOCK_API_URL/health"
 check "web /config.json" "$WEB_URL/config.json"
 check "family-web /config.json" "$FAMILY_WEB_URL/config.json"
 

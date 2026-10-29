@@ -9,7 +9,7 @@
    "protocol": "HR-NBL2 · RAPID COJEC",
    "cycle": "B4",
    "cycleStart": "2026-09-25",
-   "overallTier": "low",
+   "overallTier": "high",
    "planStatus": "draft",
    "language": "nl",
    "weightKg": 52.0,
@@ -399,9 +399,384 @@
     "Misselijkheid of braken blijft ondanks de extra medicatie"
    ],
    "wardPhone": "+32 3 000 00 00",
-   "resources": [],
+   "resources": [
+    {
+     "institution": "Stichting tegen Kanker",
+     "title": "Chemotherapie",
+     "format": "PDF",
+     "language": "nl",
+     "url": "https://www.cancer.be/ressource/chemotherapie/",
+     "effort": "low",
+     "effortNote": "Direct Dutch PDF download"
+    },
+    {
+     "institution": "ZAS (Ziekenhuis aan de Stroom)",
+     "title": "Chemotherapie: Informatie voor patiënten",
+     "format": "PDF",
+     "language": "nl",
+     "url": "https://media.zas.be/m/1be42769d38ec4ee/original/Chemotherapie.pdf",
+     "effort": "low",
+     "effortNote": "Direct regional PDF download"
+    },
+    {
+     "institution": "AZ Org",
+     "title": "Chemotherapie... wat nu?",
+     "format": "PDF",
+     "language": "nl",
+     "url": "https://www.azorg.be/sites/default/files/patient_brochures/01016-NL.pdf",
+     "effort": "low",
+     "effortNote": "Direct clinical PDF download"
+    },
+    {
+     "institution": "Stichting tegen Kanker",
+     "title": "Misselijkheid en braken",
+     "format": "Web page",
+     "language": "nl",
+     "url": "https://www.cancer.be/kanker/bijwerkingen/misselijkheid-en-braken",
+     "effort": "low",
+     "effortNote": "Direct web article"
+    },
+    {
+     "institution": "AZ Groeninge",
+     "title": "Bijwerkingen chemotherapie: misselijkheid en braken",
+     "format": "Web page",
+     "language": "nl",
+     "url": "https://www.azgroeninge.be/nl/blogs/bijwerkingen-chemotherapie/bijwerkingen-chemotherapie-misselijkheid-en-braken",
+     "effort": "low",
+     "effortNote": "Direct Dutch web guide"
+    }
+   ],
    "pairingCode": "C1-NBL2",
    "disclaimer": "Demo-gegevens, niet voor klinisch gebruik. Dit schema is pas geldig na ondertekening door de oncoloog en de ziekenhuisapotheker. Bel bij twijfel altijd de afdeling."
+  }
+ },
+ "casus-2": {
+  "patient": {
+   "id": "casus-2",
+   "alias": "Casus 2",
+   "age": 2,
+   "sex": "M",
+   "diagnosis": "Acute lymphoblastic leukaemia (ALL)",
+   "protocol": "ALLTogether1 · Induction B",
+   "cycle": "Day 8",
+   "cycleStart": "2026-10-29",
+   "overallTier": "moderate",
+   "planStatus": "draft",
+   "language": "fr",
+   "weightKg": 12.5,
+   "heightCm": 87.0,
+   "bsaM2": 0.55,
+   "diagnosisGroup": "ALL",
+   "chemo": [
+    {
+     "drug": "vincristine",
+     "doseMgM2": 1.5,
+     "days": [
+      1
+     ]
+    },
+    {
+     "drug": "daunorubicin",
+     "doseMgM2": 30.0,
+     "days": [
+      1
+     ]
+    }
+   ],
+   "activeMeds": [],
+   "history": [
+    {
+     "cycle": "Induction B D1",
+     "date": null,
+     "antiemetics": null,
+     "nauseaDays": [],
+     "vomitingDays": [],
+     "note": "Geen misselijkheid of braken bij vorige toediening"
+    }
+   ],
+   "riskFactors": {
+    "canSwallowTablets": false,
+    "preferredRoute": "oral_liquid",
+    "anticipatory": false,
+    "priorNauseaNote": null
+   },
+   "pairingCode": "C2-ALL8"
+  },
+  "plan": {
+   "patientId": "casus-2",
+   "status": "draft",
+   "refused": false,
+   "refusalReasons": [],
+   "unknownDrugs": [],
+   "drugTiers": [
+    {
+     "drug": "vincristine",
+     "doseMgM2": 1.5,
+     "tier": "low",
+     "rule": "UZA v2 · Vincristine = low",
+     "source": "UZA v2 (mock rules)"
+    },
+    {
+     "drug": "daunorubicin",
+     "doseMgM2": 30.0,
+     "tier": "moderate",
+     "rule": "UZA v2 · Daunorubicin = moderate",
+     "source": "UZA v2 (mock rules)"
+    }
+   ],
+   "dayTiers": [
+    {
+     "day": 1,
+     "tier": "moderate",
+     "drugs": [
+      "vincristine",
+      "daunorubicin"
+     ]
+    }
+   ],
+   "overallTier": "moderate",
+   "combinationRules": [],
+   "dexamethasone": {
+    "blocked": true,
+    "reason": "GEEN dexamethasone bij ALL (UZA v2)",
+    "source": "UZA v2 (mock rules)"
+   },
+   "antiemetics": [
+    {
+     "drug": "ondansetron",
+     "doseMg": 2.8,
+     "unit": "mg",
+     "frequency": "2x/d",
+     "route": "oral_liquid",
+     "days": [
+      1,
+      2
+     ],
+     "formula": "5 mg/m² per dose, max 8 mg/dose",
+     "steps": [
+      "0.55 m² × 5 mg/m² = 2.75 mg",
+      "≤ 8 mg/dose, rounded to 0.1 mg → 2.8 mg"
+     ],
+     "source": "UZA v2 (mock rules) · Ondansetron 5 mg/m², max 8 mg/dose",
+     "notes": []
+    },
+    {
+     "drug": "aprepitant",
+     "doseMg": 37.5,
+     "unit": "mg",
+     "frequency": "1x/d",
+     "route": "oral_liquid",
+     "days": [
+      1
+     ],
+     "formula": "3 mg/kg day 1, max 125 mg",
+     "steps": [
+      "12.5 kg × 3 mg/kg = 37.5 mg → 37.5 mg"
+     ],
+     "source": "UZA v2 (mock rules) · Aprepitant",
+     "notes": []
+    },
+    {
+     "drug": "aprepitant",
+     "doseMg": 25.0,
+     "unit": "mg",
+     "frequency": "1x/d",
+     "route": "oral_liquid",
+     "days": [
+      2,
+      3
+     ],
+     "formula": "2 mg/kg days 2–3, max 80 mg",
+     "steps": [
+      "12.5 kg × 2 mg/kg = 25.0 mg → 25 mg"
+     ],
+     "source": "UZA v2 (mock rules) · Aprepitant",
+     "notes": []
+    }
+   ],
+   "breakthrough": [
+    {
+     "drug": "alizapride",
+     "doseMg": 20.8,
+     "unit": "mg",
+     "frequency": "3x/d if needed",
+     "route": "oral_liquid",
+     "formula": "5 mg/kg/day in 3 doses, max 150 mg/day (mock dose)",
+     "source": "UZA v2 (mock rules)",
+     "notes": [
+      "mock dose",
+      "12.5 kg × 5 mg/kg = 62.5 mg/day → 62.5 mg/day ÷ 3"
+     ]
+    }
+   ],
+   "alternatives": [],
+   "stepUps": [],
+   "interactions": [],
+   "uzaVsPogo": [
+    {
+     "item": "vincristine 1.5 mg/m²",
+     "uzaTier": "low",
+     "pogoTier": "low",
+     "differs": false,
+     "note": "Same tier in UZA v2 and POGO"
+    },
+    {
+     "item": "daunorubicin 30 mg/m²",
+     "uzaTier": "moderate",
+     "pogoTier": "moderate",
+     "differs": false,
+     "note": "Same tier in UZA v2 and POGO"
+    }
+   ],
+   "episodesSummary": {
+    "currentCycle": [],
+    "priorNauseaDays": []
+   },
+   "signoffs": {
+    "oncologist": null,
+    "pharmacist": null
+   },
+   "comments": [],
+   "advisory": "Advisory only — requires clinician sign-off. Demo data, not for clinical use."
+  },
+  "passport": {
+   "patientId": "casus-2",
+   "alias": "Casus 2",
+   "lang": "fr",
+   "title": "Passeport CINV · Casus 2",
+   "overallTier": "moderate",
+   "status": "draft",
+   "signedOff": false,
+   "days": [
+    {
+     "day": 1,
+     "label": "Jour 1",
+     "date": "2026-10-29",
+     "items": [
+      {
+       "time": "08:00",
+       "medicine": "Ondansétron (contre les nausées)",
+       "amount": "2,8 mg",
+       "route": "sirop par la bouche",
+       "note": null
+      },
+      {
+       "time": "08:00",
+       "medicine": "Aprépitant (contre les nausées)",
+       "amount": "37,5 mg",
+       "route": "sirop par la bouche",
+       "note": null
+      },
+      {
+       "time": "20:00",
+       "medicine": "Ondansétron (contre les nausées)",
+       "amount": "2,8 mg",
+       "route": "sirop par la bouche",
+       "note": null
+      }
+     ]
+    },
+    {
+     "day": 2,
+     "label": "Jour 2",
+     "date": "2026-10-30",
+     "items": [
+      {
+       "time": "08:00",
+       "medicine": "Ondansétron (contre les nausées)",
+       "amount": "2,8 mg",
+       "route": "sirop par la bouche",
+       "note": null
+      },
+      {
+       "time": "08:00",
+       "medicine": "Aprépitant (contre les nausées)",
+       "amount": "25 mg",
+       "route": "sirop par la bouche",
+       "note": null
+      },
+      {
+       "time": "20:00",
+       "medicine": "Ondansétron (contre les nausées)",
+       "amount": "2,8 mg",
+       "route": "sirop par la bouche",
+       "note": null
+      }
+     ]
+    },
+    {
+     "day": 3,
+     "label": "Jour 3",
+     "date": "2026-10-31",
+     "items": [
+      {
+       "time": "08:00",
+       "medicine": "Aprépitant (contre les nausées)",
+       "amount": "25 mg",
+       "route": "sirop par la bouche",
+       "note": null
+      }
+     ]
+    }
+   ],
+   "warningSigns": [
+    "Votre enfant ne garde pas les liquides pendant plus de 6 heures",
+    "Fièvre de 38,5 °C ou plus",
+    "Votre enfant est très somnolent ou confus",
+    "Pas de couche mouillée / pas d'urine pendant 8 heures",
+    "Du sang ou un aspect « marc de café » dans les vomissements",
+    "Les nausées ou vomissements continuent malgré le traitement supplémentaire"
+   ],
+   "wardPhone": "+32 3 000 00 00",
+   "resources": [
+    {
+     "institution": "Fondation contre le Cancer",
+     "title": "La chimiothérapie",
+     "format": "PDF",
+     "language": "fr",
+     "url": "https://www.cancer.be/ressource/la-chimiotherapie/",
+     "effort": "low",
+     "effortNote": "Direct French PDF download"
+    },
+    {
+     "institution": "CHU de Liège",
+     "title": "Les nausées et les vomissements",
+     "format": "PDF",
+     "language": "fr",
+     "url": "https://www.chuliege.be/cms/c_60648/fr/broch-a5-les-nausees-et-les-vomissements-2024-pp",
+     "effort": "low",
+     "effortNote": "Direct clinical PDF download"
+    },
+    {
+     "institution": "Fondation contre le Cancer",
+     "title": "Nausées et vomissements",
+     "format": "Web page",
+     "language": "fr",
+     "url": "https://www.cancer.be/les-cancers/effets-secondaires/nausees-et-vomissements",
+     "effort": "low",
+     "effortNote": "Direct web article"
+    },
+    {
+     "institution": "AZ Groeninge",
+     "title": "Effets indésirables : nausées et vomissements",
+     "format": "Web page",
+     "language": "fr",
+     "url": "https://www.azgroeninge.be/fr/blogs/bijwerkingen-chemotherapie/effets-indesirables-chimiotherapie-nausees-et-vomissements",
+     "effort": "low",
+     "effortNote": "Direct French web guide"
+    },
+    {
+     "institution": "KickCancer Foundation",
+     "title": "Guide pour les familles",
+     "format": "Web portal",
+     "language": "fr",
+     "url": "https://kickcancer.org/fr",
+     "effort": "low",
+     "effortNote": "Trilingual"
+    }
+   ],
+   "pairingCode": "C2-ALL8",
+   "disclaimer": "Données de démonstration, pas pour usage clinique. Ce schéma n'est valable qu'après signature par l'oncologue et le pharmacien hospitalier. En cas de doute, appelez toujours le service."
   }
  },
  "casus-3": {
@@ -414,7 +789,7 @@
    "protocol": "iEuroEwing · IE",
    "cycle": "IE #3",
    "cycleStart": "2026-10-29",
-   "overallTier": "low",
+   "overallTier": "high",
    "planStatus": "draft",
    "language": "nl",
    "weightKg": 45.0,
@@ -1069,7 +1444,53 @@
     "Misselijkheid of braken blijft ondanks de extra medicatie"
    ],
    "wardPhone": "+32 3 000 00 00",
-   "resources": [],
+   "resources": [
+    {
+     "institution": "Stichting tegen Kanker",
+     "title": "Chemotherapie",
+     "format": "PDF",
+     "language": "nl",
+     "url": "https://www.cancer.be/ressource/chemotherapie/",
+     "effort": "low",
+     "effortNote": "Direct Dutch PDF download"
+    },
+    {
+     "institution": "ZAS (Ziekenhuis aan de Stroom)",
+     "title": "Chemotherapie: Informatie voor patiënten",
+     "format": "PDF",
+     "language": "nl",
+     "url": "https://media.zas.be/m/1be42769d38ec4ee/original/Chemotherapie.pdf",
+     "effort": "low",
+     "effortNote": "Direct regional PDF download"
+    },
+    {
+     "institution": "AZ Org",
+     "title": "Chemotherapie... wat nu?",
+     "format": "PDF",
+     "language": "nl",
+     "url": "https://www.azorg.be/sites/default/files/patient_brochures/01016-NL.pdf",
+     "effort": "low",
+     "effortNote": "Direct clinical PDF download"
+    },
+    {
+     "institution": "Stichting tegen Kanker",
+     "title": "Misselijkheid en braken",
+     "format": "Web page",
+     "language": "nl",
+     "url": "https://www.cancer.be/kanker/bijwerkingen/misselijkheid-en-braken",
+     "effort": "low",
+     "effortNote": "Direct web article"
+    },
+    {
+     "institution": "AZ Groeninge",
+     "title": "Bijwerkingen chemotherapie: misselijkheid en braken",
+     "format": "Web page",
+     "language": "nl",
+     "url": "https://www.azgroeninge.be/nl/blogs/bijwerkingen-chemotherapie/bijwerkingen-chemotherapie-misselijkheid-en-braken",
+     "effort": "low",
+     "effortNote": "Direct Dutch web guide"
+    }
+   ],
    "pairingCode": "C3-IE03",
    "disclaimer": "Demo-gegevens, niet voor klinisch gebruik. Dit schema is pas geldig na ondertekening door de oncoloog en de ziekenhuisapotheker. Bel bij twijfel altijd de afdeling."
   }
@@ -1084,7 +1505,7 @@
    "protocol": "ALLTogether1 · Consolidation",
    "cycle": "C1",
    "cycleStart": "2026-10-29",
-   "overallTier": "low",
+   "overallTier": "high",
    "planStatus": "draft",
    "language": "en",
    "weightKg": 22.0,
@@ -1411,7 +1832,44 @@
     "Nausea or vomiting continues despite the extra medicine"
    ],
    "wardPhone": "+32 3 000 00 00",
-   "resources": [],
+   "resources": [
+    {
+     "institution": "KickCancer Foundation",
+     "title": "Family Support & Research Hub",
+     "format": "Web portal",
+     "language": "en",
+     "url": "https://kickcancer.org/en",
+     "effort": "low",
+     "effortNote": "Trilingual"
+    },
+    {
+     "institution": "UZ Brussel / KidZ Health Castle",
+     "title": "KidZ Health Castle - General Overview",
+     "format": "Web page",
+     "language": "en",
+     "url": "https://www.uzbrussel.be/en/web/kidz-health-castle",
+     "effort": "medium",
+     "effortNote": "English intro only"
+    },
+    {
+     "institution": "Cliniques universitaires Saint-Luc",
+     "title": "Pediatric Hematology and Oncology",
+     "format": "Web page",
+     "language": "en",
+     "url": "https://www.saintluc.be/en/pediatric-hematology-and-oncology-department",
+     "effort": "medium",
+     "effortNote": "English summaries only"
+    },
+    {
+     "institution": "BSPHO",
+     "title": "Clinical Treatment Protocols",
+     "format": "Web page",
+     "language": "en",
+     "url": "https://www.bspho.be",
+     "effort": "high",
+     "effortNote": "For professionals"
+    }
+   ],
    "pairingCode": "C4-DDI7",
    "disclaimer": "Demo data, not for clinical use. This schedule is only valid once signed off by the oncologist and the hospital pharmacist. If in doubt, always call the ward."
   }

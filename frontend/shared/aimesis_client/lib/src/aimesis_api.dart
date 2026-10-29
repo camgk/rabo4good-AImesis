@@ -85,9 +85,9 @@ class AimesisApi extends ApiCore with EpisodesApi, PassportApi {
 
   // ---- misc --------------------------------------------------------------
 
-  /// `GET /healthz` — true when the server answers `{"ok": true}`.
+  /// `GET /health` — true when the server answers `{"ok": true}`.
   Future<bool> healthz() async {
-    final res = await getJson('/healthz');
+    final res = await getJson('/health');
     return res is Map && res['ok'] == true;
   }
 
