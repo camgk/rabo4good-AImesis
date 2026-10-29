@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'common.dart';
 
-/// Dense, clickable patient table used by the worklist and pharmacist queue.
+/// Dense, clickable patient table used by the patient list and pharmacist queue.
 class PatientTable extends StatelessWidget {
   const PatientTable({super.key, required this.patients, required this.onOpen, this.actionLabel});
 

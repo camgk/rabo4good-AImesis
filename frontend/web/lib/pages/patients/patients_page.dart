@@ -57,14 +57,14 @@ class _PatientsLoaderState extends State<PatientsLoader> {
   }
 }
 
-class WorklistPage extends StatefulWidget {
-  const WorklistPage({super.key});
+class PatientsPage extends StatefulWidget {
+  const PatientsPage({super.key});
 
   @override
-  State<WorklistPage> createState() => _WorklistPageState();
+  State<PatientsPage> createState() => _PatientsPageState();
 }
 
-class _WorklistPageState extends State<WorklistPage> {
+class _PatientsPageState extends State<PatientsPage> {
   /// Selected tag filter; null = all patients.
   String? _tag;
 
@@ -78,21 +78,21 @@ class _WorklistPageState extends State<WorklistPage> {
         final awaiting = patients.where((p) => p.planStatus == PlanStatus.awaitingPharmacist).length;
         final high = patients.where((p) => p.overallTier == Tier.high).length;
         return PageFrame(
-          title: 'Worklist',
+          title: 'Patients',
           subtitle: 'Patients starting or in a chemotherapy cycle',
           actions: [
             IconButton(tooltip: 'Refresh', onPressed: reload, icon: const Icon(Icons.refresh_rounded)),
           ],
           children: [
             Wrap(spacing: 12, runSpacing: 12, children: [
-              _Stat(label: 'Patients', value: '${patients.length}', icon: Icons.people_alt_outlined),
+              _Stat(label: 'Total', value: '${patients.length}', icon: Icons.people_alt_outlined),
               _Stat(label: 'High emetogenic', value: '$high', icon: Icons.local_fire_department_outlined),
               _Stat(label: 'Awaiting pharmacist', value: '$awaiting', icon: Icons.hourglass_top_rounded),
             ]),
             if (tags.isNotEmpty) ...[
               const SizedBox(height: 16),
               Wrap(
-                key: const Key('worklist-tag-filter'),
+                key: const Key('patients-tag-filter'),
                 spacing: 8,
                 runSpacing: 8,
                 crossAxisAlignment: WrapCrossAlignment.center,
@@ -120,7 +120,7 @@ class _WorklistPageState extends State<WorklistPage> {
                 icon: Icons.inbox_outlined,
                 title: 'No patients',
                 message: tag == null
-                    ? 'There are no patients on the worklist yet.'
+                    ? 'There are no patients yet.'
                     : 'No patients tagged "$tag".',
               )
             else

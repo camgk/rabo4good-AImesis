@@ -106,12 +106,12 @@ void main() {
       final calls = <String>[];
       await pumpLoggedIn(tester, 'oncologist', calls, size);
 
-      expect(find.text('Worklist'), findsWidgets);
+      expect(find.text('Patients'), findsWidgets);
       expect(find.text('Casus 1'), findsOneWidget);
 
       for (final id in cases.keys) {
         final alias = (cases[id]['patient'] as Map)['alias'] as String;
-        await tester.tap(find.text('Worklist').first);
+        await tester.tap(find.text('Patients').first);
         await tester.pumpAndSettle();
         await tester.tap(find.text(alias).first);
         await tester.pumpAndSettle();
@@ -133,10 +133,10 @@ void main() {
     });
   }
 
-  testWidgets('worklist shows tag chips and filters by tag', (tester) async {
+  testWidgets('patients page shows tag chips and filters by tag', (tester) async {
     addTearDown(tester.view.reset);
     await pumpLoggedIn(tester, 'oncologist', [], const Size(1280, 900));
-    final filter = find.byKey(const Key('worklist-tag-filter'));
+    final filter = find.byKey(const Key('patients-tag-filter'));
     expect(filter, findsOneWidget);
     expect(find.descendant(of: filter, matching: find.widgetWithText(FilterChip, 'All')), findsOneWidget);
     expect(find.descendant(of: filter, matching: find.widgetWithText(FilterChip, 'demo')), findsOneWidget);
@@ -193,7 +193,7 @@ void main() {
   testWidgets('dose line expands to show the calculation', (tester) async {
     addTearDown(tester.view.reset);
     await pumpLoggedIn(tester, 'pharmacist', [], const Size(1280, 900));
-    await tester.tap(find.text('Worklist').first);
+    await tester.tap(find.text('Patients').first);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Casus 1').first);
     await tester.pumpAndSettle();

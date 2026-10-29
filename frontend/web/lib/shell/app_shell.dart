@@ -24,7 +24,7 @@ class AppShell extends StatelessWidget {
   final Widget child;
 
   List<_NavItem> _items(Account acc) => [
-        const _NavItem('/worklist', 'Worklist', Icons.people_alt_outlined, Icons.people_alt_rounded),
+        const _NavItem('/patients', 'Patients', Icons.people_alt_outlined, Icons.people_alt_rounded),
         _NavItem(
           '/pharmacist',
           acc.isPharmacist ? 'Pharmacist queue' : 'Pharmacist queue (view)',
@@ -60,7 +60,7 @@ class AppShell extends StatelessWidget {
         backgroundColor: cs.surface,
         shape: Border(bottom: BorderSide(color: cs.outlineVariant)),
         title: InkWell(
-          onTap: () => context.go('/worklist'),
+          onTap: () => context.go('/patients'),
           borderRadius: BorderRadius.circular(8),
           child: const Padding(
             padding: EdgeInsets.symmetric(horizontal: 4, vertical: 6),

@@ -25,7 +25,7 @@ class AppState extends ChangeNotifier {
 
   final Map<String, PatientWorkspace> _workspaces = {};
 
-  /// Bumped whenever a plan changes, so lists (worklist, queue) can refresh.
+  /// Bumped whenever a plan changes, so lists (patients, queue) can refresh.
   int _plansVersion = 0;
   int get plansVersion => _plansVersion;
 

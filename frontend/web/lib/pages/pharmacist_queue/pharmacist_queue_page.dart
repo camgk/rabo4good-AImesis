@@ -6,7 +6,7 @@ import '../../state/app_scope.dart';
 import '../../widgets/common.dart';
 import '../../widgets/page_frame.dart';
 import '../../widgets/patient_table.dart';
-import '../worklist/worklist_page.dart';
+import '../patients/patients_page.dart';
 
 /// Plans awaiting the pharmacist check first, then everything else.
 class PharmacistQueuePage extends StatelessWidget {

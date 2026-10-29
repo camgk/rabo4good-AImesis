@@ -35,8 +35,8 @@ class PatientHeader extends StatelessWidget {
           Row(
             children: [
               IconButton(
-                tooltip: 'Back to worklist',
-                onPressed: () => context.go('/worklist'),
+                tooltip: 'Back to patients',
+                onPressed: () => context.go('/patients'),
                 icon: const Icon(Icons.arrow_back_rounded),
               ),
               const SizedBox(width: 4),

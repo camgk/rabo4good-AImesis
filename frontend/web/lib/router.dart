@@ -6,7 +6,7 @@ import 'pages/login/login_page.dart';
 import 'pages/passport/passport_print_page.dart';
 import 'pages/patient/patient_workspace_page.dart';
 import 'pages/pharmacist_queue/pharmacist_queue_page.dart';
-import 'pages/worklist/worklist_page.dart';
+import 'pages/patients/patients_page.dart';
 import 'shell/app_shell.dart';
 import 'state/app_state.dart';
 
@@ -33,7 +33,7 @@ enum WorkspaceTab {
 
 GoRouter buildRouter(AppState state) {
   return GoRouter(
-    initialLocation: '/worklist',
+    initialLocation: '/patients',
     refreshListenable: state,
     redirect: (context, s) {
       final loggingIn = s.matchedLocation == '/login';
@@ -41,19 +41,19 @@ GoRouter buildRouter(AppState state) {
       if (!state.isLoggedIn) {
         if (loggingIn) return null;
         final from = s.uri.toString();
-        return from == '/' || from == '/worklist'
+        return from == '/' || from == '/patients'
             ? '/login'
             : Uri(path: '/login', queryParameters: {'from': from}).toString();
       }
       if (loggingIn) {
         final from = s.uri.queryParameters['from'];
-        return (from != null && from.startsWith('/') && !from.startsWith('/login')) ? from : '/worklist';
+        return (from != null && from.startsWith('/') && !from.startsWith('/login')) ? from : '/patients';
       }
-      if (s.matchedLocation == '/') return '/worklist';
+      if (s.matchedLocation == '/') return '/patients';
       return null;
     },
     routes: [
-      GoRoute(path: '/', redirect: (_, __) => '/worklist'),
+      GoRoute(path: '/', redirect: (_, __) => '/patients'),
       GoRoute(path: '/login', builder: (_, __) => const LoginPage()),
       GoRoute(
         path: '/patients/:id/passport/print',
@@ -66,9 +66,11 @@ GoRouter buildRouter(AppState state) {
         builder: (context, s, child) => AppShell(location: s.matchedLocation, child: child),
         routes: [
           GoRoute(
-            path: '/worklist',
-            pageBuilder: (_, __) => const NoTransitionPage(child: WorklistPage()),
+            path: '/patients',
+            pageBuilder: (_, __) => const NoTransitionPage(child: PatientsPage()),
           ),
+          // Old links and bookmarks.
+          GoRoute(path: '/worklist', redirect: (_, __) => '/patients'),
           GoRoute(
             path: '/pharmacist',
             pageBuilder: (_, __) => const NoTransitionPage(child: PharmacistQueuePage()),
@@ -105,7 +107,7 @@ GoRouter buildRouter(AppState state) {
           const SizedBox(height: 12),
           Text('Page not found: ${s.uri}'),
           const SizedBox(height: 12),
-          FilledButton(onPressed: () => context.go('/worklist'), child: const Text('Back to worklist')),
+          FilledButton(onPressed: () => context.go('/patients'), child: const Text('Back to patients')),
         ]),
       ),
     ),

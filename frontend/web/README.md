@@ -8,7 +8,7 @@ Hackathon prototype: **advisory only, demo data, mock rules.** Every page shows 
 | Route | Page | User story |
 |---|---|---|
 | `/login` | Login with demo-account quick-pick (clinician roles only; family roles are told to use the Family app) | — |
-| `/worklist` | Patients: alias, age, diagnosis, protocol, cycle, overall tier, plan status | — |
+| `/patients` | Patients: alias, age, diagnosis, protocol, cycle, overall tier, plan status | — |
 | `/pharmacist` | Pharmacist queue: plans awaiting pharmacist first (read-only for other roles) | sign-off |
 | `/about` | What is mock, demo accounts, story map | — |
 | `/patients/:id/regimen` | Regimen & tier: per-drug tier + rule + source, per-day tier strip, combination rules | 1 |
@@ -79,7 +79,7 @@ lib/
   router.dart                go_router, login redirect, WorkspaceTab enum
   state/                     AppState (session, api), PatientWorkspace (patient + plan cache)
   shell/app_shell.dart       app bar, role-aware navigation rail, advisory banner
-  pages/                     login, worklist, pharmacist_queue, about, patient (workspace + header),
+  pages/                     login, patients, pharmacist_queue, about, patient (workspace + header),
                              risk_tier, personalise, interactions, doses, uza_vs_pogo, signoff, passport
   agent/                     AG-UI / A2UI stubs — switch from REST mock when backend/agent is deployed
   platform/                  sessionStorage / window.open / print via package:web (VM stub for tests)
