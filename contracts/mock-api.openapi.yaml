@@ -1,11 +1,14 @@
 openapi: 3.1.0
 info:
   title: AImesis mock API
-  version: 0.1.0
+  version: 0.2.0
   description: |
-    Demo stand-in REST API (backend/mock_api) with MOCK rules until backend/api + backend/agent are ready.
-    Advisory only — requires clinician sign-off. Demo data, not for clinical use.
+    Stand-in REST API (backend/mock_api) with MOCK rules until backend/api + backend/agent are ready.
+    Advisory only — requires clinician sign-off.
     All JSON is camelCase. Errors are always `{"error": "message"}`.
+    Data lives in the shared Firestore `(default)` database (snake_case documents, see
+    contracts/schemas/*.schema.json). Demo data is loaded/cleared with infra/scripts/demo-data.sh
+    (the service never seeds itself); demo records carry the tag `demo`.
 servers:
   - url: http://localhost:8080
 security:
@@ -20,7 +23,7 @@ paths:
   /auth/demo-accounts:
     get:
       security: []
-      summary: Demo accounts for the login quick-pick (password hint "aimesis-demo")
+      summary: Accounts tagged `demo` for the login quick-pick (password hint "aimesis-demo"); empty list when no demo data is loaded
       responses:
         "200": { description: OK, content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/DemoAccount" } } } } }
   /auth/login:
@@ -40,6 +43,8 @@ paths:
   /patients:
     get:
       summary: Patients visible to the caller (family roles see only their patientIds)
+      parameters:
+        - { name: tag, in: query, required: false, description: Only patients whose tags contain this value (e.g. demo), schema: { type: string, examples: [demo] } }
       responses:
         "200": { description: OK, content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/PatientSummary" } } } } }
         "401": { $ref: "#/components/responses/Error" }
@@ -144,21 +149,12 @@ paths:
         - { name: lang, in: query, required: false, schema: { type: string, enum: [nl, fr, en, de] } }
       responses:
         "200": { description: OK, content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/Resource" } } } } }
-  /admin/reset:
-    post:
-      security: []
-      summary: Wipe episodes + plan state and reseed everything
-      parameters:
-        - { name: X-Demo-Reset, in: header, required: true, description: Must equal TOKEN_SECRET, schema: { type: string } }
-      responses:
-        "200": { description: OK, content: { application/json: { schema: { type: object, properties: { ok: { type: boolean } } } } } }
-        "403": { $ref: "#/components/responses/Error" }
 
 components:
   securitySchemes:
     bearer: { type: http, scheme: bearer, bearerFormat: JWT }
   parameters:
-    PatientId: { name: id, in: path, required: true, schema: { type: string, examples: [casus-1] } }
+    PatientId: { name: id, in: path, required: true, schema: { type: string, examples: [PAT-2026-0001] } }
   responses:
     Error:
       description: Error
@@ -204,10 +200,11 @@ components:
 
     PatientSummary:
       type: object
-      required: [id, alias, age, sex, diagnosis, protocol, cycle, cycleStart, overallTier, planStatus, language]
+      required: [id, alias, tags, age, sex, diagnosis, protocol, cycle, cycleStart, overallTier, planStatus, language]
       properties:
-        id: { type: string }
-        alias: { type: string }
+        id: { type: string, examples: [PAT-2026-0001] }
+        alias: { type: string, examples: [Casus 1] }
+        tags: { type: array, items: { type: string }, description: "Labels shown as chips (e.g. demo)", examples: [[demo]] }
         age: { type: integer }
         sex: { type: string }
         diagnosis: { type: string }
@@ -283,7 +280,7 @@ components:
         episodesSummary: { $ref: "#/components/schemas/EpisodesSummary" }
         signoffs: { $ref: "#/components/schemas/Signoffs" }
         comments: { type: array, items: { $ref: "#/components/schemas/PlanComment" } }
-        advisory: { type: string, const: "Advisory only — requires clinician sign-off. Demo data, not for clinical use." }
+        advisory: { type: string, const: "Advisory only — requires clinician sign-off." }
     DrugTier:
       type: object
       required: [drug, tier, rule, source]
@@ -428,7 +425,7 @@ components:
         wardPhone: { type: string }
         resources: { type: array, items: { $ref: "#/components/schemas/Resource" }, maxItems: 5 }
         pairingCode: { type: string }
-        disclaimer: { type: string }
+        disclaimer: { type: string, description: 'Neutral care-team note in the passport language, e.g. "This schedule was prepared by your care team. Call the ward if you are worried."' }
 
     EpisodeCreate:
       type: object

@@ -29,12 +29,24 @@
     },
     "status": {
       "type": "string",
-      "enum": ["draft", "pending_pharmacist", "pending_oncologist", "active", "completed", "superseded"],
+      "enum": [
+        "draft",
+        "pending_pharmacist",
+        "pending_oncologist",
+        "active",
+        "completed",
+        "superseded"
+      ],
       "default": "draft"
     },
     "emetogenicity_tier": {
       "type": "string",
-      "enum": ["HIGH", "MODERATE", "LOW", "MINIMAL"],
+      "enum": [
+        "HIGH",
+        "MODERATE",
+        "LOW",
+        "MINIMAL"
+      ],
       "description": "UZA v2 overall emetic risk tier calculated for this regimen"
     },
     "classification_rationale": {
@@ -74,7 +86,12 @@
           },
           "route": {
             "type": "string",
-            "enum": ["iv", "oral_liquid", "oral_capsule", "oral_tablet"]
+            "enum": [
+              "iv",
+              "oral_liquid",
+              "oral_capsule",
+              "oral_tablet"
+            ]
           },
           "frequency": {
             "type": "string",
@@ -82,7 +99,9 @@
           },
           "cycle_days": {
             "type": "array",
-            "items": { "type": "integer" },
+            "items": {
+              "type": "integer"
+            },
             "description": "Days of cycle when given (e.g. [1, 2, 3, 4])"
           },
           "rule_citation": {
@@ -94,7 +113,10 @@
     },
     "dexamethasone_rules": {
       "type": "object",
-      "required": ["is_blocked", "rationale"],
+      "required": [
+        "is_blocked",
+        "rationale"
+      ],
       "properties": {
         "is_blocked": {
           "type": "boolean",
@@ -108,20 +130,41 @@
     },
     "breakthrough_plan": {
       "type": "object",
-      "required": ["rescue_steps", "instructions"],
+      "required": [
+        "rescue_steps",
+        "instructions"
+      ],
       "properties": {
         "rescue_steps": {
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["step_number", "drug_name", "dose", "route", "rule_citation"],
+            "required": [
+              "step_number",
+              "drug_name",
+              "dose",
+              "route",
+              "rule_citation"
+            ],
             "properties": {
-              "step_number": { "type": "integer" },
-              "drug_name": { "type": "string" },
-              "dose": { "type": "string" },
-              "route": { "type": "string" },
-              "max_daily_frequency": { "type": "string" },
-              "rule_citation": { "type": "string" }
+              "step_number": {
+                "type": "integer"
+              },
+              "drug_name": {
+                "type": "string"
+              },
+              "dose": {
+                "type": "string"
+              },
+              "route": {
+                "type": "string"
+              },
+              "max_daily_frequency": {
+                "type": "string"
+              },
+              "rule_citation": {
+                "type": "string"
+              }
             }
           }
         },
@@ -133,7 +176,10 @@
     },
     "signoffs": {
       "type": "object",
-      "required": ["requires_dual_signoff", "advisory_notice"],
+      "required": [
+        "requires_dual_signoff",
+        "advisory_notice"
+      ],
       "properties": {
         "requires_dual_signoff": {
           "type": "boolean",
@@ -146,19 +192,39 @@
         "oncologist": {
           "type": "object",
           "properties": {
-            "signed": { "type": "boolean", "default": false },
-            "clinician_name": { "type": "string" },
-            "timestamp": { "type": "string", "format": "date-time" },
-            "riziv_inami": { "type": "string" }
+            "signed": {
+              "type": "boolean",
+              "default": false
+            },
+            "clinician_name": {
+              "type": "string"
+            },
+            "timestamp": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "riziv_inami": {
+              "type": "string"
+            }
           }
         },
         "clinical_pharmacist": {
           "type": "object",
           "properties": {
-            "signed": { "type": "boolean", "default": false },
-            "clinician_name": { "type": "string" },
-            "timestamp": { "type": "string", "format": "date-time" },
-            "riziv_inami": { "type": "string" }
+            "signed": {
+              "type": "boolean",
+              "default": false
+            },
+            "clinician_name": {
+              "type": "string"
+            },
+            "timestamp": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "riziv_inami": {
+              "type": "string"
+            }
           }
         }
       }
@@ -169,25 +235,52 @@
         "nl": {
           "type": "object",
           "properties": {
-            "headline": { "type": "string" },
-            "daily_steps": { "type": "array", "items": { "type": "string" } },
-            "what_to_do_if_vomiting": { "type": "string" }
+            "headline": {
+              "type": "string"
+            },
+            "daily_steps": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "what_to_do_if_vomiting": {
+              "type": "string"
+            }
           }
         },
         "fr": {
           "type": "object",
           "properties": {
-            "headline": { "type": "string" },
-            "daily_steps": { "type": "array", "items": { "type": "string" } },
-            "what_to_do_if_vomiting": { "type": "string" }
+            "headline": {
+              "type": "string"
+            },
+            "daily_steps": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "what_to_do_if_vomiting": {
+              "type": "string"
+            }
           }
         },
         "en": {
           "type": "object",
           "properties": {
-            "headline": { "type": "string" },
-            "daily_steps": { "type": "array", "items": { "type": "string" } },
-            "what_to_do_if_vomiting": { "type": "string" }
+            "headline": {
+              "type": "string"
+            },
+            "daily_steps": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "what_to_do_if_vomiting": {
+              "type": "string"
+            }
           }
         }
       }
@@ -196,13 +289,79 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["role", "phone_number"],
+        "required": [
+          "role",
+          "phone_number"
+        ],
         "properties": {
-          "role": { "type": "string" },
-          "ward": { "type": "string" },
-          "phone_number": { "type": "string" }
+          "role": {
+            "type": "string"
+          },
+          "ward": {
+            "type": "string"
+          },
+          "phone_number": {
+            "type": "string"
+          }
         }
       }
+    },
+    "plan_status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "awaiting_pharmacist",
+        "approved",
+        "returned"
+      ],
+      "description": "Extension (mock-api): plan workflow state. status becomes 'active' once both sign-offs exist"
+    },
+    "comments": {
+      "type": "array",
+      "description": "Extension (mock-api): review comments",
+      "items": {
+        "type": "object",
+        "properties": {
+          "by": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "text": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "risk_factors": {
+      "type": "object",
+      "description": "Extension (mock-api): risk-factor snapshot the plan was computed with (same shape as patient risk_factors)",
+      "properties": {
+        "can_swallow_tablets": {
+          "type": "boolean"
+        },
+        "preferred_route": {
+          "type": "string"
+        },
+        "anticipatory": {
+          "type": "boolean"
+        },
+        "prior_nausea_note": {
+          "type": "string"
+        }
+      }
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Extension (mock-api): copied from the patient so demo passports are clearable"
     },
     "created_at": {
       "type": "string",

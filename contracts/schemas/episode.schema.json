@@ -37,11 +37,20 @@
     },
     "symptom_type": {
       "type": "string",
-      "enum": ["nausea", "vomiting", "retching", "both_nausea_and_vomiting"]
+      "enum": [
+        "nausea",
+        "vomiting",
+        "retching",
+        "both_nausea_and_vomiting"
+      ]
     },
     "severity": {
       "type": "string",
-      "enum": ["mild", "moderate", "severe"],
+      "enum": [
+        "mild",
+        "moderate",
+        "severe"
+      ],
       "description": "Visual analog / Baxter scale rating reported by child/parent"
     },
     "duration_minutes": {
@@ -57,19 +66,65 @@
     "rescue_medication_administered": {
       "type": "object",
       "properties": {
-        "given": { "type": "boolean", "default": false },
-        "drug_name": { "type": "string" },
-        "dose_given": { "type": "string" },
-        "time_given": { "type": "string", "format": "date-time" }
+        "given": {
+          "type": "boolean",
+          "default": false
+        },
+        "drug_name": {
+          "type": "string"
+        },
+        "dose_given": {
+          "type": "string"
+        },
+        "time_given": {
+          "type": "string",
+          "format": "date-time"
+        }
       }
     },
     "reported_by": {
       "type": "string",
-      "enum": ["parent", "patient", "nurse", "clinician"],
+      "enum": [
+        "parent",
+        "patient",
+        "nurse",
+        "clinician"
+      ],
       "default": "parent"
     },
     "free_notes": {
       "type": "string"
+    },
+    "logged_by_account": {
+      "type": "string",
+      "description": "Extension (mock-api): account id that logged the episode"
+    },
+    "logged_by_role": {
+      "type": "string",
+      "enum": [
+        "oncologist",
+        "nurse",
+        "pharmacist",
+        "parent",
+        "patient"
+      ],
+      "description": "Extension (mock-api): role of that account"
+    },
+    "severity_score": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 1,
+      "maximum": 5,
+      "description": "Extension (mock-api): 1-5 score as entered (severity = 1-2 mild, 3 moderate, 4-5 severe; null -> mild)"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Extension (mock-api): copied from the patient so demo episodes are clearable"
     },
     "created_at": {
       "type": "string",

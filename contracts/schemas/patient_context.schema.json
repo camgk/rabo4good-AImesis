@@ -57,7 +57,11 @@
       "description": "Antineoplastic medications planned for this cycle",
       "items": {
         "type": "object",
-        "required": ["drug_name", "dose_mg_per_m2", "day_numbers"],
+        "required": [
+          "drug_name",
+          "dose_mg_per_m2",
+          "day_numbers"
+        ],
         "properties": {
           "drug_name": {
             "type": "string",
@@ -69,7 +73,9 @@
           },
           "day_numbers": {
             "type": "array",
-            "items": { "type": "integer" },
+            "items": {
+              "type": "integer"
+            },
             "description": "Days of cycle when drug is infused (e.g. [1, 2, 3])"
           },
           "infusion_duration_hours": {
@@ -104,14 +110,135 @@
     },
     "allergies_and_contraindications": {
       "type": "array",
-      "items": { "type": "string" },
+      "items": {
+        "type": "string"
+      },
       "description": "Documented drug allergies or contraindications (e.g. 'QTc prolongation', '5-HT3 hypersensitivity')"
     },
     "preferred_formulation": {
       "type": "string",
-      "enum": ["oral_liquid", "oral_tablet", "iv", "orodispersible"],
+      "enum": [
+        "oral_liquid",
+        "oral_tablet",
+        "iv",
+        "orodispersible"
+      ],
       "default": "iv",
       "description": "Patient's preferred or clinically necessary drug formulation route"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Free-form labels shown as chips in the UI. 'demo' marks fictional demo patients (loaded/cleared by infra/scripts/demo-data.sh)."
+    },
+    "sex": {
+      "type": "string",
+      "enum": [
+        "F",
+        "M"
+      ],
+      "description": "Extension (mock-api): sex"
+    },
+    "height_cm": {
+      "type": "number",
+      "description": "Extension (mock-api): height in cm"
+    },
+    "diagnosis_group": {
+      "type": "string",
+      "description": "Extension (mock-api): diagnosis group used by the dexamethasone rule, e.g. 'ALL', 'brain_tumour', 'solid'"
+    },
+    "cycle_label": {
+      "type": "string",
+      "description": "Extension (mock-api): human cycle label, e.g. 'B4', 'Day 8', 'IE #3', 'C1'"
+    },
+    "cycle_start_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Extension (mock-api): start date (day 1) of the current cycle, YYYY-MM-DD"
+    },
+    "active_medications": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Extension (mock-api): current non-chemo medications (INN, lower case), used for interaction checks"
+    },
+    "preferred_language": {
+      "type": "string",
+      "enum": [
+        "nl",
+        "fr",
+        "en"
+      ],
+      "description": "Extension (mock-api): family's language for the passport"
+    },
+    "pairing_code": {
+      "type": "string",
+      "description": "Extension (mock-api): code a family enters in the companion app to link to this patient"
+    },
+    "previous_cycles": {
+      "type": "array",
+      "description": "Extension (mock-api): per-cycle history (history_previous_cycles is the summary of the last one)",
+      "items": {
+        "type": "object",
+        "required": [
+          "cycle_label"
+        ],
+        "properties": {
+          "cycle_label": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "antiemetics": {
+            "type": "string",
+            "description": "Antiemetics given in that cycle (free text)"
+          },
+          "nausea_days": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "vomiting_days": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "note": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "risk_factors": {
+      "type": "object",
+      "description": "Extension (mock-api): default risk factors / formulation for new plans",
+      "properties": {
+        "can_swallow_tablets": {
+          "type": "boolean"
+        },
+        "preferred_route": {
+          "type": "string",
+          "enum": [
+            "oral_tablet",
+            "oral_liquid",
+            "ng_tube",
+            "iv"
+          ]
+        },
+        "anticipatory": {
+          "type": "boolean"
+        },
+        "prior_nausea_note": {
+          "type": "string"
+        }
+      }
     },
     "created_at": {
       "type": "string",

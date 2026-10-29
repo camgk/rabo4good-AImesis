@@ -34,7 +34,7 @@ output "artifact_registry" {
 }
 
 output "token_secret" {
-  description = "JWT signing key of mock-api; also the X-Demo-Reset header value for POST /admin/reset."
+  description = "JWT signing key of mock-api."
   value       = random_password.token_secret.result
   sensitive   = true
 }

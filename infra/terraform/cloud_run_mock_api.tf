@@ -45,10 +45,6 @@ resource "google_cloud_run_v2_service" "mock_api" {
         value = "firestore"
       }
       env {
-        name  = "SEED_ON_START"
-        value = "true"
-      }
-      env {
         # Demo only. Next step: Secret Manager + secret_key_ref.
         name  = "TOKEN_SECRET"
         value = random_password.token_secret.result

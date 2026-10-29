@@ -1,4 +1,4 @@
-# AImesis mock API — demo stand-in (mock rules). Not for clinical use.
+# AImesis mock API — stand-in backend (mock rules). Advisory only — requires clinician sign-off.
 FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \

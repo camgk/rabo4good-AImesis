@@ -14,6 +14,7 @@ Collections:
 
 from __future__ import annotations
 
+import re
 import uuid
 from datetime import datetime, timezone
 
@@ -103,8 +104,9 @@ def history_summary(previous_cycles: list[dict], anticipatory: bool) -> dict:
 def _diagnosis_group(doc: dict) -> str:
     if doc.get("diagnosis_group"):
         return doc["diagnosis_group"]
-    dx = (doc.get("diagnosis") or "").lower()
-    if "lymphoblastic" in dx or " all" in f" {dx}" or "all " in dx:
+    raw = doc.get("diagnosis") or ""
+    dx = raw.lower()
+    if "lymphoblastic" in dx or re.search(r"\bALL\b", raw):
         return "ALL"
     if any(k in dx for k in ("medulloblastoma", "glioma", "brain", "ependymoma")):
         return "brain_tumour"

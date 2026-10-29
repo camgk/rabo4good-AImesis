@@ -251,5 +251,5 @@ check "family-web /config.json" "$FAMILY_WEB_URL/config.json"
 
 step "Done in $(($(date +%s) - T0)) s (tag $TAG)"
 printf '    %-12s %s\n' "web" "$WEB_URL" "family-web" "$FAMILY_WEB_URL" "mock-api" "$MOCK_API_URL"
-info "Reset demo data: curl -X POST -H \"X-Demo-Reset: \$(terraform -chdir=infra/terraform output -raw token_secret)\" $MOCK_API_URL/admin/reset"
+info "Demo data: infra/scripts/demo-data.sh load [--reset]   |   infra/scripts/demo-data.sh clear [--yes]"
 [ "$SMOKE_OK" = "1" ] || die "Deployed, but smoke tests failed. Check: gcloud run services logs read mock-api --region $REGION --project $PROJECT_ID"
