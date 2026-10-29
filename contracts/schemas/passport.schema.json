@@ -1,0 +1,216 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aimesis.be/schemas/passport.schema.json",
+  "title": "CinvPassport",
+  "description": "CINV Patient Passport for pediatric oncology antiemetic prophylaxis (UZA v2 protocol). Supports dual clinician sign-off and multi-language family schedules.",
+  "type": "object",
+  "required": [
+    "passport_id",
+    "patient_id",
+    "cycle_number",
+    "status",
+    "emetogenicity_tier",
+    "antiemetic_schedule",
+    "breakthrough_plan",
+    "signoffs"
+  ],
+  "properties": {
+    "passport_id": {
+      "type": "string",
+      "description": "Unique Passport identifier (e.g. PSP-2026-0042-C1)"
+    },
+    "patient_id": {
+      "type": "string",
+      "description": "Associated patient ID"
+    },
+    "cycle_number": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "status": {
+      "type": "string",
+      "enum": ["draft", "pending_pharmacist", "pending_oncologist", "active", "completed", "superseded"],
+      "default": "draft"
+    },
+    "emetogenicity_tier": {
+      "type": "string",
+      "enum": ["HIGH", "MODERATE", "LOW", "MINIMAL"],
+      "description": "UZA v2 overall emetic risk tier calculated for this regimen"
+    },
+    "classification_rationale": {
+      "type": "string",
+      "description": "Clinical justification citing UZA v2 rules (e.g. 'Cisplatin >= 50 mg/m² is Tier HIGH (UZA v2 p.1)')"
+    },
+    "antiemetic_schedule": {
+      "type": "array",
+      "description": "Planned prophylactic antiemetic drugs and timing",
+      "items": {
+        "type": "object",
+        "required": [
+          "drug_name",
+          "dose_amount",
+          "dose_unit",
+          "route",
+          "frequency",
+          "cycle_days",
+          "rule_citation"
+        ],
+        "properties": {
+          "drug_name": {
+            "type": "string",
+            "description": "Antiemetic INN name (e.g. 'Ondansetron', 'Aprepitant', 'Dexamethasone', 'Fosaprepitant')"
+          },
+          "dose_amount": {
+            "type": "number",
+            "description": "Calculated dose amount for this patient's BSA/weight"
+          },
+          "dose_unit": {
+            "type": "string",
+            "default": "mg"
+          },
+          "formula_used": {
+            "type": "string",
+            "description": "Formula explanation (e.g. '5 mg/m² * 1.1 m² = 5.5 mg (rounded to 5 mg; max 8 mg)')"
+          },
+          "route": {
+            "type": "string",
+            "enum": ["iv", "oral_liquid", "oral_capsule", "oral_tablet"]
+          },
+          "frequency": {
+            "type": "string",
+            "description": "Timing/frequency (e.g. 'q8h', 'once daily 1h before chemotherapy', 'q12h')"
+          },
+          "cycle_days": {
+            "type": "array",
+            "items": { "type": "integer" },
+            "description": "Days of cycle when given (e.g. [1, 2, 3, 4])"
+          },
+          "rule_citation": {
+            "type": "string",
+            "description": "Specific guideline citation (e.g. 'UZA v2 p.2 · Ondansetron 5 mg/m², max 8 mg/dose')"
+          }
+        }
+      }
+    },
+    "dexamethasone_rules": {
+      "type": "object",
+      "required": ["is_blocked", "rationale"],
+      "properties": {
+        "is_blocked": {
+          "type": "boolean",
+          "description": "True if dexamethasone is blocked (e.g. tumor lysis risk, leukemia induction, CAR-T, or already included in protocol)"
+        },
+        "rationale": {
+          "type": "string",
+          "description": "Rule citation explaining inclusion or block"
+        }
+      }
+    },
+    "breakthrough_plan": {
+      "type": "object",
+      "required": ["rescue_steps", "instructions"],
+      "properties": {
+        "rescue_steps": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["step_number", "drug_name", "dose", "route", "rule_citation"],
+            "properties": {
+              "step_number": { "type": "integer" },
+              "drug_name": { "type": "string" },
+              "dose": { "type": "string" },
+              "route": { "type": "string" },
+              "max_daily_frequency": { "type": "string" },
+              "rule_citation": { "type": "string" }
+            }
+          }
+        },
+        "instructions": {
+          "type": "string",
+          "description": "Instructions for family and nursing staff when nausea occurs"
+        }
+      }
+    },
+    "signoffs": {
+      "type": "object",
+      "required": ["requires_dual_signoff", "advisory_notice"],
+      "properties": {
+        "requires_dual_signoff": {
+          "type": "boolean",
+          "default": true
+        },
+        "advisory_notice": {
+          "type": "string",
+          "default": "Advisory only — requires clinician sign-off"
+        },
+        "oncologist": {
+          "type": "object",
+          "properties": {
+            "signed": { "type": "boolean", "default": false },
+            "clinician_name": { "type": "string" },
+            "timestamp": { "type": "string", "format": "date-time" },
+            "riziv_inami": { "type": "string" }
+          }
+        },
+        "clinical_pharmacist": {
+          "type": "object",
+          "properties": {
+            "signed": { "type": "boolean", "default": false },
+            "clinician_name": { "type": "string" },
+            "timestamp": { "type": "string", "format": "date-time" },
+            "riziv_inami": { "type": "string" }
+          }
+        }
+      }
+    },
+    "family_schedule_multilingual": {
+      "type": "object",
+      "properties": {
+        "nl": {
+          "type": "object",
+          "properties": {
+            "headline": { "type": "string" },
+            "daily_steps": { "type": "array", "items": { "type": "string" } },
+            "what_to_do_if_vomiting": { "type": "string" }
+          }
+        },
+        "fr": {
+          "type": "object",
+          "properties": {
+            "headline": { "type": "string" },
+            "daily_steps": { "type": "array", "items": { "type": "string" } },
+            "what_to_do_if_vomiting": { "type": "string" }
+          }
+        },
+        "en": {
+          "type": "object",
+          "properties": {
+            "headline": { "type": "string" },
+            "daily_steps": { "type": "array", "items": { "type": "string" } },
+            "what_to_do_if_vomiting": { "type": "string" }
+          }
+        }
+      }
+    },
+    "emergency_contacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["role", "phone_number"],
+        "properties": {
+          "role": { "type": "string" },
+          "ward": { "type": "string" },
+          "phone_number": { "type": "string" }
+        }
+      }
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

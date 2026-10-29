@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aimesis.be/schemas/patient_context.schema.json",
+  "title": "PatientContext",
+  "description": "Patient clinical context and regimen parameters for CINV decision support. Pseudonymized; no PII.",
+  "type": "object",
+  "required": [
+    "patient_id",
+    "age_years",
+    "weight_kg",
+    "bsa_m2",
+    "chemo_regimen"
+  ],
+  "properties": {
+    "patient_id": {
+      "type": "string",
+      "description": "Pseudonymous identifier for the patient (e.g. PAT-2026-0042)"
+    },
+    "display_pseudonym": {
+      "type": "string",
+      "description": "Friendly pseudonym or initials (e.g. 'Emma D.')"
+    },
+    "age_years": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 21,
+      "description": "Patient age in years at treatment start"
+    },
+    "weight_kg": {
+      "type": "number",
+      "minimum": 1.0,
+      "maximum": 150.0,
+      "description": "Weight in kilograms"
+    },
+    "bsa_m2": {
+      "type": "number",
+      "minimum": 0.1,
+      "maximum": 3.0,
+      "description": "Body surface area in m² (Mosteller formula)"
+    },
+    "diagnosis": {
+      "type": "string",
+      "description": "Oncological diagnosis (e.g. 'B-cell ALL', 'Osteosarcoma')"
+    },
+    "protocol_name": {
+      "type": "string",
+      "description": "Chemotherapy protocol/trial name (e.g. 'AIEOP-BFM ALL 2017')"
+    },
+    "current_cycle": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 1,
+      "description": "Current chemotherapy treatment cycle number"
+    },
+    "chemo_regimen": {
+      "type": "array",
+      "description": "Antineoplastic medications planned for this cycle",
+      "items": {
+        "type": "object",
+        "required": ["drug_name", "dose_mg_per_m2", "day_numbers"],
+        "properties": {
+          "drug_name": {
+            "type": "string",
+            "description": "Standard INN drug name (e.g. 'Cisplatin', 'Doxorubicin', 'Cyclophosphamide')"
+          },
+          "dose_mg_per_m2": {
+            "type": "number",
+            "description": "Dose per m² BSA"
+          },
+          "day_numbers": {
+            "type": "array",
+            "items": { "type": "integer" },
+            "description": "Days of cycle when drug is infused (e.g. [1, 2, 3])"
+          },
+          "infusion_duration_hours": {
+            "type": "number",
+            "description": "Duration of infusion in hours"
+          }
+        }
+      }
+    },
+    "history_previous_cycles": {
+      "type": "object",
+      "properties": {
+        "had_refractory_cinv": {
+          "type": "boolean",
+          "default": false,
+          "description": "True if patient experienced breakthrough or refractory nausea/vomiting in prior cycle"
+        },
+        "prior_episode_count": {
+          "type": "integer",
+          "default": 0,
+          "description": "Count of emetic episodes recorded in previous cycle"
+        },
+        "anticipatory_nausea": {
+          "type": "boolean",
+          "default": false,
+          "description": "True if anticipatory nausea observed"
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "allergies_and_contraindications": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Documented drug allergies or contraindications (e.g. 'QTc prolongation', '5-HT3 hypersensitivity')"
+    },
+    "preferred_formulation": {
+      "type": "string",
+      "enum": ["oral_liquid", "oral_tablet", "iv", "orodispersible"],
+      "default": "iv",
+      "description": "Patient's preferred or clinically necessary drug formulation route"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}
