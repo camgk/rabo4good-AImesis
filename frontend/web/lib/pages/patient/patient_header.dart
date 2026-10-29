@@ -26,71 +26,71 @@ class PatientHeader extends StatelessWidget {
     final cs = theme.colorScheme;
     final p = patient;
     final sexLabel = switch (p.sex) { 'F' => 'female', 'M' => 'male', _ => p.sex ?? '' };
+    final details = <GovukSummaryRow>[
+      GovukSummaryRow(key: 'Weight', value: _n(p.weightKg, 'kg')),
+      GovukSummaryRow(key: 'Height', value: _n(p.heightCm, 'cm', decimals: 0)),
+      GovukSummaryRow(key: 'BSA', value: p.bsaM2 == null ? 'missing' : '${p.bsaM2!.toStringAsFixed(2)} m²'),
+      GovukSummaryRow(key: 'Diagnosis', value: p.diagnosis ?? '—'),
+      GovukSummaryRow(key: 'Protocol', value: p.protocol ?? '—'),
+      GovukSummaryRow(key: 'Cycle', value: [p.cycle ?? '—', if (p.cycleStart != null) 'from ${p.cycleStart}'].join(' · ')),
+      GovukSummaryRow(key: 'Active meds', value: p.activeMeds.isEmpty ? 'none' : p.activeMeds.map(cap).join(', ')),
+      GovukSummaryRow(key: 'Language', value: (p.language ?? '—').toUpperCase()),
+    ];
+    final gutter = GovukLayout.isTablet(context) ? GovukSpacing.s6 : GovukSpacing.s3;
     return Container(
-      color: cs.surfaceContainerLow,
-      padding: const EdgeInsets.fromLTRB(16, 12, 24, 14),
+      color: cs.surface,
+      padding: EdgeInsets.fromLTRB(gutter, 0, gutter, GovukSpacing.s3),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
+          Row(children: [
+            GovukBackLink(label: 'Back to worklist', onTap: () => context.go('/worklist')),
+            const Spacer(),
+            refreshing
+                ? const Padding(
+                    padding: EdgeInsets.all(12),
+                    child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+                  )
+                : IconButton(
+                    tooltip: 'Reload patient and plan',
+                    onPressed: onRefresh,
+                    icon: const Icon(Icons.refresh_rounded),
+                  ),
+          ]),
+          Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: GovukSpacing.s3,
+            runSpacing: GovukSpacing.s2,
             children: [
-              IconButton(
-                tooltip: 'Back to worklist',
-                onPressed: () => context.go('/worklist'),
-                icon: const Icon(Icons.arrow_back_rounded),
+              Semantics(
+                header: true,
+                child: Text(p.alias, style: GovukType.style(context, GovukType.p36, bold: true, color: cs.onSurface)),
               ),
-              const SizedBox(width: 4),
-              Expanded(
-                child: Wrap(
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  spacing: 12,
-                  runSpacing: 6,
-                  children: [
-                    Text(p.alias, style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
-                    Text(
-                      [if (p.age != null) '${p.age} years', sexLabel].where((s) => s.isNotEmpty).join(', '),
-                      style: theme.textTheme.titleMedium?.copyWith(color: cs.onSurfaceVariant),
-                    ),
-                    for (final t in p.tags) TagChip(t),
-                  ],
-                ),
+              Text(
+                [if (p.age != null) '${p.age} years', sexLabel].where((s) => s.isNotEmpty).join(', '),
+                style: GovukType.style(context, GovukType.p24, color: cs.onSurfaceVariant),
               ),
-              if (!plan.refused && plan.overallTier != null) ...[
-                TierBadge(tier: plan.overallTier!),
-                const SizedBox(width: 10),
-              ],
+              for (final t in p.tags) TagChip(t),
+              if (!plan.refused && plan.overallTier != null) TierBadge(tier: plan.overallTier!),
               PlanStatusChip(plan.status),
-              const SizedBox(width: 4),
-              refreshing
-                  ? const Padding(
-                      padding: EdgeInsets.all(12),
-                      child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
-                    )
-                  : IconButton(
-                      tooltip: 'Reload patient and plan',
-                      onPressed: onRefresh,
-                      icon: const Icon(Icons.refresh_rounded),
-                    ),
             ],
           ),
-          const SizedBox(height: 10),
-          Padding(
-            padding: const EdgeInsets.only(left: 52),
-            child: Wrap(
-              spacing: 28,
-              runSpacing: 10,
-              children: [
-                KeyValue('Weight', _n(p.weightKg, 'kg')),
-                KeyValue('Height', _n(p.heightCm, 'cm', decimals: 0)),
-                KeyValue('BSA', p.bsaM2 == null ? 'missing' : '${p.bsaM2!.toStringAsFixed(2)} m²'),
-                KeyValue('Diagnosis', p.diagnosis ?? '—'),
-                KeyValue('Protocol', p.protocol ?? '—'),
-                KeyValue('Cycle', [p.cycle ?? '—', if (p.cycleStart != null) 'from ${p.cycleStart}'].join(' · ')),
-                KeyValue('Active meds', p.activeMeds.isEmpty ? 'none' : p.activeMeds.map(cap).join(', ')),
-                KeyValue('Language', (p.language ?? '—').toUpperCase()),
-              ],
-            ),
-          ),
+          const SizedBox(height: GovukSpacing.s2),
+          LayoutBuilder(builder: (context, c) {
+            // Two summary-list columns on wide screens keep the header short.
+            if (c.maxWidth < 900) {
+              return GovukDetails(
+                summary: 'Patient details',
+                child: GovukSummaryList(rows: details),
+              );
+            }
+            final half = (details.length / 2).ceil();
+            return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Expanded(child: GovukSummaryList(rows: details.sublist(0, half), keyWidthFraction: 0.35)),
+              const SizedBox(width: GovukSpacing.s6),
+              Expanded(child: GovukSummaryList(rows: details.sublist(half), keyWidthFraction: 0.35)),
+            ]);
+          }),
         ],
       ),
     );

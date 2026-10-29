@@ -1,3 +1,4 @@
+import 'package:aimesis_a2ui_catalog/aimesis_a2ui_catalog.dart';
 import 'package:aimesis_client/aimesis_client.dart';
 import 'package:flutter/material.dart' hide Route;
 import 'package:intl/intl.dart';
@@ -18,6 +19,9 @@ class RiskFactorsTab extends StatefulWidget {
 class _RiskFactorsTabState extends State<RiskFactorsTab> {
   late RiskFactors _rf = widget.ws.patient!.riskFactors;
   bool _saving = false;
+
+  /// GOV.UK success notification after a recalculation.
+  String? _notice;
   Future<List<Episode>>? _episodes;
 
   @override
@@ -40,12 +44,11 @@ class _RiskFactorsTabState extends State<RiskFactorsTab> {
       final plan = await widget.ws.mutate((api) => api.updateRiskFactors(widget.ws.patientId, _rf));
       await widget.ws.refreshPatient();
       if (!mounted) return;
-      setState(() => _rf = widget.ws.patient!.riskFactors);
-      messenger.showSnackBar(SnackBar(
-        behavior: SnackBarBehavior.floating,
-        content: Text('Plan recalculated · overall tier ${Tier.label(plan.overallTier)}'
-            '${plan.refused ? ' · plan refused' : ' · ${plan.antiemetics.length} antiemetic lines'}'),
-      ));
+      setState(() {
+        _rf = widget.ws.patient!.riskFactors;
+        _notice = 'Overall tier ${Tier.label(plan.overallTier)}'
+            '${plan.refused ? ' · plan refused' : ' · ${plan.antiemetics.length} antiemetic lines'}';
+      });
     } catch (e) {
       messenger.showSnackBar(SnackBar(behavior: SnackBarBehavior.floating, content: Text(errorMessage(e))));
     } finally {
@@ -67,14 +70,23 @@ class _RiskFactorsTabState extends State<RiskFactorsTab> {
         const SizedBox(height: 16),
         _companionCard(context, plan),
       ]);
-      if (wide) {
-        return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Expanded(flex: 5, child: left),
-          const SizedBox(width: 16),
-          Expanded(flex: 6, child: right),
-        ]);
-      }
-      return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [left, const SizedBox(height: 16), right]);
+      final Widget body = wide
+          ? Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Expanded(flex: 5, child: left),
+              const SizedBox(width: 16),
+              Expanded(flex: 6, child: right),
+            ])
+          : Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [left, const SizedBox(height: 16), right]);
+      if (_notice == null) return body;
+      return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        GovukNotificationBanner.success(
+          heading: 'Plan recalculated',
+          text: _notice,
+          onDismiss: () => setState(() => _notice = null),
+        ),
+        const SizedBox(height: GovukSpacing.s6),
+        body,
+      ]);
     });
   }
 
