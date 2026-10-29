@@ -177,7 +177,7 @@ def test_passport_times_casus1(client):
     times = [(i["time"], i["medicine"].split(" ")[0]) for i in d1["items"]]
     assert ("08:00", "Ondansetron") in times and ("16:00", "Ondansetron") in times and ("00:00", "Ondansetron") in times
     assert ("20:00", "Olanzapine") in times
-    assert d1["date"] == "2026-09-25"
+    assert d1["date"] == "2026-10-28"
 
 
 def test_pairing(client):

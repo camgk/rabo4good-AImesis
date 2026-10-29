@@ -52,7 +52,7 @@ def patients() -> list[dict]:
             "diagnosisGroup": "solid",
             "protocol": "HR-NBL2 · RAPID COJEC",
             "cycle": "B4",
-            "cycleStart": "2026-09-25",
+            "cycleStart": "2026-10-28",  # demo: shifted so today is cycle day 2 (case doc: 25/09)
             "chemo": [
                 {"drug": "vincristine", "doseMgM2": 1.5, "days": [1]},
                 {"drug": "cisplatin", "doseMgM2": 80, "days": [1]},
