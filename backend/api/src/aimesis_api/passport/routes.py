@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field
 from aimesis_api.passport.render import render_passport_payload
 
 router = APIRouter(prefix="/passport", tags=["Patient Passport (NL/FR/EN)"])
+passports_router = APIRouter(prefix="/passports", tags=["Patient Passport (NL/FR/EN)"])
 
 
 class PassportGenerateRequest(BaseModel):
@@ -31,7 +32,10 @@ class PassportGenerateRequest(BaseModel):
     pharmacist_name: Optional[str] = None
 
 
+@router.post("")
 @router.post("/generate")
+@passports_router.post("")
+@passports_router.post("/generate")
 def generate_passport(req: PassportGenerateRequest) -> Dict[str, Any]:
     """Generate a multilingual (NL/FR/EN) CINV Patient Passport JSON + HTML."""
     uza_eval = req.uza_evaluation
@@ -63,6 +67,7 @@ def generate_passport(req: PassportGenerateRequest) -> Dict[str, Any]:
 
 
 @router.post("/export-html", response_class=HTMLResponse)
+@passports_router.post("/export-html", response_class=HTMLResponse)
 def export_passport_html(req: PassportGenerateRequest) -> HTMLResponse:
     """Export print-ready HTML only when dual sign-off (oncologist + pharmacist) is complete."""
     if not (req.oncologist_signed and req.pharmacist_signed):
