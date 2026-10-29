@@ -3,6 +3,5 @@
 !Dockerfile
 !docker/
 !docker/**
-!build/
 !build/web/
 !build/web/**

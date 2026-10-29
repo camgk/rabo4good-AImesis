@@ -10,10 +10,10 @@
 .packages
 .flutter-plugins
 .flutter-plugins-dependencies
-lib/
-test/
-web/
+/lib/
+/test/
+/web/
 pubspec.lock
-build/*
-!build/web/
-!build/web/**
+/build/*
+!/build/web/
+!/build/web/**
