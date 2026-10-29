@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
 from typing import Any
 
 from dotenv import load_dotenv
@@ -12,6 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from aimesis_api.episodes.routes import router as episodes_router
 from aimesis_api.passport.routes import router as passport_router
 
+load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 load_dotenv()
 
 ALLOWED_ORIGINS = [
