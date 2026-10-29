@@ -1,3 +1,4 @@
+
 """Render structured JSON and print-ready HTML for the multilingual CINV Patient Passport."""
 
 from __future__ import annotations

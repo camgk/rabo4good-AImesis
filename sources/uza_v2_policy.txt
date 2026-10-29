@@ -1,0 +1,203 @@
+ANTI-EMETICA BELEID
+Bij Chemotherapy Induced
+Nauseau and Vomiting (CINV)
+
+HOOG EMETOGEEN (>90% kans op CINV in afwezigheid profylaxe)
+Carboplatine
+Cisplatine
+Cyclofosfamide >1500mg/m²
+Cytarabine IV vanaf 3g/m²
+Dacarbazine
+Dactinomycine IV ≥ 1,35 mg/m2
+Doxorubicine
+Methotrexaat IV ≥ 12g/m²
+
+Melphalan IV
+Thiotepa IV ≥ 300mg/m²
+Combinatie:
+Cytarabine/Daunorubicine of Etoposide
+Cyclofosfamide/anthracycline
+Cyclofosfamide/anthracycline/Etoposide
+Ifosfamide/Etoposide
+
+Ondansetron (3x/d)
++
+Dexamethasone
++
+Aprepitant
++
+Olanzapine ( >2j)
+
+MATIG EMETOGEEN (30-90% kans op CINV in afwezigheid van profylaxe)
+Arseentrioxide
+Azacitidine IV
+Bendamustine
+Busulfan
+Clofarabine
+Cyclofosfamide IV≤1500mg/m²
+Cytarabine >200mg <3g/m²
+
+Dactinomycine
+Daunorubicine
+Idarubicine
+Ifosfamide
+Irinotecan
+Lomustine
+Methotrexaat IV ≥250mg <12g/m²
+
+Ondansetron (2x/d)
++
+Dexamethasone
+OF
+Aprepitant
+
+LAAG EMETOGEEN (10-30% kans op CINV in afwezigheid van profylaxe)
+Asparaginase/Pegasparaginase
+ATG
+Blinatumomab
+Cytarabine <200mg/m² (lage dosis)
+Doxorubicine liposomaal
+Etoposide
+Gemcitabine
+Inotuzumab ozogamicin
+Methotrexaat <250mg/m² of IT
+
+Mitomycine
+Mitoxantrone IV
+Temozolomide
+Thiotepa <300mg/m²
+Topotecan
+Triple IT/ITT
+Vinblastine
+Vincristine
+Vinorelbine
+
+Ondansetron (1x/d)
+
+MINIMAAL EMETOGEEN (<10% kans op CINV in afwezigheid van profylaxe)
+Bevacizumab
+Bleomycine
+Bortezomib
+Cladribine
+Fludarabine
+Gemtuzumab ozogamicin
+
+JULI 2026 VERSIE 2
+
+Methotrexaat <50mg/m²
+Nelarabine
+Rituximab
+Thioguanine
+
+Geen standaard
+profylaxe
+
+ANTI-EMETICA BELEID
+Bij Chemotherapy Induced
+Nauseau and Vomiting (CINV)
+
+-
+
+De meest emetogene chemotherapie bepaalt het profylaxe-niveau
+Start toediening anti-emetica 30 min. (IV) tot 60 min. (PO) voor
+eerste toediening chemotherapie
+Consulteer EPD voor eventuele voorgaande CINV-profylaxe
+
+STOP PROFYLAXE
+-
+
+-
+
+Ondansetron:
+- Matig- en hoog emetogeen: t.e.m. 3 dagen na laatste
+chemotherapie
+- Laag emetogeen: enkel op dagen van chemotherapie
+Dexamethasone: enkel op dagen van chemotherapie
+Olanzapine: t.e.m. 3 dagen na laatste chemotherapie
+
+DOORBRAAK NAUSEA & BRAKEN
+
+= optreden van nausea en/of braken tijdens de acute en/of late fase
+ondanks geschikte CINV-profylaxe (zonder andere oorzaak)
+- Verhoog frequentie ondansetron naar 3x/d voor matig emetogeen
+– 2x/dag voor laag emetogeen – 1x/d voor minimaal emetogeen
+- Onvoldoende respons: overweeg opstart olanzapine (>2j)
+- Onvoldoende respons: associatie alizapride of lorazepam
+- Volgende chemotherapie cyclus: start met hoger profylaxe niveau
+
+ANTICIPATOIR NAUSEA & BRAKEN
+
+= optreden van nausea en/of braken voor aanvang van een nieuwe
+cyclus chemotherapie
+- Niet-farmacologische maatregelen (o.a. relaxatie)
+- Associatie lorazepam
+
+OPMERKINGEN
+
+GEEN dexamethasone: indien kuur al corticoïden bevat, bij
+hersentumoren, bij ALL behandeling, bij dinutuximab beta
+
+JULI 2026 VERSIE 2
+
+CORTICOÏDEN
+
+-
+
+PALONOSETRON (enkel in overleg met supervisie/apotheek)
+IV: <17j. 20 mcg/kg (max. 1500 mcg/dosis) eenmalig
+≥17j. 250 mcg/dosis eenmalig op D1, indien nodig herhalen op D4
+= langwerkende vorm, niet samen met ondansetron (tot 3 dagen na toediening palonosetron)
+Switch ondansetron → palonosetron bij onvoldoende controle van hoog emetogene kuren
+DEXAMETHASONE
+IV/PO: <0,6m² 1mg 2x/d (i.c.m. (fos)aprepitant) OF 2mg 2x/d (zonder (fos)aprepitant)
+≥0,6m² 2mg 2x/d (i.c.m. (fos)aprepitant) OF 4mg 2x/d (zonder (fos)aprepitant)
+GEEN voorkeur bij kuur met corticoïden/ALL/AML/hersentumoren/CAR-T patiënten
+IV Aacidexam® 5 mg/ml bevat ± 4 mg/ml actieve stof → dosis omrekenen
+
+NK1ANTAGONIST
+
+START PROFYLAXE
+
+ONDANSETRON
+IV/PO: 5 mg/m² (max. 8 mg/dosis) max. 3x/d
+Bij ontslag: 2x/d PO, patiënten doorverwijzen naar ziekenhuisapotheek
+
+(FOS)APREPITANT
+<6m of ≤6kg: geen indicatie
+PO: <12j. 3 mg/kg (max. 125mg) op D1 gevolgd door 2 mg/kg (max. 80mg) op D2 en D3
+≥12j. 125mg op D1 gevolgd door 80mg op D2 en D3
+IV: 3 mg/kg (max. 115mg) op D1 gevolgd door 2 mg/kg (max. 80mg) op D2 en D3
+OF: >6m - <2j. 5 mg/kg (max. 150mg/dosis) eenmalig IV bij eendaagse chemotherapie
+≥2j. - <12j. 4mg/kg (max. 150mg/dosis) eenmalig IV bij eendaagse chemotherapie
+≥12j.150mg eenmalig IV bij eendaagse chemotherapie.
+PO = voorkeur. Terugbetaling afhankelijk van leeftijd. Opgelet voor interacties (CYP3A4/2C9).
+
+ANTIPSYCHOTICA
+
+toediening t.e.m. 24u na laatste toediening chemotherapie) en late
+fase (eerste 96u na de acute fase)
+
+OLANZAPINE
+PO: <2j. geen indicatie
+≥2j. 0,1 mg/kg (max. 5 mg/dosis) 1x/d
+Dosis naar beneden afronden tot de dichtstbijzijnde 0,5mg. Inname 1 e dosis vlak voor
+chemotherapie, nadien bij voorkeur ‘s avonds. Nooit in monotherapie voor CINV-indicatie.
+
+BENZODOPAMINEANTAGONIST DIAZEPINE
+
+DOEL = nausea en braken voorkomen tijdens acute fase (vanaf 1e
+
+5HT3ANTAGONIST
+
+ALGEMENE INFO
+
+LORAZEPAM
+IV/PO: 0,025-0,05 mg/kg (max. 2 mg/dosis) elke 6u indien nodig bij doorbraak CINV
+OF: 0,04-0,08 mg/kg (max. 2 mg/dosis) avond voor en ochtend van eerste chemotherapie bij
+anticipatoir CINV
+IV-vorm niet terugbetaald
+ALIZAPRIDE
+IV of per os: 1 mg/kg (max. 50mg/dosis) max. 6x/d
+Enkel op dagen van chemotherapie
+
+
