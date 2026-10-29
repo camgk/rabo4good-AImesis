@@ -11,6 +11,8 @@ from typing import Any, Dict, List, Optional
 
 from aimesis_rules import (
     ChemoDrugInput,
+    RefusalReason,
+    RegimenClassification,
     EmetogenicTier,
     calculate_uza_dosing,
     check_ddi_interactions as _check_ddi_interactions,
@@ -34,13 +36,16 @@ def classify_regimen_emetogenicity(
     chemo_drugs_list: List[str],
     drug_doses_mg_m2: Optional[Dict[str, float]] = None,
     drug_routes: Optional[Dict[str, str]] = None,
-    strict_missing_dose: bool = False,
+    strict_missing_dose: bool = True,
+    drug_days: Optional[Dict[str, List[int]]] = None,
 ) -> Dict[str, Any]:
     """Classify the acute emetogenic risk of a pediatric chemotherapy regimen
-    per UZA July 2026 v2 Table 1 and compare against POGO 250111.
+    per UZA July 2026 v2 page 1. Supply doses for dose-dependent drugs and
+    the actual route and treatment days. Returns baseline strategy and source
+    rules without requiring age, weight or BSA. Refuses rather than guessing.
     """
     doses = {
-        normalize_drug_name(k): float(v)
+        normalize_drug_name(k): v
         for k, v in (drug_doses_mg_m2 or {}).items()
         if v is not None
     }
@@ -48,19 +53,28 @@ def classify_regimen_emetogenicity(
         normalize_drug_name(k): str(v)
         for k, v in (drug_routes or {}).items()
     }
-    inputs = [
-        ChemoDrugInput(
-            drug=d,
-            dose_mg_m2=doses.get(normalize_drug_name(d)),
-            route=routes.get(normalize_drug_name(d), "IV"),
-        )
-        for d in chemo_drugs_list
-    ]
+    days = {normalize_drug_name(k): v for k, v in (drug_days or {}).items()}
+    try:
+        inputs = [
+            ChemoDrugInput(
+                drug=d,
+                dose_mg_m2=doses.get(normalize_drug_name(d)),
+                route=routes.get(normalize_drug_name(d), "IV"),
+                days=days.get(normalize_drug_name(d), [1]),
+            )
+            for d in chemo_drugs_list
+        ]
+    except ValueError:
+        return RegimenClassification(
+            refused=True,
+            refusal_reasons=[RefusalReason(
+                field="regimen",
+                message="Provide finite positive doses and non-empty lists of positive integer treatment days.",
+            )],
+        ).model_dump()
+
     cls = classify_regimen_uza_v2(inputs, strict_missing_dose=strict_missing_dose)
-    pogo_comp = compare_regimen_uza_vs_pogo(inputs)
-    res = cls.model_dump()
-    res["pogo_comparison"] = pogo_comp
-    return res
+    return cls.model_dump()
 
 
 def check_ddi_interactions(
@@ -165,6 +179,7 @@ def evaluate_uza_cinv_policy_v2(
     concomitant_meds: Optional[List[str]] = None,
     strict_validation: bool = False,
     include_a2ui_surfaces: bool = True,
+    drug_routes: Optional[Dict[str, str]] = None,
 ) -> Dict[str, Any]:
     """Evaluate a complete pediatric CINV case under the UZA July 2026 v2 policy
     and POGO 250111 benchmark, including declarative A2UI surfaces.
@@ -176,6 +191,7 @@ def evaluate_uza_cinv_policy_v2(
         bsa_m2=bsa_m2,
         drug_doses_mg_m2=drug_doses_mg_m2,
         drug_days=drug_days,
+        drug_routes=drug_routes,
         indication=indication,
         can_swallow_tablets=can_swallow_tablets,
         prior_breakthrough_cinv=prior_breakthrough_cinv,
@@ -235,6 +251,7 @@ def get_patient_context(patient_id: str) -> Dict[str, Any]:
             if item.get("dose_mg_per_m2") is not None
         },
         "drug_days": {item["drug_name"]: item.get("day_numbers") or [] for item in regimen},
+        "drug_routes": {item["drug_name"]: item.get("route", "IV") for item in regimen},
         "chemo_duration_days": (max(all_days) - min(all_days) + 1) if all_days else 1,
         "can_swallow_tablets": record.get("preferred_formulation") == "oral_tablet",
         "prior_breakthrough_cinv": bool(history.get("had_refractory_cinv", False)),

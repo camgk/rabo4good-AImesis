@@ -15,9 +15,11 @@ from aimesis_agent.agui_endpoint import router as agui_router
 try:
     from aimesis_api.episodes.routes import router as episodes_router
     from aimesis_api.passport.routes import router as passport_router
+    from aimesis_api.regimens.routes import router as regimens_router
 except ImportError:
     episodes_router = None
     passport_router = None
+    regimens_router = None
 
 load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 load_dotenv()
@@ -58,6 +60,8 @@ def create_app() -> FastAPI:
         )
 
     app.include_router(agui_router)
+    if regimens_router is not None:
+        app.include_router(regimens_router)
     if episodes_router is not None:
         app.include_router(episodes_router)
     if passport_router is not None:
