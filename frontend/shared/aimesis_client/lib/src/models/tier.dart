@@ -61,8 +61,12 @@ abstract final class Role {
   static bool isFamily(String? role) => family.contains(role);
 }
 
+/// Alias of [DoseRoute]. Clashes with Flutter's `Route`; in Flutter files either
+/// `import 'package:flutter/material.dart' hide Route;` or use [DoseRoute].
+typedef Route = DoseRoute;
+
 /// Administration routes (RiskFactors.preferredRoute and dose lines).
-abstract final class Route {
+abstract final class DoseRoute {
   static const String oralTablet = 'oral_tablet';
   static const String oralLiquid = 'oral_liquid';
   static const String ngTube = 'ng_tube';

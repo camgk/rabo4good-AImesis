@@ -188,6 +188,10 @@ final Map<String, dynamic> episodeJson = {
 };
 
 /// Round-trips through JSON text to make sure toJson is encodable.
+http.Response _json(Object? body, int status) =>
+    http.Response.bytes(utf8.encode(jsonEncode(body)), status,
+        headers: {'content-type': 'application/json; charset=utf-8'});
+
 Map<String, dynamic> _rt(Map<String, dynamic> m) => jsonDecode(jsonEncode(m)) as Map<String, dynamic>;
 
 void main() {
@@ -213,7 +217,7 @@ void main() {
       expect(p.chemo[1].doseMgM2, 80.0);
       expect(p.history.single.nauseaDays, [2]);
       expect(p.history.single.hadNausea, isTrue);
-      expect(p.riskFactors.preferredRoute, Route.oralTablet);
+      expect(p.riskFactors.preferredRoute, DoseRoute.oralTablet);
       expect(p.riskFactors.priorNauseaNote, isNull);
       expect(p.pairingCode, 'C1-NBL2');
       expect(p.hasAnthropometrics, isTrue);
@@ -337,7 +341,7 @@ void main() {
         }
         if (req.url.path == '/patients/casus-1/passport') {
           expect(req.url.queryParameters['lang'], 'fr');
-          return http.Response.bytes(utf8.encode(jsonEncode(passportJson)), 200);
+          return _json(passportJson, 200);
         }
         return http.Response('{"error":"not found"}', 404);
       });
@@ -399,15 +403,15 @@ void main() {
         client: MockClient((req) async {
           calls.add('${req.method} ${req.url.path} ${req.body}');
           if (req.url.path.endsWith('/episodes')) {
-            return http.Response(jsonEncode(episodeJson), 201);
+            return _json(episodeJson, 201);
           }
           if (req.url.path == '/pairing') {
-            return http.Response(jsonEncode({'id': 'casus-2', 'alias': 'Casus 2'}), 200);
+            return _json({'id': 'casus-2', 'alias': 'Casus 2'}, 200);
           }
           if (req.url.path == '/resources') {
-            return http.Response(jsonEncode(passportJson['resources']), 200);
+            return _json(passportJson['resources'], 200);
           }
-          return http.Response(jsonEncode(planJson), 200);
+          return _json(planJson, 200);
         }),
       )..token = 't';
 

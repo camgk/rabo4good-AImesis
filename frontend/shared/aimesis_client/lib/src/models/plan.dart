@@ -150,7 +150,7 @@ class AntiemeticLine {
     return '$s $unit';
   }
 
-  String get routeLabel => Route.label(route);
+  String get routeLabel => DoseRoute.label(route);
 
   /// e.g. "Days 1–2", "Day 1", or "" when no days.
   String get daysLabel {

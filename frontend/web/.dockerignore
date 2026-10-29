@@ -1,0 +1,8 @@
+# Only the prebuilt web bundle and the docker/ config go into the image.
+*
+!Dockerfile
+!docker/
+!docker/**
+!build/
+!build/web/
+!build/web/**

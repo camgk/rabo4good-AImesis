@@ -111,21 +111,21 @@ class HistoryEntry {
 class RiskFactors {
   final bool canSwallowTablets;
 
-  /// One of [Route.values]: oral_tablet | oral_liquid | ng_tube | iv.
+  /// One of [DoseRoute.values]: oral_tablet | oral_liquid | ng_tube | iv.
   final String preferredRoute;
   final bool anticipatory;
   final String? priorNauseaNote;
 
   const RiskFactors({
     this.canSwallowTablets = true,
-    this.preferredRoute = Route.oralTablet,
+    this.preferredRoute = DoseRoute.oralTablet,
     this.anticipatory = false,
     this.priorNauseaNote,
   });
 
   factory RiskFactors.fromJson(Map<String, dynamic> json) => RiskFactors(
         canSwallowTablets: boolean(json['canSwallowTablets'], true),
-        preferredRoute: str(json['preferredRoute'], Route.oralTablet),
+        preferredRoute: str(json['preferredRoute'], DoseRoute.oralTablet),
         anticipatory: boolean(json['anticipatory']),
         priorNauseaNote: strOrNull(json['priorNauseaNote']),
       );
@@ -153,7 +153,7 @@ class RiskFactors {
         priorNauseaNote: priorNauseaNote ?? this.priorNauseaNote,
       );
 
-  String get routeLabel => Route.label(preferredRoute);
+  String get routeLabel => DoseRoute.label(preferredRoute);
 }
 
 /// Full patient context (`GET /patients/{id}`) = PatientSummary + clinical fields.

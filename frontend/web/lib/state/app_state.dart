@@ -73,9 +73,6 @@ class AppState extends ChangeNotifier {
     api.logout();
     storageRemove(_tokenKey);
     _account = null;
-    for (final w in _workspaces.values) {
-      w.dispose();
-    }
     _workspaces.clear();
     notifyListeners();
   }
@@ -89,6 +86,9 @@ class AppState extends ChangeNotifier {
         patientId,
         () => PatientWorkspace(this, patientId)..load(),
       );
+
+  /// Whether [workspace] already holds data for [patientId].
+  bool hasWorkspace(String patientId) => _workspaces[patientId]?.ready ?? false;
 
   void planChanged() {
     _plansVersion++;

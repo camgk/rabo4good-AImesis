@@ -15,11 +15,31 @@ import '../uza_vs_pogo/evidence_tab.dart';
 import 'patient_header.dart';
 
 /// `/patients/:id/:tab` — header + tab bar of the clinical flow.
-class PatientWorkspacePage extends StatelessWidget {
+class PatientWorkspacePage extends StatefulWidget {
   const PatientWorkspacePage({super.key, required this.patientId, required this.tab});
 
   final String patientId;
   final WorkspaceTab tab;
+
+  @override
+  State<PatientWorkspacePage> createState() => _PatientWorkspacePageState();
+}
+
+class _PatientWorkspacePageState extends State<PatientWorkspacePage> {
+  String get patientId => widget.patientId;
+  WorkspaceTab get tab => widget.tab;
+
+  @override
+  void initState() {
+    super.initState();
+    // Entering a patient: refresh cached data in the background so changes
+    // made by another clinician (e.g. pharmacist approval) show up.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final app = AppScope.read(context);
+      if (app.hasWorkspace(widget.patientId)) app.workspace(widget.patientId).load();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +56,7 @@ class PatientWorkspacePage extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            PatientHeader(patient: ws.patient!, plan: ws.plan!),
+            PatientHeader(patient: ws.patient!, plan: ws.plan!, refreshing: ws.loading, onRefresh: ws.load),
             _TabStrip(patientId: patientId, current: tab, ws: ws),
             Expanded(
               child: SingleChildScrollView(

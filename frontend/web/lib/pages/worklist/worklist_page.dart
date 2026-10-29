@@ -117,10 +117,15 @@ class _Stat extends StatelessWidget {
       child: Row(children: [
         Icon(icon, color: cs.primary),
         const SizedBox(width: 12),
-        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
-          Text(label, style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
-        ]),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
+            Text(label,
+                style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis),
+          ]),
+        ),
       ]),
     );
   }

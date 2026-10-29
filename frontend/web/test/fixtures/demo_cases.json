@@ -1,0 +1,1419 @@
+{
+ "casus-1": {
+  "patient": {
+   "id": "casus-1",
+   "alias": "Casus 1",
+   "age": 16,
+   "sex": "F",
+   "diagnosis": "Neuroblastoma",
+   "protocol": "HR-NBL2 · RAPID COJEC",
+   "cycle": "B4",
+   "cycleStart": "2026-09-25",
+   "overallTier": "low",
+   "planStatus": "draft",
+   "language": "nl",
+   "weightKg": 52.0,
+   "heightCm": 160.0,
+   "bsaM2": 1.52,
+   "diagnosisGroup": "solid",
+   "chemo": [
+    {
+     "drug": "vincristine",
+     "doseMgM2": 1.5,
+     "days": [
+      1
+     ]
+    },
+    {
+     "drug": "cisplatin",
+     "doseMgM2": 80.0,
+     "days": [
+      1
+     ]
+    }
+   ],
+   "activeMeds": [],
+   "history": [
+    {
+     "cycle": "B3",
+     "date": "2026-09-05",
+     "antiemetics": "Ondansetron 2x/d + aprepitant + dexamethasone + olanzapine",
+     "nauseaDays": [
+      2
+     ],
+     "vomitingDays": [],
+     "note": "Toch nausea gehad op dag 2 (toernota)"
+    }
+   ],
+   "riskFactors": {
+    "canSwallowTablets": true,
+    "preferredRoute": "oral_tablet",
+    "anticipatory": false,
+    "priorNauseaNote": null
+   },
+   "pairingCode": "C1-NBL2"
+  },
+  "plan": {
+   "patientId": "casus-1",
+   "status": "draft",
+   "refused": false,
+   "refusalReasons": [],
+   "unknownDrugs": [],
+   "drugTiers": [
+    {
+     "drug": "vincristine",
+     "doseMgM2": 1.5,
+     "tier": "low",
+     "rule": "UZA v2 · Vincristine = low",
+     "source": "UZA v2 (mock rules)"
+    },
+    {
+     "drug": "cisplatin",
+     "doseMgM2": 80.0,
+     "tier": "high",
+     "rule": "UZA v2 · Cisplatin = high",
+     "source": "UZA v2 (mock rules)"
+    }
+   ],
+   "dayTiers": [
+    {
+     "day": 1,
+     "tier": "high",
+     "drugs": [
+      "vincristine",
+      "cisplatin"
+     ]
+    }
+   ],
+   "overallTier": "high",
+   "combinationRules": [],
+   "dexamethasone": {
+    "blocked": false,
+    "reason": null,
+    "source": "UZA v2 (mock rules)"
+   },
+   "antiemetics": [
+    {
+     "drug": "ondansetron",
+     "doseMg": 7.6,
+     "unit": "mg",
+     "frequency": "3x/d",
+     "route": "oral_tablet",
+     "days": [
+      1,
+      2
+     ],
+     "formula": "5 mg/m² per dose, max 8 mg/dose",
+     "steps": [
+      "1.52 m² × 5 mg/m² = 7.60 mg",
+      "≤ 8 mg/dose, rounded to 0.1 mg → 7.6 mg"
+     ],
+     "source": "UZA v2 (mock rules) · Ondansetron 5 mg/m², max 8 mg/dose",
+     "notes": [
+      "step-up: prior nausea day 2 on ondansetron 2x/d"
+     ]
+    },
+    {
+     "drug": "aprepitant",
+     "doseMg": 125.0,
+     "unit": "mg",
+     "frequency": "1x/d",
+     "route": "oral_tablet",
+     "days": [
+      1
+     ],
+     "formula": "age ≥ 12 y and weight ≥ 30 kg: 125 mg day 1",
+     "steps": [
+      "age 16 y, 52 kg → fixed dose 125 mg"
+     ],
+     "source": "UZA v2 (mock rules) · Aprepitant",
+     "notes": []
+    },
+    {
+     "drug": "aprepitant",
+     "doseMg": 80.0,
+     "unit": "mg",
+     "frequency": "1x/d",
+     "route": "oral_tablet",
+     "days": [
+      2,
+      3
+     ],
+     "formula": "age ≥ 12 y and weight ≥ 30 kg: 80 mg days 2–3",
+     "steps": [
+      "age 16 y, 52 kg → fixed dose 80 mg"
+     ],
+     "source": "UZA v2 (mock rules) · Aprepitant",
+     "notes": []
+    },
+    {
+     "drug": "dexamethasone",
+     "doseMg": 2.0,
+     "unit": "mg",
+     "frequency": "2x/d",
+     "route": "oral_tablet",
+     "days": [
+      1,
+      2
+     ],
+     "formula": "BSA ≤ 0.6 m²: 2 mg 2x/d; BSA > 0.6 m²: 4 mg 2x/d; halve with aprepitant",
+     "steps": [
+      "BSA 1.52 m² > 0.6 m² → 4 mg 2x/d",
+      "CYP3A4: dose halved with aprepitant → 2 mg 2x/d"
+     ],
+     "source": "UZA v2 (mock rules) · Dexamethasone",
+     "notes": [
+      "CYP3A4: dose halved with aprepitant"
+     ]
+    },
+    {
+     "drug": "olanzapine",
+     "doseMg": 5.0,
+     "unit": "mg",
+     "frequency": "1x/d (evening)",
+     "route": "oral_tablet",
+     "days": [
+      1,
+      2
+     ],
+     "formula": "0.1 mg/kg once daily in the evening, max 10 mg, rounded down to 0.5 mg",
+     "steps": [
+      "52 kg × 0.1 = 5.2 mg → 5.0 mg"
+     ],
+     "source": "UZA v2 (mock rules) · Olanzapine",
+     "notes": []
+    }
+   ],
+   "breakthrough": [
+    {
+     "drug": "alizapride",
+     "doseMg": 50.0,
+     "unit": "mg",
+     "frequency": "3x/d if needed",
+     "route": "oral_tablet",
+     "formula": "5 mg/kg/day in 3 doses, max 150 mg/day (mock dose)",
+     "source": "UZA v2 (mock rules)",
+     "notes": [
+      "mock dose",
+      "52 kg × 5 mg/kg = 260.0 mg/day → 150 mg/day ÷ 3"
+     ]
+    }
+   ],
+   "alternatives": [
+    {
+     "title": "Palonosetron IV once instead of ondansetron",
+     "detail": "Single IV dose replaces ondansetron for the cycle — never within 3 days of ondansetron",
+     "source": "UZA v2 (mock rules)"
+    }
+   ],
+   "stepUps": [
+    {
+     "title": "Ondansetron → 3x/d",
+     "reason": "step-up: prior nausea day 2 on ondansetron 2x/d",
+     "source": "UZA v2 (mock rules)"
+    }
+   ],
+   "interactions": [
+    {
+     "severity": "info",
+     "drugs": [
+      "aprepitant",
+      "dexamethasone"
+     ],
+     "message": "Aprepitant inhibits CYP3A4 and raises dexamethasone exposure — dexamethasone dose already halved",
+     "alternative": null,
+     "source": "BCFI/CBIP (mock)"
+    }
+   ],
+   "uzaVsPogo": [
+    {
+     "item": "vincristine 1.5 mg/m²",
+     "uzaTier": "low",
+     "pogoTier": "low",
+     "differs": false,
+     "note": "Same tier in UZA v2 and POGO"
+    },
+    {
+     "item": "cisplatin 80 mg/m²",
+     "uzaTier": "high",
+     "pogoTier": "high",
+     "differs": false,
+     "note": "Same tier in UZA v2 and POGO"
+    }
+   ],
+   "episodesSummary": {
+    "currentCycle": [],
+    "priorNauseaDays": [
+     2
+    ]
+   },
+   "signoffs": {
+    "oncologist": null,
+    "pharmacist": null
+   },
+   "comments": [],
+   "advisory": "Advisory only — requires clinician sign-off. Demo data, not for clinical use."
+  },
+  "passport": {
+   "patientId": "casus-1",
+   "alias": "Casus 1",
+   "lang": "nl",
+   "title": "CINV-paspoort · Casus 1",
+   "overallTier": "high",
+   "status": "draft",
+   "signedOff": false,
+   "days": [
+    {
+     "day": 1,
+     "label": "Dag 1",
+     "date": "2026-09-25",
+     "items": [
+      {
+       "time": "08:00",
+       "medicine": "Ondansetron (tegen misselijkheid)",
+       "amount": "7,6 mg",
+       "route": "tablet via de mond",
+       "note": null
+      },
+      {
+       "time": "08:00",
+       "medicine": "Aprepitant (tegen misselijkheid)",
+       "amount": "125 mg",
+       "route": "tablet via de mond",
+       "note": null
+      },
+      {
+       "time": "08:00",
+       "medicine": "Dexamethason (corticosteroïd)",
+       "amount": "2 mg",
+       "route": "tablet via de mond",
+       "note": null
+      },
+      {
+       "time": "16:00",
+       "medicine": "Ondansetron (tegen misselijkheid)",
+       "amount": "7,6 mg",
+       "route": "tablet via de mond",
+       "note": null
+      },
+      {
+       "time": "20:00",
+       "medicine": "Dexamethason (corticosteroïd)",
+       "amount": "2 mg",
+       "route": "tablet via de mond",
+       "note": null
+      },
+      {
+       "time": "20:00",
+       "medicine": "Olanzapine (tegen misselijkheid, 's avonds)",
+       "amount": "5 mg",
+       "route": "tablet via de mond",
+       "note": "'s Avonds innemen, kan slaperig maken"
+      },
+      {
+       "time": "00:00",
+       "medicine": "Ondansetron (tegen misselijkheid)",
+       "amount": "7,6 mg",
+       "route": "tablet via de mond",
+       "note": null
+      }
+     ]
+    },
+    {
+     "day": 2,
+     "label": "Dag 2",
+     "date": "2026-09-26",
+     "items": [
+      {
+       "time": "08:00",
+       "medicine": "Ondansetron (tegen misselijkheid)",
+       "amount": "7,6 mg",
+       "route": "tablet via de mond",
+       "note": null
+      },
+      {
+       "time": "08:00",
+       "medicine": "Aprepitant (tegen misselijkheid)",
+       "amount": "80 mg",
+       "route": "tablet via de mond",
+       "note": null
+      },
+      {
+       "time": "08:00",
+       "medicine": "Dexamethason (corticosteroïd)",
+       "amount": "2 mg",
+       "route": "tablet via de mond",
+       "note": null
+      },
+      {
+       "time": "16:00",
+       "medicine": "Ondansetron (tegen misselijkheid)",
+       "amount": "7,6 mg",
+       "route": "tablet via de mond",
+       "note": null
+      },
+      {
+       "time": "20:00",
+       "medicine": "Dexamethason (corticosteroïd)",
+       "amount": "2 mg",
+       "route": "tablet via de mond",
+       "note": null
+      },
+      {
+       "time": "20:00",
+       "medicine": "Olanzapine (tegen misselijkheid, 's avonds)",
+       "amount": "5 mg",
+       "route": "tablet via de mond",
+       "note": "'s Avonds innemen, kan slaperig maken"
+      },
+      {
+       "time": "00:00",
+       "medicine": "Ondansetron (tegen misselijkheid)",
+       "amount": "7,6 mg",
+       "route": "tablet via de mond",
+       "note": null
+      }
+     ]
+    },
+    {
+     "day": 3,
+     "label": "Dag 3",
+     "date": "2026-09-27",
+     "items": [
+      {
+       "time": "08:00",
+       "medicine": "Aprepitant (tegen misselijkheid)",
+       "amount": "80 mg",
+       "route": "tablet via de mond",
+       "note": null
+      }
+     ]
+    }
+   ],
+   "warningSigns": [
+    "Uw kind kan langer dan 6 uur geen vocht binnenhouden",
+    "Koorts van 38,5 °C of hoger",
+    "Uw kind is erg slaperig of verward",
+    "Geen natte luier / geen urine gedurende 8 uur",
+    "Bloed of donker 'koffiedik' in het braaksel",
+    "Misselijkheid of braken blijft ondanks de extra medicatie"
+   ],
+   "wardPhone": "+32 3 000 00 00",
+   "resources": [],
+   "pairingCode": "C1-NBL2",
+   "disclaimer": "Demo-gegevens, niet voor klinisch gebruik. Dit schema is pas geldig na ondertekening door de oncoloog en de ziekenhuisapotheker. Bel bij twijfel altijd de afdeling."
+  }
+ },
+ "casus-3": {
+  "patient": {
+   "id": "casus-3",
+   "alias": "Casus 3",
+   "age": 14,
+   "sex": "M",
+   "diagnosis": "Ewing sarcoma",
+   "protocol": "iEuroEwing · IE",
+   "cycle": "IE #3",
+   "cycleStart": "2026-10-29",
+   "overallTier": "low",
+   "planStatus": "draft",
+   "language": "nl",
+   "weightKg": 45.0,
+   "heightCm": 158.0,
+   "bsaM2": 1.41,
+   "diagnosisGroup": "solid",
+   "chemo": [
+    {
+     "drug": "ifosfamide",
+     "doseMgM2": 1800.0,
+     "days": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "drug": "etoposide",
+     "doseMgM2": 100.0,
+     "days": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    }
+   ],
+   "activeMeds": [],
+   "history": [
+    {
+     "cycle": "IE #2",
+     "date": null,
+     "antiemetics": null,
+     "nauseaDays": [
+      4
+     ],
+     "vomitingDays": [
+      4
+     ],
+     "note": "Misselijkheid en braken op dag 4"
+    }
+   ],
+   "riskFactors": {
+    "canSwallowTablets": true,
+    "preferredRoute": "oral_tablet",
+    "anticipatory": false,
+    "priorNauseaNote": null
+   },
+   "pairingCode": "C3-IE03"
+  },
+  "plan": {
+   "patientId": "casus-3",
+   "status": "draft",
+   "refused": false,
+   "refusalReasons": [],
+   "unknownDrugs": [],
+   "drugTiers": [
+    {
+     "drug": "ifosfamide",
+     "doseMgM2": 1800.0,
+     "tier": "moderate",
+     "rule": "UZA v2 · Ifosfamide = moderate",
+     "source": "UZA v2 (mock rules)"
+    },
+    {
+     "drug": "etoposide",
+     "doseMgM2": 100.0,
+     "tier": "low",
+     "rule": "UZA v2 · Etoposide = low",
+     "source": "UZA v2 (mock rules)"
+    }
+   ],
+   "dayTiers": [
+    {
+     "day": 1,
+     "tier": "high",
+     "drugs": [
+      "ifosfamide",
+      "etoposide"
+     ]
+    },
+    {
+     "day": 2,
+     "tier": "high",
+     "drugs": [
+      "ifosfamide",
+      "etoposide"
+     ]
+    },
+    {
+     "day": 3,
+     "tier": "high",
+     "drugs": [
+      "ifosfamide",
+      "etoposide"
+     ]
+    },
+    {
+     "day": 4,
+     "tier": "high",
+     "drugs": [
+      "ifosfamide",
+      "etoposide"
+     ]
+    },
+    {
+     "day": 5,
+     "tier": "high",
+     "drugs": [
+      "ifosfamide",
+      "etoposide"
+     ]
+    }
+   ],
+   "overallTier": "high",
+   "combinationRules": [
+    {
+     "rule": "UZA v2 + POGO · Ifosfamide + Etoposide = HEC",
+     "source": "UZA v2 + POGO (mock rules)"
+    }
+   ],
+   "dexamethasone": {
+    "blocked": false,
+    "reason": null,
+    "source": "UZA v2 (mock rules)"
+   },
+   "antiemetics": [
+    {
+     "drug": "ondansetron",
+     "doseMg": 7.1,
+     "unit": "mg",
+     "frequency": "3x/d",
+     "route": "oral_tablet",
+     "days": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+     ],
+     "formula": "5 mg/m² per dose, max 8 mg/dose",
+     "steps": [
+      "1.41 m² × 5 mg/m² = 7.05 mg",
+      "≤ 8 mg/dose, rounded to 0.1 mg → 7.1 mg"
+     ],
+     "source": "UZA v2 (mock rules) · Ondansetron 5 mg/m², max 8 mg/dose",
+     "notes": []
+    },
+    {
+     "drug": "aprepitant",
+     "doseMg": 125.0,
+     "unit": "mg",
+     "frequency": "1x/d",
+     "route": "oral_tablet",
+     "days": [
+      1
+     ],
+     "formula": "age ≥ 12 y and weight ≥ 30 kg: 125 mg day 1",
+     "steps": [
+      "age 14 y, 45 kg → fixed dose 125 mg"
+     ],
+     "source": "UZA v2 (mock rules) · Aprepitant",
+     "notes": []
+    },
+    {
+     "drug": "aprepitant",
+     "doseMg": 80.0,
+     "unit": "mg",
+     "frequency": "1x/d",
+     "route": "oral_tablet",
+     "days": [
+      2,
+      3,
+      4,
+      5
+     ],
+     "formula": "age ≥ 12 y and weight ≥ 30 kg: 80 mg days 2–5",
+     "steps": [
+      "age 14 y, 45 kg → fixed dose 80 mg"
+     ],
+     "source": "UZA v2 (mock rules) · Aprepitant",
+     "notes": [
+      "extend aprepitant to days 4–5, prior nausea day 4"
+     ]
+    },
+    {
+     "drug": "dexamethasone",
+     "doseMg": 2.0,
+     "unit": "mg",
+     "frequency": "2x/d",
+     "route": "oral_tablet",
+     "days": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+     ],
+     "formula": "BSA ≤ 0.6 m²: 2 mg 2x/d; BSA > 0.6 m²: 4 mg 2x/d; halve with aprepitant",
+     "steps": [
+      "BSA 1.41 m² > 0.6 m² → 4 mg 2x/d",
+      "CYP3A4: dose halved with aprepitant → 2 mg 2x/d"
+     ],
+     "source": "UZA v2 (mock rules) · Dexamethasone",
+     "notes": [
+      "CYP3A4: dose halved with aprepitant"
+     ]
+    },
+    {
+     "drug": "olanzapine",
+     "doseMg": 4.5,
+     "unit": "mg",
+     "frequency": "1x/d (evening)",
+     "route": "oral_tablet",
+     "days": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+     ],
+     "formula": "0.1 mg/kg once daily in the evening, max 10 mg, rounded down to 0.5 mg",
+     "steps": [
+      "45 kg × 0.1 = 4.5 mg → 4.5 mg"
+     ],
+     "source": "UZA v2 (mock rules) · Olanzapine",
+     "notes": []
+    }
+   ],
+   "breakthrough": [
+    {
+     "drug": "alizapride",
+     "doseMg": 50.0,
+     "unit": "mg",
+     "frequency": "3x/d if needed",
+     "route": "oral_tablet",
+     "formula": "5 mg/kg/day in 3 doses, max 150 mg/day (mock dose)",
+     "source": "UZA v2 (mock rules)",
+     "notes": [
+      "mock dose",
+      "45 kg × 5 mg/kg = 225.0 mg/day → 150 mg/day ÷ 3"
+     ]
+    }
+   ],
+   "alternatives": [],
+   "stepUps": [
+    {
+     "title": "Aprepitant through day 5",
+     "reason": "extend aprepitant to days 4–5, prior nausea day 4",
+     "source": "UZA v2 (mock rules)"
+    }
+   ],
+   "interactions": [
+    {
+     "severity": "info",
+     "drugs": [
+      "aprepitant",
+      "dexamethasone"
+     ],
+     "message": "Aprepitant inhibits CYP3A4 and raises dexamethasone exposure — dexamethasone dose already halved",
+     "alternative": null,
+     "source": "BCFI/CBIP (mock)"
+    }
+   ],
+   "uzaVsPogo": [
+    {
+     "item": "ifosfamide 1800 mg/m²",
+     "uzaTier": "moderate",
+     "pogoTier": "moderate",
+     "differs": false,
+     "note": "Same tier in UZA v2 and POGO"
+    },
+    {
+     "item": "etoposide 100 mg/m²",
+     "uzaTier": "low",
+     "pogoTier": "low",
+     "differs": false,
+     "note": "Same tier in UZA v2 and POGO"
+    },
+    {
+     "item": "ifosfamide + etoposide (combination)",
+     "uzaTier": "high",
+     "pogoTier": "high",
+     "differs": false,
+     "note": "Both classify the combination as highly emetogenic"
+    }
+   ],
+   "episodesSummary": {
+    "currentCycle": [],
+    "priorNauseaDays": [
+     4
+    ]
+   },
+   "signoffs": {
+    "oncologist": null,
+    "pharmacist": null
+   },
+   "comments": [],
+   "advisory": "Advisory only — requires clinician sign-off. Demo data, not for clinical use."
+  },
+  "passport": {
+   "patientId": "casus-3",
+   "alias": "Casus 3",
+   "lang": "nl",
+   "title": "CINV-paspoort · Casus 3",
+   "overallTier": "high",
+   "status": "draft",
+   "signedOff": false,
+   "days": [
+    {
+     "day": 1,
+     "label": "Dag 1",
+     "date": "2026-10-29",
+     "items": [
+      {
+       "time": "08:00",
+       "medicine": "Ondansetron (tegen misselijkheid)",
+       "amount": "7,1 mg",
+       "route": "tablet via de mond",
+       "note": null
+      },
+      {
+       "time": "08:00",
+       "medicine": "Aprepitant (tegen misselijkheid)",
+       "amount": "125 mg",
+       "route": "tablet via de mond",
+       "note": null
+      },
+      {
+       "time": "08:00",
+       "medicine": "Dexamethason (corticosteroïd)",
+       "amount": "2 mg",
+       "route": "tablet via de mond",
+       "note": null
+      },
+      {
+       "time": "16:00",
+       "medicine": "Ondansetron (tegen misselijkheid)",
+       "amount": "7,1 mg",
+       "route": "tablet via de mond",
+       "note": null
+      },
+      {
+       "time": "20:00",
+       "medicine": "Dexamethason (corticosteroïd)",
+       "amount": "2 mg",
+       "route": "tablet via de mond",
+       "note": null
+      },
+      {
+       "time": "20:00",
+       "medicine": "Olanzapine (tegen misselijkheid, 's avonds)",
+       "amount": "4,5 mg",
+       "route": "tablet via de mond",
+       "note": "'s Avonds innemen, kan slaperig maken"
+      },
+      {
+       "time": "00:00",
+       "medicine": "Ondansetron (tegen misselijkheid)",
+       "amount": "7,1 mg",
+       "route": "tablet via de mond",
+       "note": null
+      }
+     ]
+    },
+    {
+     "day": 2,
+     "label": "Dag 2",
+     "date": "2026-10-30",
+     "items": [
+      {
+       "time": "08:00",
+       "medicine": "Ondansetron (tegen misselijkheid)",
+       "amount": "7,1 mg",
+       "route": "tablet via de mond",
+       "note": null
+      },
+      {
+       "time": "08:00",
+       "medicine": "Aprepitant (tegen misselijkheid)",
+       "amount": "80 mg",
+       "route": "tablet via de mond",
+       "note": null
+      },
+      {
+       "time": "08:00",
+       "medicine": "Dexamethason (corticosteroïd)",
+       "amount": "2 mg",
+       "route": "tablet via de mond",
+       "note": null
+      },
+      {
+       "time": "16:00",
+       "medicine": "Ondansetron (tegen misselijkheid)",
+       "amount": "7,1 mg",
+       "route": "tablet via de mond",
+       "note": null
+      },
+      {
+       "time": "20:00",
+       "medicine": "Dexamethason (corticosteroïd)",
+       "amount": "2 mg",
+       "route": "tablet via de mond",
+       "note": null
+      },
+      {
+       "time": "20:00",
+       "medicine": "Olanzapine (tegen misselijkheid, 's avonds)",
+       "amount": "4,5 mg",
+       "route": "tablet via de mond",
+       "note": "'s Avonds innemen, kan slaperig maken"
+      },
+      {
+       "time": "00:00",
+       "medicine": "Ondansetron (tegen misselijkheid)",
+       "amount": "7,1 mg",
+       "route": "tablet via de mond",
+       "note": null
+      }
+     ]
+    },
+    {
+     "day": 3,
+     "label": "Dag 3",
+     "date": "2026-10-31",
+     "items": [
+      {
+       "time": "08:00",
+       "medicine": "Ondansetron (tegen misselijkheid)",
+       "amount": "7,1 mg",
+       "route": "tablet via de mond",
+       "note": null
+      },
+      {
+       "time": "08:00",
+       "medicine": "Aprepitant (tegen misselijkheid)",
+       "amount": "80 mg",
+       "route": "tablet via de mond",
+       "note": null
+      },
+      {
+       "time": "08:00",
+       "medicine": "Dexamethason (corticosteroïd)",
+       "amount": "2 mg",
+       "route": "tablet via de mond",
+       "note": null
+      },
+      {
+       "time": "16:00",
+       "medicine": "Ondansetron (tegen misselijkheid)",
+       "amount": "7,1 mg",
+       "route": "tablet via de mond",
+       "note": null
+      },
+      {
+       "time": "20:00",
+       "medicine": "Dexamethason (corticosteroïd)",
+       "amount": "2 mg",
+       "route": "tablet via de mond",
+       "note": null
+      },
+      {
+       "time": "20:00",
+       "medicine": "Olanzapine (tegen misselijkheid, 's avonds)",
+       "amount": "4,5 mg",
+       "route": "tablet via de mond",
+       "note": "'s Avonds innemen, kan slaperig maken"
+      },
+      {
+       "time": "00:00",
+       "medicine": "Ondansetron (tegen misselijkheid)",
+       "amount": "7,1 mg",
+       "route": "tablet via de mond",
+       "note": null
+      }
+     ]
+    },
+    {
+     "day": 4,
+     "label": "Dag 4",
+     "date": "2026-11-01",
+     "items": [
+      {
+       "time": "08:00",
+       "medicine": "Ondansetron (tegen misselijkheid)",
+       "amount": "7,1 mg",
+       "route": "tablet via de mond",
+       "note": null
+      },
+      {
+       "time": "08:00",
+       "medicine": "Aprepitant (tegen misselijkheid)",
+       "amount": "80 mg",
+       "route": "tablet via de mond",
+       "note": null
+      },
+      {
+       "time": "08:00",
+       "medicine": "Dexamethason (corticosteroïd)",
+       "amount": "2 mg",
+       "route": "tablet via de mond",
+       "note": null
+      },
+      {
+       "time": "16:00",
+       "medicine": "Ondansetron (tegen misselijkheid)",
+       "amount": "7,1 mg",
+       "route": "tablet via de mond",
+       "note": null
+      },
+      {
+       "time": "20:00",
+       "medicine": "Dexamethason (corticosteroïd)",
+       "amount": "2 mg",
+       "route": "tablet via de mond",
+       "note": null
+      },
+      {
+       "time": "20:00",
+       "medicine": "Olanzapine (tegen misselijkheid, 's avonds)",
+       "amount": "4,5 mg",
+       "route": "tablet via de mond",
+       "note": "'s Avonds innemen, kan slaperig maken"
+      },
+      {
+       "time": "00:00",
+       "medicine": "Ondansetron (tegen misselijkheid)",
+       "amount": "7,1 mg",
+       "route": "tablet via de mond",
+       "note": null
+      }
+     ]
+    },
+    {
+     "day": 5,
+     "label": "Dag 5",
+     "date": "2026-11-02",
+     "items": [
+      {
+       "time": "08:00",
+       "medicine": "Ondansetron (tegen misselijkheid)",
+       "amount": "7,1 mg",
+       "route": "tablet via de mond",
+       "note": null
+      },
+      {
+       "time": "08:00",
+       "medicine": "Aprepitant (tegen misselijkheid)",
+       "amount": "80 mg",
+       "route": "tablet via de mond",
+       "note": null
+      },
+      {
+       "time": "08:00",
+       "medicine": "Dexamethason (corticosteroïd)",
+       "amount": "2 mg",
+       "route": "tablet via de mond",
+       "note": null
+      },
+      {
+       "time": "16:00",
+       "medicine": "Ondansetron (tegen misselijkheid)",
+       "amount": "7,1 mg",
+       "route": "tablet via de mond",
+       "note": null
+      },
+      {
+       "time": "20:00",
+       "medicine": "Dexamethason (corticosteroïd)",
+       "amount": "2 mg",
+       "route": "tablet via de mond",
+       "note": null
+      },
+      {
+       "time": "20:00",
+       "medicine": "Olanzapine (tegen misselijkheid, 's avonds)",
+       "amount": "4,5 mg",
+       "route": "tablet via de mond",
+       "note": "'s Avonds innemen, kan slaperig maken"
+      },
+      {
+       "time": "00:00",
+       "medicine": "Ondansetron (tegen misselijkheid)",
+       "amount": "7,1 mg",
+       "route": "tablet via de mond",
+       "note": null
+      }
+     ]
+    },
+    {
+     "day": 6,
+     "label": "Dag 6",
+     "date": "2026-11-03",
+     "items": [
+      {
+       "time": "08:00",
+       "medicine": "Ondansetron (tegen misselijkheid)",
+       "amount": "7,1 mg",
+       "route": "tablet via de mond",
+       "note": null
+      },
+      {
+       "time": "08:00",
+       "medicine": "Dexamethason (corticosteroïd)",
+       "amount": "2 mg",
+       "route": "tablet via de mond",
+       "note": null
+      },
+      {
+       "time": "16:00",
+       "medicine": "Ondansetron (tegen misselijkheid)",
+       "amount": "7,1 mg",
+       "route": "tablet via de mond",
+       "note": null
+      },
+      {
+       "time": "20:00",
+       "medicine": "Dexamethason (corticosteroïd)",
+       "amount": "2 mg",
+       "route": "tablet via de mond",
+       "note": null
+      },
+      {
+       "time": "20:00",
+       "medicine": "Olanzapine (tegen misselijkheid, 's avonds)",
+       "amount": "4,5 mg",
+       "route": "tablet via de mond",
+       "note": "'s Avonds innemen, kan slaperig maken"
+      },
+      {
+       "time": "00:00",
+       "medicine": "Ondansetron (tegen misselijkheid)",
+       "amount": "7,1 mg",
+       "route": "tablet via de mond",
+       "note": null
+      }
+     ]
+    }
+   ],
+   "warningSigns": [
+    "Uw kind kan langer dan 6 uur geen vocht binnenhouden",
+    "Koorts van 38,5 °C of hoger",
+    "Uw kind is erg slaperig of verward",
+    "Geen natte luier / geen urine gedurende 8 uur",
+    "Bloed of donker 'koffiedik' in het braaksel",
+    "Misselijkheid of braken blijft ondanks de extra medicatie"
+   ],
+   "wardPhone": "+32 3 000 00 00",
+   "resources": [],
+   "pairingCode": "C3-IE03",
+   "disclaimer": "Demo-gegevens, niet voor klinisch gebruik. Dit schema is pas geldig na ondertekening door de oncoloog en de ziekenhuisapotheker. Bel bij twijfel altijd de afdeling."
+  }
+ },
+ "casus-4": {
+  "patient": {
+   "id": "casus-4",
+   "alias": "Casus 4 · interactions",
+   "age": 7,
+   "sex": "M",
+   "diagnosis": "ALL",
+   "protocol": "ALLTogether1 · Consolidation",
+   "cycle": "C1",
+   "cycleStart": "2026-10-29",
+   "overallTier": "low",
+   "planStatus": "draft",
+   "language": "en",
+   "weightKg": 22.0,
+   "heightCm": 120.0,
+   "bsaM2": 0.85,
+   "diagnosisGroup": "ALL",
+   "chemo": [
+    {
+     "drug": "cyclophosphamide",
+     "doseMgM2": 1600.0,
+     "days": [
+      1
+     ]
+    },
+    {
+     "drug": "vincristine",
+     "doseMgM2": 1.5,
+     "days": [
+      1
+     ]
+    }
+   ],
+   "activeMeds": [
+    "voriconazole"
+   ],
+   "history": [],
+   "riskFactors": {
+    "canSwallowTablets": false,
+    "preferredRoute": "oral_liquid",
+    "anticipatory": false,
+    "priorNauseaNote": null
+   },
+   "pairingCode": "C4-DDI7"
+  },
+  "plan": {
+   "patientId": "casus-4",
+   "status": "draft",
+   "refused": false,
+   "refusalReasons": [],
+   "unknownDrugs": [],
+   "drugTiers": [
+    {
+     "drug": "cyclophosphamide",
+     "doseMgM2": 1600.0,
+     "tier": "high",
+     "rule": "UZA v2 · Cyclophosphamide 1600 mg/m² > 1500 mg/m² = high",
+     "source": "UZA v2 (mock rules)"
+    },
+    {
+     "drug": "vincristine",
+     "doseMgM2": 1.5,
+     "tier": "low",
+     "rule": "UZA v2 · Vincristine = low",
+     "source": "UZA v2 (mock rules)"
+    }
+   ],
+   "dayTiers": [
+    {
+     "day": 1,
+     "tier": "high",
+     "drugs": [
+      "cyclophosphamide",
+      "vincristine"
+     ]
+    }
+   ],
+   "overallTier": "high",
+   "combinationRules": [],
+   "dexamethasone": {
+    "blocked": true,
+    "reason": "GEEN dexamethasone bij ALL (UZA v2)",
+    "source": "UZA v2 (mock rules)"
+   },
+   "antiemetics": [
+    {
+     "drug": "ondansetron",
+     "doseMg": 4.3,
+     "unit": "mg",
+     "frequency": "3x/d",
+     "route": "oral_liquid",
+     "days": [
+      1,
+      2
+     ],
+     "formula": "5 mg/m² per dose, max 8 mg/dose",
+     "steps": [
+      "0.85 m² × 5 mg/m² = 4.25 mg",
+      "≤ 8 mg/dose, rounded to 0.1 mg → 4.3 mg"
+     ],
+     "source": "UZA v2 (mock rules) · Ondansetron 5 mg/m², max 8 mg/dose",
+     "notes": []
+    },
+    {
+     "drug": "aprepitant",
+     "doseMg": 66.0,
+     "unit": "mg",
+     "frequency": "1x/d",
+     "route": "oral_liquid",
+     "days": [
+      1
+     ],
+     "formula": "3 mg/kg day 1, max 125 mg",
+     "steps": [
+      "22 kg × 3 mg/kg = 66.0 mg → 66 mg"
+     ],
+     "source": "UZA v2 (mock rules) · Aprepitant",
+     "notes": []
+    },
+    {
+     "drug": "aprepitant",
+     "doseMg": 44.0,
+     "unit": "mg",
+     "frequency": "1x/d",
+     "route": "oral_liquid",
+     "days": [
+      2,
+      3
+     ],
+     "formula": "2 mg/kg days 2–3, max 80 mg",
+     "steps": [
+      "22 kg × 2 mg/kg = 44.0 mg → 44 mg"
+     ],
+     "source": "UZA v2 (mock rules) · Aprepitant",
+     "notes": []
+    },
+    {
+     "drug": "olanzapine",
+     "doseMg": 2.0,
+     "unit": "mg",
+     "frequency": "1x/d (evening)",
+     "route": "oral_liquid",
+     "days": [
+      1,
+      2
+     ],
+     "formula": "0.1 mg/kg once daily in the evening, max 10 mg, rounded down to 0.5 mg",
+     "steps": [
+      "22 kg × 0.1 = 2.2 mg → 2.0 mg"
+     ],
+     "source": "UZA v2 (mock rules) · Olanzapine",
+     "notes": []
+    }
+   ],
+   "breakthrough": [
+    {
+     "drug": "alizapride",
+     "doseMg": 36.7,
+     "unit": "mg",
+     "frequency": "3x/d if needed",
+     "route": "oral_liquid",
+     "formula": "5 mg/kg/day in 3 doses, max 150 mg/day (mock dose)",
+     "source": "UZA v2 (mock rules)",
+     "notes": [
+      "mock dose",
+      "22 kg × 5 mg/kg = 110.0 mg/day → 110 mg/day ÷ 3"
+     ]
+    }
+   ],
+   "alternatives": [],
+   "stepUps": [],
+   "interactions": [
+    {
+     "severity": "critical",
+     "drugs": [
+      "voriconazole",
+      "vincristine"
+     ],
+     "message": "Strong CYP3A4 inhibition raises vincristine exposure: neuropathy, paralytic ileus",
+     "alternative": "Consider switching antifungal (e.g. to an echinocandin) — discuss with infectious disease",
+     "source": "BCFI/CBIP (mock)"
+    },
+    {
+     "severity": "warning",
+     "drugs": [
+      "voriconazole",
+      "aprepitant"
+     ],
+     "message": "CYP3A4 inhibition: azole raises aprepitant exposure, and aprepitant may raise azole levels",
+     "alternative": "Monitor for side effects; consider omitting aprepitant if the azole cannot be changed",
+     "source": "BCFI/CBIP (mock)"
+    }
+   ],
+   "uzaVsPogo": [
+    {
+     "item": "cyclophosphamide 1600 mg/m²",
+     "uzaTier": "high",
+     "pogoTier": "high",
+     "differs": false,
+     "note": "Same tier in UZA v2 and POGO"
+    },
+    {
+     "item": "vincristine 1.5 mg/m²",
+     "uzaTier": "low",
+     "pogoTier": "low",
+     "differs": false,
+     "note": "Same tier in UZA v2 and POGO"
+    }
+   ],
+   "episodesSummary": {
+    "currentCycle": [],
+    "priorNauseaDays": []
+   },
+   "signoffs": {
+    "oncologist": null,
+    "pharmacist": null
+   },
+   "comments": [],
+   "advisory": "Advisory only — requires clinician sign-off. Demo data, not for clinical use."
+  },
+  "passport": {
+   "patientId": "casus-4",
+   "alias": "Casus 4 · interactions",
+   "lang": "en",
+   "title": "CINV Passport · Casus 4 · interactions",
+   "overallTier": "high",
+   "status": "draft",
+   "signedOff": false,
+   "days": [
+    {
+     "day": 1,
+     "label": "Day 1",
+     "date": "2026-10-29",
+     "items": [
+      {
+       "time": "08:00",
+       "medicine": "Ondansetron (anti-sickness)",
+       "amount": "4.3 mg",
+       "route": "liquid by mouth",
+       "note": null
+      },
+      {
+       "time": "08:00",
+       "medicine": "Aprepitant (anti-sickness)",
+       "amount": "66 mg",
+       "route": "liquid by mouth",
+       "note": null
+      },
+      {
+       "time": "16:00",
+       "medicine": "Ondansetron (anti-sickness)",
+       "amount": "4.3 mg",
+       "route": "liquid by mouth",
+       "note": null
+      },
+      {
+       "time": "20:00",
+       "medicine": "Olanzapine (anti-sickness, evening)",
+       "amount": "2 mg",
+       "route": "liquid by mouth",
+       "note": "Take in the evening, may cause sleepiness"
+      },
+      {
+       "time": "00:00",
+       "medicine": "Ondansetron (anti-sickness)",
+       "amount": "4.3 mg",
+       "route": "liquid by mouth",
+       "note": null
+      }
+     ]
+    },
+    {
+     "day": 2,
+     "label": "Day 2",
+     "date": "2026-10-30",
+     "items": [
+      {
+       "time": "08:00",
+       "medicine": "Ondansetron (anti-sickness)",
+       "amount": "4.3 mg",
+       "route": "liquid by mouth",
+       "note": null
+      },
+      {
+       "time": "08:00",
+       "medicine": "Aprepitant (anti-sickness)",
+       "amount": "44 mg",
+       "route": "liquid by mouth",
+       "note": null
+      },
+      {
+       "time": "16:00",
+       "medicine": "Ondansetron (anti-sickness)",
+       "amount": "4.3 mg",
+       "route": "liquid by mouth",
+       "note": null
+      },
+      {
+       "time": "20:00",
+       "medicine": "Olanzapine (anti-sickness, evening)",
+       "amount": "2 mg",
+       "route": "liquid by mouth",
+       "note": "Take in the evening, may cause sleepiness"
+      },
+      {
+       "time": "00:00",
+       "medicine": "Ondansetron (anti-sickness)",
+       "amount": "4.3 mg",
+       "route": "liquid by mouth",
+       "note": null
+      }
+     ]
+    },
+    {
+     "day": 3,
+     "label": "Day 3",
+     "date": "2026-10-31",
+     "items": [
+      {
+       "time": "08:00",
+       "medicine": "Aprepitant (anti-sickness)",
+       "amount": "44 mg",
+       "route": "liquid by mouth",
+       "note": null
+      }
+     ]
+    }
+   ],
+   "warningSigns": [
+    "Your child cannot keep fluids down for more than 6 hours",
+    "Fever 38.5 °C or higher",
+    "Your child is very sleepy or confused",
+    "No wet nappy / no urine for 8 hours",
+    "Blood or dark 'coffee grounds' in the vomit",
+    "Nausea or vomiting continues despite the extra medicine"
+   ],
+   "wardPhone": "+32 3 000 00 00",
+   "resources": [],
+   "pairingCode": "C4-DDI7",
+   "disclaimer": "Demo data, not for clinical use. This schedule is only valid once signed off by the oncologist and the hospital pharmacist. If in doubt, always call the ward."
+  }
+ }
+}

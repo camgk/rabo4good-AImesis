@@ -1,7 +1,4 @@
-import 'dart:convert';
-
 import 'package:aimesis_client/aimesis_client.dart';
-import 'package:http/http.dart' as http;
 
 import 'offline_queue.dart';
 
@@ -14,19 +11,14 @@ class LogResult {
   final Episode? episode;
 }
 
-/// Server said no for good (e.g. 403 not your child): retrying won't help.
+/// The server refused the log for good (e.g. 403: not your child), so
+/// retrying won't help.
 class EpisodeRejected implements Exception {
   const EpisodeRejected(this.status, this.message);
   final int status;
   final String message;
   @override
   String toString() => 'EpisodeRejected($status): $message';
-}
-
-class _HttpStatus implements Exception {
-  const _HttpStatus(this.status, this.message);
-  final int status;
-  final String message;
 }
 
 /// Wraps the REST client and the offline queue.
@@ -38,12 +30,10 @@ class _HttpStatus implements Exception {
 ///     If that fails it stays in the queue and [flush] retries later
 ///     (app resume, pull-to-refresh), sending the original tap time.
 class EpisodeService {
-  EpisodeService({required this.api, required this.queue, http.Client? client})
-      : _client = client ?? http.Client();
+  EpisodeService({required this.api, required this.queue});
 
   final AimesisApi api;
   final OfflineQueue queue;
-  final http.Client _client;
   Future<int>? _flushing;
 
   static const _permanentStatuses = {400, 403, 404, 409, 422};
@@ -62,6 +52,13 @@ class EpisodeService {
     return item;
   }
 
+  /// Stage + commit in one go (no severity).
+  Future<LogResult> logNow(String patientId, String type,
+      {int? severity, int? cycleDay}) async {
+    final item = await stage(patientId, type, cycleDay: cycleDay);
+    return commit(item.localId, severity: severity);
+  }
+
   Future<LogResult> commit(String localId, {int? severity}) async {
     final item = await queue.update(
         localId, (e) => e.copyWith(severity: severity, staged: false));
@@ -73,11 +70,13 @@ class EpisodeService {
       final ep = await _send(item);
       await queue.remove(localId);
       return LogResult(LogOutcome.sent, item.at, episode: ep);
-    } catch (e) {
-      if (_isPermanent(e)) {
+    } on ApiException catch (e) {
+      if (_permanentStatuses.contains(e.status)) {
         await queue.remove(localId);
-        throw EpisodeRejected(_statusOf(e) ?? 0, _messageOf(e));
+        throw EpisodeRejected(e.status, e.message);
       }
+      return LogResult(LogOutcome.savedOffline, item.at);
+    } catch (_) {
       return LogResult(LogOutcome.savedOffline, item.at);
     }
   }
@@ -88,67 +87,29 @@ class EpisodeService {
   }
 
   Future<int> _doFlush() async {
+    if (!api.isLoggedIn) return queue.length;
     for (final item in queue.ready()) {
       try {
         await _send(item);
         await queue.remove(item.localId);
-      } catch (e) {
-        if (_isPermanent(e)) {
+      } on ApiException catch (e) {
+        if (_permanentStatuses.contains(e.status)) {
           await queue.remove(item.localId);
           continue;
         }
-        break; // offline or server down: keep order, try again later
+        break; // offline / server down / 401: keep order, try again later
+      } catch (_) {
+        break;
       }
     }
     return queue.length;
   }
 
-  Future<Episode> _send(QueuedEpisode item) async {
-    final age = DateTime.now().difference(item.at);
-    if (age < const Duration(minutes: 2)) {
-      return api.logEpisode(item.patientId, item.type, severity: item.severity);
-    }
-    // Older (queued offline): post directly so the original tap time is kept.
-    final base = api.baseUrl.endsWith('/')
-        ? api.baseUrl.substring(0, api.baseUrl.length - 1)
-        : api.baseUrl;
-    final res = await _client.post(
-      Uri.parse('$base/patients/${Uri.encodeComponent(item.patientId)}/episodes'),
-      headers: {
-        'Content-Type': 'application/json',
-        if (api.token != null) 'Authorization': 'Bearer ${api.token}',
-      },
-      body: jsonEncode({
-        'type': item.type,
-        if (item.severity != null) 'severity': item.severity,
-        'at': item.at.toUtc().toIso8601String(),
-      }),
-    );
-    if (res.statusCode >= 200 && res.statusCode < 300) {
-      return Episode.fromJson(
-          Map<String, dynamic>.from(jsonDecode(res.body) as Map));
-    }
-    String msg = res.body;
-    try {
-      msg = (jsonDecode(res.body) as Map)['error']?.toString() ?? msg;
-    } catch (_) {}
-    throw _HttpStatus(res.statusCode, msg);
-  }
-
-  static int? _statusOf(Object e) {
-    if (e is ApiException) return e.status;
-    if (e is _HttpStatus) return e.status;
-    return null;
-  }
-
-  static String _messageOf(Object e) {
-    if (e is ApiException) return e.message;
-    if (e is _HttpStatus) return e.message;
-    return e.toString();
-  }
-
-  static bool _isPermanent(Object e) {
-    final s = _statusOf(e);
-    return s != null && _permanentStatuses.contains(s);
+  Future<Episode> _send(QueuedEpisode item) {
+    final queuedForAWhile =
+        DateTime.now().difference(item.at) > const Duration(minutes: 2);
+    // Fresh taps let the server stamp the time; replays keep the tap time.
+    return api.logEpisode(item.patientId, item.type,
+        severity: item.severity, at: queuedForAWhile ? item.at : null);
   }
 }

@@ -6,9 +6,17 @@ import 'package:go_router/go_router.dart';
 import '../../widgets/common.dart';
 
 class PatientHeader extends StatelessWidget {
-  const PatientHeader({super.key, required this.patient, required this.plan});
+  const PatientHeader({
+    super.key,
+    required this.patient,
+    required this.plan,
+    this.refreshing = false,
+    this.onRefresh,
+  });
   final Patient patient;
   final Plan plan;
+  final bool refreshing;
+  final VoidCallback? onRefresh;
 
   String _n(double? v, String unit, {int decimals = 1}) => v == null ? 'missing' : '${fmtNum(v, decimals: decimals)} $unit';
 
@@ -60,6 +68,17 @@ class PatientHeader extends StatelessWidget {
                 const SizedBox(width: 10),
               ],
               PlanStatusChip(plan.status),
+              const SizedBox(width: 4),
+              refreshing
+                  ? const Padding(
+                      padding: EdgeInsets.all(12),
+                      child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+                    )
+                  : IconButton(
+                      tooltip: 'Reload patient and plan',
+                      onPressed: onRefresh,
+                      icon: const Icon(Icons.refresh_rounded),
+                    ),
             ],
           ),
           const SizedBox(height: 10),
