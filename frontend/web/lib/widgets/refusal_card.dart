@@ -1,3 +1,4 @@
+import 'package:aimesis_a2ui_catalog/aimesis_a2ui_catalog.dart';
 import 'package:aimesis_client/aimesis_client.dart';
 import 'package:flutter/material.dart';
 
@@ -16,39 +17,38 @@ class RefusalCard extends StatelessWidget {
       for (final d in plan.unknownDrugs)
         if (!plan.refusalReasons.any((r) => r.toLowerCase().contains(d.toLowerCase()))) 'Drug not in UZA v2: $d',
     ];
+    // GOV.UK error-summary pattern: red 5px border, "There is a problem"
+    // style heading, then the list of what is missing.
     return Container(
-      padding: EdgeInsets.all(compact ? 16 : 24),
+      width: double.infinity,
+      padding: EdgeInsets.all(compact ? GovukSpacing.s3 : GovukSpacing.s4),
       decoration: BoxDecoration(
-        color: cs.errorContainer,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: cs.error, width: 1.5),
+        color: cs.surface,
+        border: Border.all(color: cs.error, width: GovukLayout.borderWidth),
       ),
-      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Icon(Icons.block_rounded, color: cs.onErrorContainer, size: compact ? 28 : 40),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('No doses calculated — missing or unsupported input',
-                style: (compact ? theme.textTheme.titleMedium : theme.textTheme.titleLarge)
-                    ?.copyWith(color: cs.onErrorContainer, fontWeight: FontWeight.w700)),
-            const SizedBox(height: 6),
-            Text('AImesis refuses rather than guesses. Resolve the items below, then recalculate.',
-                style: TextStyle(color: cs.onErrorContainer)),
-            const SizedBox(height: 10),
-            for (final r in reasons.isEmpty ? ['Plan refused by the rules engine'] : reasons)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Icon(Icons.close_rounded, size: 18, color: cs.onErrorContainer),
-                  const SizedBox(width: 6),
-                  Expanded(
-                      child: Text(r,
-                          style: TextStyle(color: cs.onErrorContainer, fontWeight: FontWeight.w600, fontSize: compact ? 14 : 16))),
-                ]),
-              ),
-          ]),
-        ),
-      ]),
+      child: Semantics(
+        container: true,
+        liveRegion: true,
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Semantics(
+            header: true,
+            child: Text('No doses calculated — missing or unsupported input',
+                style: GovukType.style(context, GovukType.p24, bold: true, color: cs.onSurface)),
+          ),
+          const SizedBox(height: GovukSpacing.s3),
+          Text('AImesis refuses rather than guesses. Resolve the items below, then recalculate.',
+              style: theme.textTheme.bodyMedium),
+          const SizedBox(height: GovukSpacing.s3),
+          for (final r in reasons.isEmpty ? ['Plan refused by the rules engine'] : reasons)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 5),
+              child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('•  ', style: GovukType.style(context, GovukType.p19, bold: true, color: cs.error)),
+                Expanded(child: Text(r, style: GovukType.style(context, GovukType.p19, bold: true, color: cs.error))),
+              ]),
+            ),
+        ]),
+      ),
     );
   }
 }

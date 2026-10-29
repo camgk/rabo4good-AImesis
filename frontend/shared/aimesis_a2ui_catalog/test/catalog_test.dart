@@ -8,7 +8,7 @@ Widget _wrap(Widget child, {ThemeData? theme}) =>
 void main() {
   testWidgets('TierBadge shows the tier label', (tester) async {
     await tester.pumpWidget(_wrap(const TierBadge(tier: 'high')));
-    expect(find.text('HIGH'), findsOneWidget);
+    expect(find.text('High'), findsOneWidget);
 
     await tester.pumpWidget(_wrap(const TierBadge(tier: 'moderate', compact: true)));
     expect(find.text('Moderate'), findsOneWidget);
@@ -16,7 +16,7 @@ void main() {
 
   testWidgets('TierBadge renders in dark theme and for unknown tiers', (tester) async {
     await tester.pumpWidget(_wrap(const TierBadge(tier: 'whatever'), theme: AimesisTheme.dark()));
-    expect(find.text('UNKNOWN'), findsOneWidget);
+    expect(find.text('Unknown'), findsOneWidget);
   });
 
   testWidgets('AdvisoryBanner defaults to the advisory text', (tester) async {

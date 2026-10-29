@@ -51,20 +51,15 @@ class SafetyGatesTab extends StatelessWidget {
                 ]),
         ),
         const SizedBox(height: 16),
-        Row(children: [
-          if (crit > 0)
-            Expanded(
-              child: Text(
-                '$crit critical interaction${crit == 1 ? '' : 's'}: review with the team before the plan is submitted.',
-                style: TextStyle(color: Theme.of(context).colorScheme.error, fontWeight: FontWeight.w600),
-              ),
-            )
-          else
-            const Spacer(),
-          FilledButton.tonalIcon(
+        if (crit > 0)
+          GovukWarningText(
+            '$crit critical interaction${crit == 1 ? '' : 's'}: review with the team before the plan is submitted.',
+          ),
+        const SizedBox(height: GovukSpacing.s3),
+        GovukButtonGroup(children: [
+          GovukButton(
+            label: 'Continue to plan & doses',
             onPressed: () => context.go('/patients/${ws.patientId}/plan'),
-            icon: const Icon(Icons.arrow_forward_rounded),
-            label: const Text('Continue to plan & doses'),
           ),
         ]),
       ],
@@ -78,86 +73,79 @@ class _NoInteractions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
-    final bg = dark ? const Color(0xFF14532D) : const Color(0xFFDCFCE7);
-    final fg = dark ? const Color(0xFFDCFCE7) : const Color(0xFF14532D);
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(10)),
-      child: Row(children: [
-        Icon(Icons.check_circle_rounded, color: fg),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('No interactions found', style: TextStyle(color: fg, fontWeight: FontWeight.w700, fontSize: 15)),
-            Text('Screened against BCFI/CBIP (mock) interaction rules.', style: TextStyle(color: fg, fontSize: 12.5)),
-          ]),
-        ),
+    return GovukInsetText(
+      borderColor: dark ? GovukColours.darkSuccess : GovukColours.success,
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Text('No interactions found', style: TextStyle(fontWeight: FontWeight.w700)),
+        const SizedBox(height: 5),
+        Text('Screened against BCFI/CBIP (mock) interaction rules.',
+            style: GovukType.style(context, GovukType.p16, color: Theme.of(context).colorScheme.onSurfaceVariant)),
       ]),
     );
   }
 }
 
-/// One interaction, coloured by severity (critical red, warning amber, info blue).
+/// One interaction. GOV.UK pattern: severity tag (critical red, warning
+/// orange, info blue) with a matching 5px left border; critical ones use
+/// warning text. Severity is always written, never colour alone.
 class InteractionCard extends StatelessWidget {
   const InteractionCard({super.key, required this.interaction});
   final Interaction interaction;
 
   static (Color bg, Color border, Color fg, IconData icon, String label) style(String severity, bool dark) {
-    switch (severity) {
-      case Severity.critical:
-        return dark
-            ? (const Color(0xFF450A0A), const Color(0xFFEF4444), const Color(0xFFFECACA), Icons.dangerous_rounded, 'CRITICAL')
-            : (const Color(0xFFFEF2F2), const Color(0xFFDC2626), const Color(0xFF7F1D1D), Icons.dangerous_rounded, 'CRITICAL');
-      case Severity.warning:
-        return dark
-            ? (const Color(0xFF451A03), const Color(0xFFF59E0B), const Color(0xFFFDE68A), Icons.warning_amber_rounded, 'WARNING')
-            : (const Color(0xFFFFFBEB), const Color(0xFFD97706), const Color(0xFF78350F), Icons.warning_amber_rounded, 'WARNING');
-      default:
-        return dark
-            ? (const Color(0xFF172554), const Color(0xFF60A5FA), const Color(0xFFBFDBFE), Icons.info_rounded, 'INFO')
-            : (const Color(0xFFEFF6FF), const Color(0xFF2563EB), const Color(0xFF1E3A8A), Icons.info_rounded, 'INFO');
-    }
+    final tag = GovukMapping.severityTag(severity);
+    final icon = switch (severity) {
+      Severity.critical => Icons.dangerous_rounded,
+      Severity.warning => Icons.warning_amber_rounded,
+      _ => Icons.info_rounded,
+    };
+    final border = switch (severity) {
+      Severity.critical => GovukColours.red,
+      Severity.warning => GovukColours.orange,
+      _ => GovukColours.blue,
+    };
+    return (tag.background, border, tag.foreground, icon, GovukMapping.severityLabel(severity));
   }
 
   @override
   Widget build(BuildContext context) {
     final i = interaction;
-    final (bg, border, fg, icon, label) = style(i.severity, Theme.of(context).brightness == Brightness.dark);
+    final cs = Theme.of(context).colorScheme;
+    final (_, border, _, _, label) = style(i.severity, Theme.of(context).brightness == Brightness.dark);
+    final drugs = i.drugs.map(cap).join(' + ');
     return Container(
       decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(10),
-        border: Border(left: BorderSide(color: border, width: 5)),
-      ),
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Icon(icon, color: border, size: 24),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Wrap(spacing: 8, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                decoration: BoxDecoration(color: border, borderRadius: BorderRadius.circular(4)),
-                child: Text(label,
-                    style: const TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.w800, letterSpacing: 0.6)),
-              ),
-              Text(i.drugs.map(cap).join(' + '), style: TextStyle(color: fg, fontWeight: FontWeight.w700, fontSize: 15)),
-            ]),
-            const SizedBox(height: 6),
-            Text(i.message, style: TextStyle(color: fg)),
-            if (i.alternative != null && i.alternative!.isNotEmpty) ...[
-              const SizedBox(height: 6),
-              Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Icon(Icons.lightbulb_outline_rounded, size: 16, color: fg),
-                const SizedBox(width: 6),
-                Expanded(child: Text(i.alternative!, style: TextStyle(color: fg, fontWeight: FontWeight.w600))),
-              ]),
-            ],
-            const SizedBox(height: 6),
-            Text(i.source, style: TextStyle(color: fg.withValues(alpha: 0.8), fontSize: 12, fontStyle: FontStyle.italic)),
-          ]),
+        color: cs.surface,
+        border: Border(
+          left: BorderSide(color: border, width: GovukLayout.borderWidthWide),
+          top: BorderSide(color: cs.outlineVariant),
+          right: BorderSide(color: cs.outlineVariant),
+          bottom: BorderSide(color: cs.outlineVariant),
         ),
+      ),
+      padding: const EdgeInsets.all(GovukSpacing.s3),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Wrap(spacing: 10, runSpacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [
+          GovukTag(label, colour: GovukMapping.severityTag(i.severity), small: true, semanticLabel: 'Severity: $label'),
+          Text(drugs, style: GovukType.style(context, GovukType.p19, bold: true, color: cs.onSurface)),
+        ]),
+        const SizedBox(height: GovukSpacing.s2),
+        if (i.isCritical)
+          GovukWarningText(i.message)
+        else
+          Text(i.message, style: Theme.of(context).textTheme.bodyMedium),
+        if (i.alternative != null && i.alternative!.isNotEmpty) ...[
+          const SizedBox(height: GovukSpacing.s2),
+          GovukInsetText(
+            borderColor: GovukColours.brand,
+            child: Text.rich(TextSpan(children: [
+              const TextSpan(text: 'Alternative: ', style: TextStyle(fontWeight: FontWeight.w700)),
+              TextSpan(text: i.alternative!),
+            ])),
+          ),
+        ],
+        const SizedBox(height: GovukSpacing.s2),
+        SourceLabel(i.source),
       ]),
     );
   }

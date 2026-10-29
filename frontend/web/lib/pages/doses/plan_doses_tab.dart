@@ -102,7 +102,7 @@ class PlanDosesTab extends StatelessWidget {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text(s.title, style: const TextStyle(fontWeight: FontWeight.w600)),
+                        Text(s.title, style: const TextStyle(fontWeight: FontWeight.w700)),
                         if (s.reason.isNotEmpty) Text(s.reason),
                         SourceLabel(s.source),
                       ]),
@@ -130,7 +130,7 @@ class PlanDosesTab extends StatelessWidget {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text(a.title, style: const TextStyle(fontWeight: FontWeight.w600)),
+                        Text(a.title, style: const TextStyle(fontWeight: FontWeight.w700)),
                         if (a.detail.isNotEmpty) Text(a.detail),
                         SourceLabel(a.source),
                       ]),
@@ -142,6 +142,7 @@ class PlanDosesTab extends StatelessWidget {
   }
 }
 
+/// Critical-interaction reminder: GOV.UK notification banner with a link.
 class _GateReminder extends StatelessWidget {
   const _GateReminder({required this.text, required this.onTap});
   final String text;
@@ -149,23 +150,13 @@ class _GateReminder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Material(
-      color: cs.errorContainer,
-      borderRadius: BorderRadius.circular(10),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(10),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          child: Row(children: [
-            Icon(Icons.dangerous_rounded, color: cs.onErrorContainer),
-            const SizedBox(width: 10),
-            Expanded(child: Text(text, style: TextStyle(color: cs.onErrorContainer, fontWeight: FontWeight.w600))),
-            Text('Open safety gates', style: TextStyle(color: cs.onErrorContainer, decoration: TextDecoration.underline)),
-          ]),
-        ),
-      ),
+    return GovukNotificationBanner(
+      title: 'Safety gate',
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(text, style: const TextStyle(fontWeight: FontWeight.w700)),
+        const SizedBox(height: GovukSpacing.s2),
+        GovukLink('Open safety gates', onTap: onTap),
+      ]),
     );
   }
 }
@@ -196,22 +187,25 @@ class _DoseTableState extends State<DoseTable> {
   Widget _table(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
-    final header = TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, letterSpacing: 0.5, color: cs.onSurfaceVariant);
+    final header = GovukType.style(context, GovukType.p19, bold: true, color: cs.onSurface);
     final cols = <(String, int)>[
-      ('DRUG', 3),
-      ('DOSE', 2),
-      ('FREQUENCY', 2),
-      ('ROUTE', 2),
-      if (widget.showDays) ('DAYS', 2),
+      ('Drug', 3),
+      ('Dose', 2),
+      ('Frequency', 2),
+      ('Route', 2),
+      if (widget.showDays) ('Days', 2),
       ('', _narrow ? 2 : 3),
     ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Container(
-          color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
-          child: Row(children: [for (final c in cols) Expanded(flex: c.$2, child: Text(c.$1, style: header))]),
+          decoration: BoxDecoration(border: Border(bottom: BorderSide(color: cs.outlineVariant))),
+          padding: const EdgeInsets.symmetric(horizontal: GovukSpacing.s3, vertical: 10),
+          child: Semantics(
+            header: true,
+            child: Row(children: [for (final c in cols) Expanded(flex: c.$2, child: Text(c.$1, style: header))]),
+          ),
         ),
         for (var i = 0; i < widget.lines.length; i++) ...[
           if (i > 0) Divider(height: 1, color: cs.outlineVariant),
@@ -229,20 +223,23 @@ class _DoseTableState extends State<DoseTable> {
       InkWell(
         onTap: () => setState(() => open ? _open.remove(i) : _open.add(i)),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: GovukSpacing.s3, vertical: 10),
           child: Row(children: [
             Expanded(
               flex: 3,
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(cap(l.drug), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14.5)),
-                if (mock)
-                  Text('mock dose', style: TextStyle(fontSize: 11.5, color: cs.tertiary, fontWeight: FontWeight.w600)),
+                Text(cap(l.drug), style: const TextStyle(fontWeight: FontWeight.w700)),
+                if (mock) ...[
+                  const SizedBox(height: 4),
+                  const GovukTag('mock dose', colour: GovukTagColour.purple, small: true),
+                ],
               ]),
             ),
             Expanded(
               flex: 2,
               child: Text(l.doseMg == null ? '—' : '${fmtNum(l.doseMg!)} ${l.unit}',
-                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: cs.primary)),
+                  style: GovukType.style(context, GovukType.p19, bold: true, color: cs.onSurface)
+                      .copyWith(fontFeatures: const [FontFeature.tabularFigures()])),
             ),
             Expanded(flex: 2, child: Text(l.frequency)),
             Expanded(flex: 2, child: Text(Route.label(l.route))),
@@ -270,11 +267,11 @@ class _DoseTableState extends State<DoseTable> {
       ),
       if (!open)
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+          padding: const EdgeInsets.fromLTRB(GovukSpacing.s3, 0, GovukSpacing.s3, 10),
           child: Row(children: [
             Flexible(
               child: Text(l.formula,
-                  style: TextStyle(fontFamily: 'monospace', fontSize: 12, color: cs.onSurfaceVariant),
+                  style: GovukType.style(context, GovukType.p16, color: cs.onSurfaceVariant),
                   overflow: TextOverflow.ellipsis),
             ),
             const SizedBox(width: 12),
@@ -285,6 +282,8 @@ class _DoseTableState extends State<DoseTable> {
   }
 }
 
+/// "How was this calculated?": GOV.UK inset text (brand border) with the
+/// formula, numbered steps, notes and the source.
 class _Calculation extends StatelessWidget {
   const _Calculation({required this.line});
   final AntiemeticLine line;
@@ -292,49 +291,47 @@ class _Calculation extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final mono = TextStyle(fontFamily: 'monospace', fontSize: 13, color: cs.onSurface);
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: cs.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: cs.outlineVariant),
+    final label = GovukType.style(context, GovukType.p19, bold: true, color: cs.onSurface);
+    final body = GovukType.style(context, GovukType.p19, color: cs.onSurface);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(GovukSpacing.s3, 0, GovukSpacing.s3, GovukSpacing.s3),
+      child: GovukInsetText(
+        borderColor: GovukColours.brand,
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('Formula', style: label),
+          const SizedBox(height: 5),
+          SelectableText(line.formula.isEmpty ? '—' : line.formula,
+              style: body.copyWith(fontWeight: FontWeight.w700, fontFeatures: const [FontFeature.tabularFigures()])),
+          if (line.steps.isNotEmpty) ...[
+            const SizedBox(height: GovukSpacing.s3),
+            Text('Steps', style: label),
+            const SizedBox(height: 5),
+            for (var i = 0; i < line.steps.length; i++)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 5),
+                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  SizedBox(width: 28, child: Text('${i + 1}.', style: body)),
+                  Expanded(child: SelectableText(line.steps[i], style: body)),
+                ]),
+              ),
+          ],
+          if (line.notes.isNotEmpty) ...[
+            const SizedBox(height: GovukSpacing.s3),
+            Text('Notes', style: label),
+            const SizedBox(height: 5),
+            for (final n in line.notes)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 5),
+                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('•  ', style: body),
+                  Expanded(child: Text(n, style: body)),
+                ]),
+              ),
+          ],
+          const SizedBox(height: GovukSpacing.s3),
+          SourceLabel(line.source),
+        ]),
       ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('FORMULA', style: TextStyle(fontSize: 10.5, letterSpacing: 0.6, fontWeight: FontWeight.w700, color: cs.onSurfaceVariant)),
-        const SizedBox(height: 4),
-        SelectableText(line.formula.isEmpty ? '—' : line.formula, style: mono.copyWith(fontWeight: FontWeight.w600)),
-        if (line.steps.isNotEmpty) ...[
-          const SizedBox(height: 10),
-          Text('STEPS', style: TextStyle(fontSize: 10.5, letterSpacing: 0.6, fontWeight: FontWeight.w700, color: cs.onSurfaceVariant)),
-          const SizedBox(height: 4),
-          for (var i = 0; i < line.steps.length; i++)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 3),
-              child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                SizedBox(width: 22, child: Text('${i + 1}.', style: mono.copyWith(color: cs.onSurfaceVariant))),
-                Expanded(child: SelectableText(line.steps[i], style: mono)),
-              ]),
-            ),
-        ],
-        if (line.notes.isNotEmpty) ...[
-          const SizedBox(height: 10),
-          Text('NOTES', style: TextStyle(fontSize: 10.5, letterSpacing: 0.6, fontWeight: FontWeight.w700, color: cs.onSurfaceVariant)),
-          const SizedBox(height: 4),
-          for (final n in line.notes)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 3),
-              child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Icon(Icons.sticky_note_2_outlined, size: 15, color: cs.tertiary),
-                const SizedBox(width: 6),
-                Expanded(child: Text(n)),
-              ]),
-            ),
-        ],
-        const SizedBox(height: 10),
-        SourceLabel(line.source),
-      ]),
     );
   }
 }

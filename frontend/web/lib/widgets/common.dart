@@ -1,3 +1,4 @@
+import 'package:aimesis_a2ui_catalog/aimesis_a2ui_catalog.dart';
 import 'package:aimesis_client/aimesis_client.dart';
 import 'package:flutter/material.dart';
 
@@ -67,11 +68,7 @@ class ErrorView extends StatelessWidget {
                   textAlign: TextAlign.center, style: TextStyle(color: cs.onSurfaceVariant)),
               if (onRetry != null) ...[
                 const SizedBox(height: 16),
-                FilledButton.tonalIcon(
-                  onPressed: onRetry,
-                  icon: const Icon(Icons.refresh_rounded),
-                  label: const Text('Retry'),
-                ),
+                GovukButton.secondary(label: 'Retry', icon: Icons.refresh_rounded, onPressed: onRetry),
               ],
             ],
           ),
@@ -98,7 +95,7 @@ class EmptyView extends StatelessWidget {
         children: [
           Icon(icon, size: 36, color: cs.outline),
           const SizedBox(height: 8),
-          Text(title, style: Theme.of(context).textTheme.titleSmall),
+          Text(title, style: Theme.of(context).textTheme.titleMedium),
           if (message != null) ...[
             const SizedBox(height: 4),
             Text(message!, textAlign: TextAlign.center, style: TextStyle(color: cs.onSurfaceVariant)),
@@ -134,44 +131,53 @@ class SectionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
-    return Card(
-      margin: EdgeInsets.zero,
-      elevation: 0,
+    // GOV.UK summary-card pattern: grey title bar, 1px border, square corners.
+    return Material(
+      color: cs.surface,
+      shape: Border.all(color: cs.outlineVariant),
       clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: cs.outlineVariant),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 12, 8),
+          Container(
+            color: cs.surfaceContainer,
+            padding: const EdgeInsets.fromLTRB(GovukSpacing.s3, 12, GovukSpacing.s3, 12),
             child: Row(
               children: [
                 if (icon != null) ...[
-                  Icon(icon, size: 20, color: cs.primary),
-                  const SizedBox(width: 8),
+                  Icon(icon, size: 22, color: cs.onSurface),
+                  const SizedBox(width: 10),
                 ],
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(title, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
-                      if (subtitle != null)
-                        Text(subtitle!, style: theme.textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
+                      Semantics(
+                        header: true,
+                        child: Text(title, style: GovukType.style(context, GovukType.p24, bold: true, color: cs.onSurface)),
+                      ),
+                      if (subtitle != null) ...[
+                        const SizedBox(height: 2),
+                        Text(subtitle!, style: GovukType.style(context, GovukType.p16, color: cs.onSurfaceVariant)),
+                      ],
                     ],
                   ),
                 ),
                 if (story != null) StoryTag(story!),
-                if (trailing != null) ...[const SizedBox(width: 8), trailing!],
+                if (trailing != null) ...[const SizedBox(width: 10), trailing!],
               ],
             ),
           ),
-          Padding(padding: padding, child: child),
+          Padding(padding: _pad(padding), child: child),
         ],
       ),
     );
+  }
+
+  /// Old cards used 16px gutters; GOV.UK uses 15px.
+  EdgeInsetsGeometry _pad(EdgeInsetsGeometry p) {
+    if (p == const EdgeInsets.fromLTRB(16, 4, 16, 16)) return const EdgeInsets.all(GovukSpacing.s3);
+    return p;
   }
 }
 
@@ -181,43 +187,20 @@ class StoryTag extends StatelessWidget {
   final String label;
 
   @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Tooltip(
-      message: 'UZA user story',
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-        decoration: BoxDecoration(
-          color: cs.secondaryContainer,
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Text(label,
-            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: cs.onSecondaryContainer)),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => Tooltip(
+        message: 'UZA user story',
+        child: GovukTag(label, colour: GovukTagColour.brandTint, small: true),
+      );
 }
 
-/// Outlined chip for a patient tag (e.g. "demo").
+/// Patient tag (e.g. "demo") as a GOV.UK tag; same tag → same colour.
 class TagChip extends StatelessWidget {
   const TagChip(this.tag, {super.key, this.dense = false});
   final String tag;
   final bool dense;
 
   @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: dense ? 6 : 8, vertical: dense ? 1 : 2),
-      decoration: BoxDecoration(
-        border: Border.all(color: cs.outline),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Text(tag,
-          style: TextStyle(
-              fontSize: dense ? 10.5 : 11, color: cs.onSurfaceVariant, fontWeight: FontWeight.w600)),
-    );
-  }
+  Widget build(BuildContext context) => GovukTag(tag, colour: GovukMapping.patientTag(tag), small: true);
 }
 
 /// Muted source / rule citation line, e.g. "UZA v2 (mock rules)".
@@ -233,62 +216,45 @@ class SourceLabel extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 13, color: cs.onSurfaceVariant),
-        const SizedBox(width: 4),
+        Icon(icon, size: 16, color: cs.onSurfaceVariant),
+        const SizedBox(width: 5),
         Flexible(
-          child: Text(text,
-              style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant, fontStyle: FontStyle.italic)),
+          child: Text(text, style: GovukType.style(context, GovukType.p16, color: cs.onSurfaceVariant)),
         ),
       ],
     );
   }
 }
 
-/// Coloured pill for plan workflow status.
+/// Plan workflow status as a GOV.UK tag: draft grey, awaiting pharmacist
+/// yellow, returned orange, approved green.
 class PlanStatusChip extends StatelessWidget {
   const PlanStatusChip(this.status, {super.key, this.dense = false});
   final String? status;
   final bool dense;
 
+  static GovukTagColour tagColour(String? status) => switch (status) {
+        PlanStatus.approved => GovukTagColour.green,
+        PlanStatus.awaitingPharmacist => GovukTagColour.yellow,
+        PlanStatus.returned => GovukTagColour.orange,
+        _ => GovukTagColour.grey,
+      };
+
+  /// Background / foreground / icon for callers that draw their own surface.
   static (Color bg, Color fg, IconData icon) colors(String? status, Brightness b) {
-    final dark = b == Brightness.dark;
-    switch (status) {
-      case PlanStatus.approved:
-        return dark
-            ? (const Color(0xFF1B4332), const Color(0xFFB7E4C7), Icons.verified_rounded)
-            : (const Color(0xFFDCFCE7), const Color(0xFF14532D), Icons.verified_rounded);
-      case PlanStatus.awaitingPharmacist:
-        return dark
-            ? (const Color(0xFF1E3A5F), const Color(0xFFBFDBFE), Icons.hourglass_top_rounded)
-            : (const Color(0xFFDBEAFE), const Color(0xFF1E3A8A), Icons.hourglass_top_rounded);
-      case PlanStatus.returned:
-        return dark
-            ? (const Color(0xFF5C2B0E), const Color(0xFFFED7AA), Icons.undo_rounded)
-            : (const Color(0xFFFFEDD5), const Color(0xFF7C2D12), Icons.undo_rounded);
-      default:
-        return dark
-            ? (const Color(0xFF2E3436), const Color(0xFFD1D5DB), Icons.edit_note_rounded)
-            : (const Color(0xFFF1F5F9), const Color(0xFF334155), Icons.edit_note_rounded);
-    }
+    final c = tagColour(status);
+    final icon = switch (status) {
+      PlanStatus.approved => Icons.verified_rounded,
+      PlanStatus.awaitingPharmacist => Icons.hourglass_top_rounded,
+      PlanStatus.returned => Icons.undo_rounded,
+      _ => Icons.edit_note_rounded,
+    };
+    return (c.background, c.foreground, icon);
   }
 
   @override
-  Widget build(BuildContext context) {
-    final (bg, fg, icon) = colors(status, Theme.of(context).brightness);
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: dense ? 8 : 10, vertical: dense ? 3 : 5),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(999)),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: dense ? 13 : 15, color: fg),
-          const SizedBox(width: 5),
-          Text(PlanStatus.label(status),
-              style: TextStyle(color: fg, fontWeight: FontWeight.w600, fontSize: dense ? 12 : 13)),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) =>
+      GovukTag(PlanStatus.label(status), colour: tagColour(status), small: dense, semanticLabel: 'Plan status: ${PlanStatus.label(status)}');
 }
 
 /// Role chip shown in the app bar.
@@ -314,20 +280,7 @@ class RoleChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: cs.primaryContainer,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Icon(icon(role), size: 15, color: cs.onPrimaryContainer),
-        const SizedBox(width: 6),
-        Text(label(role),
-            style: TextStyle(color: cs.onPrimaryContainer, fontWeight: FontWeight.w600, fontSize: 12.5)),
-      ]),
-    );
+    return GovukTag(label(role), colour: GovukTagColour.brandTint, small: true, semanticLabel: 'Role: ${label(role)}');
   }
 }
 
@@ -344,10 +297,9 @@ class KeyValue extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(label.toUpperCase(),
-            style: TextStyle(fontSize: 10.5, letterSpacing: 0.6, color: cs.onSurfaceVariant, fontWeight: FontWeight.w600)),
+        Text(label, style: GovukType.style(context, GovukType.p16, color: cs.onSurfaceVariant)),
         const SizedBox(height: 2),
-        Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+        Text(value, style: GovukType.style(context, GovukType.p19, bold: true, color: cs.onSurface)),
       ],
     );
   }

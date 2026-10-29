@@ -70,13 +70,15 @@ class RegimenTierTab extends StatelessWidget {
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 6),
                         child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Icon(Icons.arrow_upward_rounded, size: 18, color: Theme.of(context).colorScheme.error),
-                          const SizedBox(width: 8),
                           Expanded(
-                            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                              Text(r.rule, style: const TextStyle(fontWeight: FontWeight.w600)),
-                              SourceLabel(r.source),
-                            ]),
+                            child: GovukInsetText(
+                              borderColor: GovukColours.brand,
+                              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                Text(r.rule, style: const TextStyle(fontWeight: FontWeight.w700)),
+                                const SizedBox(height: 5),
+                                SourceLabel(r.source),
+                              ]),
+                            ),
                           ),
                         ]),
                       ),
@@ -90,11 +92,11 @@ class RegimenTierTab extends StatelessWidget {
   List<Widget> _chemoRow(BuildContext context, ChemoRow c, DrugTier? t, List<String> unknown) {
     final isUnknown = unknown.map((e) => e.toLowerCase()).contains(c.drug.toLowerCase()) || t == null;
     return [
-      Text(cap(c.drug), style: const TextStyle(fontWeight: FontWeight.w600)),
+      Text(cap(c.drug), style: const TextStyle(fontWeight: FontWeight.w700)),
       Text('${fmtNum(c.doseMgM2)} mg/m²'),
       Text(formatDays(c.days)),
       isUnknown
-          ? Text('Not in UZA v2', style: TextStyle(color: Theme.of(context).colorScheme.error, fontWeight: FontWeight.w600))
+          ? const Align(alignment: Alignment.centerLeft, child: GovukTag('Not in UZA v2', colour: GovukTagColour.red, small: true))
           : Align(alignment: Alignment.centerLeft, child: TierBadge(tier: t.tier, compact: true)),
       isUnknown
           ? const Text('Unknown drug — refuse rather than guess')
@@ -106,6 +108,8 @@ class RegimenTierTab extends StatelessWidget {
   }
 }
 
+/// Overall tier: GOV.UK summary-card style box with a brand-tint title bar
+/// and the tier tag; the explanation sits beside it as body text.
 class _OverallCard extends StatelessWidget {
   const _OverallCard({required this.plan});
   final Plan plan;
@@ -115,36 +119,34 @@ class _OverallCard extends StatelessWidget {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final tier = plan.overallTier;
-    final b = theme.brightness;
-    final accent = tier == null ? cs.outline : AimesisTheme.tierColor(tier, b);
+    final accent = tier == null ? cs.outlineVariant : AimesisTheme.tierAccent(tier);
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(GovukSpacing.s4),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: cs.outlineVariant),
-        gradient: LinearGradient(
-          colors: [accent.withValues(alpha: 0.16), cs.surface],
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
+        color: cs.surface,
+        border: Border(
+          left: BorderSide(color: accent, width: GovukLayout.borderWidthWide),
+          top: BorderSide(color: cs.outlineVariant),
+          right: BorderSide(color: cs.outlineVariant),
+          bottom: BorderSide(color: cs.outlineVariant),
         ),
       ),
-      child: Row(
+      child: Wrap(
+        spacing: GovukSpacing.s7,
+        runSpacing: GovukSpacing.s3,
+        crossAxisAlignment: WrapCrossAlignment.center,
         children: [
-          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('OVERALL EMETOGENICITY',
-                style: TextStyle(fontSize: 11, letterSpacing: 0.8, fontWeight: FontWeight.w700, color: cs.onSurfaceVariant)),
-            const SizedBox(height: 8),
+          Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+            Text('Overall emetogenicity', style: GovukType.style(context, GovukType.p19, bold: true, color: cs.onSurface)),
+            const SizedBox(height: GovukSpacing.s2),
             if (tier != null)
-              Transform.scale(scale: 1.35, alignment: Alignment.centerLeft, child: TierBadge(tier: tier))
+              GovukTag.tier(tier, prefix: true)
             else
               Text('Not classified', style: theme.textTheme.titleLarge),
           ]),
-          const SizedBox(width: 48),
-          Expanded(
-            child: Text(
-              _explain(plan),
-              style: theme.textTheme.bodyMedium,
-            ),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 640),
+            child: Text(_explain(plan), style: theme.textTheme.bodyMedium),
           ),
         ],
       ),
@@ -166,40 +168,25 @@ class _OverallCard extends StatelessWidget {
   }
 }
 
+/// Per-day tiers as a GOV.UK table: day, tier tag, drugs. Colour is never the
+/// only signal: the tag carries the tier name.
 class _DayStrip extends StatelessWidget {
   const _DayStrip({required this.days});
   final List<DayTier> days;
 
   @override
   Widget build(BuildContext context) {
-    final b = Theme.of(context).brightness;
     final sorted = [...days]..sort((a, b) => a.day.compareTo(b.day));
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          for (final d in sorted)
-            Container(
-              width: 150,
-              margin: const EdgeInsets.only(right: 8),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AimesisTheme.tierColor(d.tier, b),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('Day ${d.day}',
-                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: AimesisTheme.onTierColor(d.tier, b))),
-                Text(Tier.label(d.tier),
-                    style: TextStyle(fontWeight: FontWeight.w600, color: AimesisTheme.onTierColor(d.tier, b))),
-                const SizedBox(height: 6),
-                Text(d.drugs.map(cap).join(' + '),
-                    style: TextStyle(fontSize: 12, color: AimesisTheme.onTierColor(d.tier, b))),
-              ]),
-            ),
-        ],
-      ),
+    return GovukTable(
+      columns: const [
+        GovukTableColumn('Day', width: 90),
+        GovukTableColumn('Tier', width: 150),
+        GovukTableColumn('Chemotherapy that day'),
+      ],
+      rows: [
+        for (final d in sorted)
+          ['Day ${d.day}', Align(alignment: Alignment.topLeft, child: GovukTag.tier(d.tier, small: true)), d.drugs.map(cap).join(' + ')],
+      ],
     );
   }
 }
