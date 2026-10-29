@@ -1,5 +1,3 @@
-import 'package:http/http.dart' as http;
-
 import 'models/account.dart';
 import 'models/patient_context.dart';
 import 'models/plan.dart';

@@ -93,15 +93,15 @@ abstract class ApiCore {
   Map<String, dynamic> asObject(Object? decoded) {
     if (decoded is Map<String, dynamic>) return decoded;
     if (decoded is Map) return decoded.map((k, v) => MapEntry(k.toString(), v));
-    throw ApiException(200, 'Unexpected response: expected a JSON object.');
+    throw const ApiException(200, 'Unexpected response: expected a JSON object.');
   }
 
   /// Maps a decoded JSON array to models (non-object entries are skipped).
   List<T> asList<T>(Object? decoded, T Function(Map<String, dynamic>) fromJson) {
     if (decoded is! List) {
-      throw ApiException(200, 'Unexpected response: expected a JSON array.');
+      throw const ApiException(200, 'Unexpected response: expected a JSON array.');
     }
-    return decoded.whereType<Map>().map((m) => fromJson(asObject(m))).toList();
+    return decoded.whereType<Map<dynamic, dynamic>>().map((m) => fromJson(asObject(m))).toList();
   }
 
   /// Closes the underlying HTTP client.

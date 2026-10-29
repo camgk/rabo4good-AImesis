@@ -1,0 +1,20 @@
+name: aimesis_a2ui_catalog
+description: AImesis A2UI component catalog and shared theme — the only components the agent may render.
+version: 0.1.0
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.6.0
+  flutter: ">=3.27.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true

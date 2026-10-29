@@ -7,9 +7,6 @@ analyzer:
     - "**/build/**"
     - "**/*.g.dart"
     - "**/*.freezed.dart"
-  language:
-    strict-casts: false
-    strict-raw-types: true
 
 linter:
   rules:

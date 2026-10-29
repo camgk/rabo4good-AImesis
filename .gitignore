@@ -1,0 +1,50 @@
+# OS / editors
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Clinical source documents never go into git
+docs/source/
+
+# Secrets and local config
+.env
+*.env.local
+*.tfvars.local
+*.pem
+*.p12
+*.mobileprovision
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+*.whl
+
+# Dart / Flutter
+.dart_tool/
+.packages
+.flutter-plugins
+.flutter-plugins-dependencies
+build/
+pubspec_overrides.yaml
+
+# iOS
+**/ios/Pods/
+**/ios/.symlinks/
+**/ios/Flutter/ephemeral/
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/flutter_export_environment.sh
+**/ios/Runner/GeneratedPluginRegistrant.*
+xcuserdata/
+*.xcarchive
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+tfplan
