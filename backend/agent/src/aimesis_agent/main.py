@@ -16,6 +16,7 @@ from aimesis_agent.agui_endpoint import router as agui_router
 from aimesis_api.episodes.routes import router as episodes_router
 from aimesis_api.passport.routes import router as passport_router, passports_router
 from aimesis_api.regimens.routes import router as regimens_router
+from aimesis_api.patients.routes import patient_router, dosing_router
 
 load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 load_dotenv()
@@ -104,6 +105,8 @@ def create_app() -> FastAPI:
 
     # Story 1 standalone workbench and deterministic classification.
     app.include_router(regimens_router)
+    app.include_router(patient_router)
+    app.include_router(dosing_router)
 
     # 3. Episodes & Cycle Tracking
     app.include_router(episodes_router)

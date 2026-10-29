@@ -113,12 +113,15 @@ if _HAS_PYDANTIC:
         warnings: List[str] = _PydanticField(default_factory=list)
         # Structured doses behind `dose_text`: [{dose_amount, dose_unit, cycle_days, day_label}]
         administrations: List[Dict[str, Any]] = _PydanticField(default_factory=list)
+        calculations: List[Dict[str, Any]] = _PydanticField(default_factory=list)
+        purpose: str = "prophylaxis"
 
     class DosingScheduleResult(_PydanticBaseModel):
         refused: bool = False
         refusal_reasons: List[RefusalReason] = _PydanticField(default_factory=list)
         dexamethasone_evaluation: Optional[DexamethasoneEvaluation] = None
         lines: Dict[str, DoseLine] = _PydanticField(default_factory=dict)
+        inputs_used: Dict[str, Any] = _PydanticField(default_factory=dict)
         advisory_status: str = ADVISORY_LABEL
 
     class PogoComparisonItem(_PydanticBaseModel):
@@ -200,6 +203,8 @@ else:
         citation: str
         warnings: List[str] = field(default_factory=list)
         administrations: List[Dict[str, Any]] = field(default_factory=list)
+        calculations: List[Dict[str, Any]] = field(default_factory=list)
+        purpose: str = "prophylaxis"
 
     @dataclass
     class DosingScheduleResult(_DumpMixin):  # type: ignore[no-redef]
@@ -207,6 +212,7 @@ else:
         refusal_reasons: List[RefusalReason] = field(default_factory=list)
         dexamethasone_evaluation: Optional[DexamethasoneEvaluation] = None
         lines: Dict[str, DoseLine] = field(default_factory=dict)
+        inputs_used: Dict[str, Any] = field(default_factory=dict)
         advisory_status: str = ADVISORY_LABEL
 
     @dataclass

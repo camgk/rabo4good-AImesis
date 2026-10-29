@@ -32,6 +32,7 @@ from aimesis_agent.a2ui.surfaces import build_clinical_plan_surfaces
 from aimesis_agent.notes_extraction import extract_prior_cycle_signals_from_note
 from aimesis_agent.patient_store import (
     PatientValidationError,
+    latest_bsa,
     mosteller_bsa,
     patient_store,
 )
@@ -243,6 +244,32 @@ def generate_cinv_patient_passport(patient_id: str) -> Dict[str, Any]:
     return passport.to_contract()
 
 
+def get_patient_dosing(
+    patient_id: str,
+    antiemetic_route: str = "PO",
+    aprepitant_route: str = "PO",
+    fosaprepitant_schedule: str = "multi_day",
+    use_palonosetron_switch: bool = False,
+    mec_prefer_aprepitant: bool = False,
+) -> Dict[str, Any]:
+    """Story 2: calculate doses using the patient's latest recorded BSA.
+
+    Fetches fresh age, weight, diagnosis and regimen from the shared record.
+    Returns BSA provenance and numerical calculations/formulas, caps and rules.
+    Never provide guessed measurements; save corrected patient context first.
+    """
+    from aimesis_api.patients.service import calculate_patient_dosing
+
+    try:
+        return calculate_patient_dosing(
+            patient_id, store=patient_store, antiemetic_route=antiemetic_route,
+            aprepitant_route=aprepitant_route, fosaprepitant_schedule=fosaprepitant_schedule,
+            use_palonosetron_switch=use_palonosetron_switch, mec_prefer_aprepitant=mec_prefer_aprepitant,
+        )
+    except Exception:
+        return {"refused": True, "patient_id": patient_id, "refusal_reasons": [{"field": "patient_record", "message": "Patient storage is unavailable. Do not guess measurements."}]}
+
+
 def get_patient_context(patient_id: str) -> Dict[str, Any]:
     """Load a pseudonymised patient's clinical context (age, weight, BSA,
     diagnosis, planned chemo regimen, prior-cycle CINV history, allergies,
@@ -255,6 +282,11 @@ def get_patient_context(patient_id: str) -> Dict[str, Any]:
     if record is None:
         return {"found": False, "patient_id": patient_id}
 
+    try:
+        observation = latest_bsa(record)
+        record = {**record, "bsa_m2": observation["bsa_m2"], "latest_bsa": observation}
+    except PatientValidationError as exc:
+        return {"found": True, "patient": record, "refused": True, "errors": str(exc)}
     evaluation_inputs, inputs = evaluation_inputs_from_patient_context(record)
     defaulted = [i["field"] for i in inputs if i["source"] == "default"]
     return {
@@ -280,6 +312,8 @@ def save_patient_context(
     allergies_and_contraindications: Optional[List[str]] = None,
     preferred_formulation: Optional[str] = None,
     diagnosis_group: Optional[str] = None,
+    bsa_measured_at: Optional[str] = None,
+    bsa_measurements: Optional[List[Dict[str, Any]]] = None,
     active_medications: Optional[List[str]] = None,
 ) -> Dict[str, Any]:
     """Create or update a pseudonymised patient's clinical context. Only the
@@ -306,6 +340,8 @@ def save_patient_context(
         "age_years": age_years,
         "weight_kg": weight_kg,
         "bsa_m2": bsa_m2,
+        "bsa_measured_at": bsa_measured_at,
+        "bsa_measurements": bsa_measurements,
         "chemo_regimen": chemo_regimen,
         "display_pseudonym": display_pseudonym,
         "diagnosis": diagnosis,
@@ -332,6 +368,7 @@ __all__ = [
     "extract_prior_cycle_signals_from_note",
     "generate_cinv_patient_passport",
     "get_patient_context",
+    "get_patient_dosing",
     "get_pogo_guideline_recommendation",
     "save_patient_context",
 ]

@@ -9,6 +9,7 @@ dependencies = [
     "uvicorn>=0.32.0",
     "pydantic>=2.7.0",
     "python-dotenv>=1.0.0",
+    "google-cloud-firestore>=2.16.0",
 ]
 
 [build-system]

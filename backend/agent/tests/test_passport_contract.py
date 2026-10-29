@@ -92,7 +92,7 @@ def test_demo_passports_match_contract(record) -> None:
     assert doc["refusal"] == {"refused": False, "reasons": []}
     assert doc["emetogenicity_tier"] == doc["classification"]["overall_tier"]
     assert all(r["rule_citation"] for r in doc["antiemetic_schedule"])
-    assert {d["drug"] for d in doc["dose_review"]} >= {"Ondansetron", "Dexamethasone", "(Fos)Aprepitant"}
+    assert {d["drug"] for d in doc["dose_review"]} >= {"Ondansetron", "Dexamethasone", "Aprepitant"}
 
 
 def test_casus3_combination_and_structured_doses() -> None:
@@ -101,7 +101,7 @@ def test_casus3_combination_and_structured_doses() -> None:
     assert [d["tier"] for d in doc["classification"]["drugs"]] == ["MODERATE", "LOW"]
     assert len(doc["classification"]["combination_rules"]) == 1
     assert [d["day"] for d in doc["classification"]["days"]] == [1, 2, 3, 4, 5]
-    assert _schedule(doc, "(Fos)Aprepitant") == [(125.0, [1]), (80.0, [2, 3])]
+    assert _schedule(doc, "Aprepitant") == [(125.0, [1]), (80.0, [2, 3])]
     assert _schedule(doc, "Dexamethasone") == [(2.0, [1, 2, 3, 4, 5])]
     assert doc["dexamethasone_rules"]["aprepitant_dose_reduction"] is True
     assert {r["route"] for r in doc["antiemetic_schedule"]} == {"oral_tablet"}
@@ -112,7 +112,7 @@ def test_casus2_all_blocks_dexamethasone() -> None:
     assert doc["dexamethasone_rules"]["is_blocked"] is True
     assert "ALL" in doc["dexamethasone_rules"]["rationale"]
     assert _schedule(doc, "Dexamethasone") == []
-    assert _schedule(doc, "(Fos)Aprepitant")  # MEC without dexamethasone -> aprepitant
+    assert _schedule(doc, "Aprepitant")  # MEC without dexamethasone -> aprepitant
     assert {r["route"] for r in doc["antiemetic_schedule"]} == {"oral_liquid"}
 
 

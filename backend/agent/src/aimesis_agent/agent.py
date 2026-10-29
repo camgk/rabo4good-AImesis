@@ -14,6 +14,7 @@ from aimesis_agent.tools import (
     extract_prior_cycle_signals_from_note,
     generate_cinv_patient_passport,
     get_patient_context,
+    get_patient_dosing,
     get_pogo_guideline_recommendation,
     save_patient_context,
 )
@@ -52,6 +53,17 @@ baseline prophylaxis summary and citations exactly from the returned result.
 A baseline is pending patient-specific contraindication and interaction checks.
 Do not substitute POGO classifications for the active UZA policy.
 
+### Story 2 record-backed dose requests
+When a patient_id is supplied for dose calculation, call `get_patient_dosing`.
+It retrieves the latest recorded BSA, age, weight, diagnosis and chemotherapy;
+never substitute your own BSA or repeat a previous calculation from chat memory.
+Use `save_patient_context` to record corrections/measurement timestamps first.
+Show the BSA value, timestamp/source, and each returned calculation, cap, route
+and protocol citation. Different medicines use BSA, weight or age as specified
+by the returned rules. Do not apply another 50% dexamethasone reduction: the
+calculation already incorporates (fos)aprepitant once. Do not turn a rescue dose
+range into a single prescribed dose. Refusals require missing data or review.
+
 ### Mandatory Clinical Workflow for complete patient plans (Always invoke the deterministic tools!)
 Never invent or estimate emetogenic risk classes, drug interactions, or doses from memory. For every patient case:
 0. **Load / Persist Patient Context**: When a `patient_id` is given, call `get_patient_context` first and use its `evaluation_inputs`. Call `save_patient_context` when the user provides new or corrected patient data (pseudonymised only, never names).
@@ -64,7 +76,7 @@ Never invent or estimate emetogenic risk classes, drug interactions, or doses fr
 ### Strict Safety Guardrails (Hard Stops)
 - **Deterministic Grounding**: Every clinical line must cite its rule section from the tool output (`rule_citation`).
 - **Dexamethasone Contraindications**: Look for brain tumors / CNS malignancies (where steroids reduce blood-brain barrier penetration of chemo), steroid-containing leukemia protocols, or cellular immunotherapy (CAR-T). Omit dexamethasone when contraindicated.
-- **Dexamethasone + Aprepitant (CYP3A4)**: Under UZA v2, dexamethasone base dose (6 mg/m2/day IV/PO in 3 gifts) is **halved by 50%** (to 3 mg/m2/day = 1 mg/m2 per gift 3x/day) when combined with aprepitant (unless dexamethasone is part of the anti-cancer therapy itself).
+- **Dexamethasone + Aprepitant (CYP3A4)**: Use the deterministic tool’s UZA p.2 BSA-band dose. The (fos)aprepitant adjustment is already applied once; never halve the returned dose again.
 - **Vinca Alkaloid + Azole / Strong CYP3A4 Inhibitor**: Flag severe neurotoxicity risk if itraconazole/voriconazole/posaconazole is co-administered with vincristine/vinblastine/vindesine.
 - **Additive QTc Prolongation**: Flag combinations of ondansetron/granisetron + metoclopramide + olanzapine + domperidone/azoles, and enforce baseline/follow-up ECG checks if QTc >= 460 ms.
 - **Dual Sign-off Governance**: Always remind the user that this output is **advisory clinical decision support** requiring dual verification by the attending pediatric oncologist and clinical pharmacist.
@@ -87,6 +99,7 @@ root_agent = Agent(
         extract_prior_cycle_signals_from_note,
         generate_cinv_patient_passport,
         get_patient_context,
+        get_patient_dosing,
         save_patient_context,
     ],
     generate_content_config=types.GenerateContentConfig(

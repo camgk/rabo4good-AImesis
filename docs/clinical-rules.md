@@ -56,3 +56,41 @@ Regression tests cover the three supplied cases, all dose-dependent cutoffs,
 local/POGO table separation, overlapping/non-overlapping schedules, route
 restrictions and refusals. The browser workbench uses the same function as the
 ADK tool and REST endpoint. It does not modify or replace the Flutter mock API.
+
+
+## Story 2 implementation
+
+The shared `calculate_patient_dosing` service retrieves a patient record on each
+request, selects the most recent timestamped BSA observation, runs Story 1, and
+calls `calculate_uza_dosing`. REST (`POST /patients/{id}/dosing`) and the ADK
+`get_patient_dosing` tool use this service. `/dosing` displays its arithmetic and
+citations. The supplied UZA v2 page 2 is the dosing source.
+
+- Ondansetron: 5 mg/m² per dose, maximum 8 mg; frequency follows risk tier.
+- Dexamethasone: below 0.6 m², 2 mg without / 1 mg with (fos)aprepitant;
+  at least 0.6 m², 4 mg without / 2 mg with; twice daily on chemo days.
+  Existing diagnosis/medication exclusions take priority. IV Aacidexam volume
+  uses approximately 4 mg/mL active base and explicitly calls for product verification.
+- Oral aprepitant: eligibility at least 6 months and greater than 6 kg;
+  under 12 years, 3 mg/kg on D1 (max 125) and 2 mg/kg D2–3 (max 80);
+  from 12 years, fixed 125/80 mg, including oral suspension.
+- IV fosaprepitant: multi-day 3/2 mg/kg with 115/80 mg caps. The optional
+  one-day chemo schedule uses 5 mg/kg below 2 years, 4 mg/kg from 2 to under 12,
+  capped at 150 mg; from 12 years, fixed 150 mg. Exactly 6 months is refused for
+  the single-dose option because the source states greater than 6 months.
+- Olanzapine: from 2 years, 0.1 mg/kg, cap 5 mg, then floor to 0.5 mg.
+  Decimal arithmetic avoids rounding upward across the half-milligram boundary.
+- Palonosetron: an explicitly selected switch for inadequately controlled HEC,
+  with supervision/pharmacy consultation; under 17 years, 20 micrograms/kg
+  (max 1500); from 17 years, 250 micrograms. Suppresses ondansetron dosing and
+  displays the three-day separation warning.
+- Lorazepam: breakthrough 0.025–0.05 mg/kg or anticipatory 0.04–0.08 mg/kg,
+  capped at 2 mg per dose; displayed as a range requiring clinician selection.
+  Alizapride: breakthrough option, 1 mg/kg, capped at 50 mg, up to six times/day.
+
+All selected dose lines include structured raw/final amounts, applicable caps,
+rounding, readable formula and source. Unselected medicines carry reasons without
+numeric doses. No age, weight or BSA is invented when measurements are missing.
+BSA history uses measurement timestamps with timezones; recording time and legacy
+unknown time are labelled explicitly. No live EHR feed or automatic BSA measurement
+import is introduced. Persistent records use the existing optional Firestore setup.

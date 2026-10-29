@@ -155,15 +155,8 @@ def evaluate_uza_cinv_policy_v2(
             "advisory_status": ADVISORY_LABEL,
         }
 
-    # Check biometrics
-    if not strict_validation:
-        age = 9.0 if patient_age_years is None else patient_age_years
-        weight = 28.0 if patient_weight_kg is None else patient_weight_kg
-        bsa = 1.02 if bsa_m2 is None else bsa_m2
-    else:
-        age = patient_age_years
-        weight = patient_weight_kg
-        bsa = bsa_m2
+    # Story 2: missing measurements are never replaced with demo defaults.
+    age, weight, bsa = patient_age_years, patient_weight_kg, bsa_m2
 
     assert regimen_cls.overall_tier is not None
 
