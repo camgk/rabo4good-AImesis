@@ -116,13 +116,13 @@ def save_state(store: Store, patient_doc: dict, state: dict) -> Plan:
 def evaluate_patient(raw: dict) -> tuple[Patient, Plan]:
     """Stateless: wire-shape Patient JSON -> (Patient, Plan) via the same engine call as build_from_doc."""
     data = dict(raw or {})
-    data.setdefault("tags", [])
-    data.setdefault("pairingCode", "")
-    data.setdefault("overallTier", "minimal")
-    data.setdefault("planStatus", "draft")
-    data.setdefault("riskFactors", {})
-    # Optional in the cycle flow: fill the fields the stored-patient model requires.
+    # Optional in the cycle flow (sent missing or null): fill what the stored-patient model requires.
     for key, default in (
+        ("tags", []),
+        ("pairingCode", ""),
+        ("overallTier", "minimal"),
+        ("planStatus", "draft"),
+        ("riskFactors", {}),
         ("cycleStart", date.today().isoformat()),
         ("cycle", ""),
         ("protocol", ""),

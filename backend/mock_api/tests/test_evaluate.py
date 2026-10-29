@@ -83,6 +83,7 @@ def test_evaluate_accepts_null_optional_fields(client):
     """The web cycle flow leaves start date, protocol and sex optional."""
     body = {"patient": {
         "id": "NEW-X", "alias": "Casus 9", "age": 7, "sex": None, "diagnosis": "Ewing sarcoma",
+        "overallTier": None, "planStatus": None, "pairingCode": None, "tags": None,
         "diagnosisGroup": None, "protocol": None, "cycle": "Cycle 1", "cycleStart": None,
         "language": "nl", "weightKg": 22, "heightCm": 120, "bsaM2": None,
         "chemo": [{"drug": "ifosfamide", "doseMgM2": 1800, "days": [1, 2, 3]}],

@@ -273,6 +273,16 @@ def prior_ondansetron_freq(patient: Patient) -> int | None:
     return None
 
 
+def _prior_high_breakthrough(patient: Patient) -> bool:
+    """A previous cycle had nausea/vomiting while on ondansetron + aprepitant + dex/olanzapine."""
+    for h in patient.history:
+        a = (h.antiemetics or "").lower()
+        high_regimen = "ondansetron" in a and "aprepitant" in a and ("dexamethason" in a or "olanzapine" in a)
+        if high_regimen and (h.nausea_days or h.vomiting_days):
+            return True
+    return False
+
+
 def resolve_route(preferred: str, can_swallow: bool) -> tuple[str, list[str]]:
     if preferred == "oral_tablet" and not can_swallow:
         return "oral_liquid", ["Cannot swallow tablets → oral liquid formulation (BCFI/CBIP)"]
@@ -326,7 +336,10 @@ def compute_plan(patient: Patient, episodes: list[Episode] | None = None) -> Pla
     route, route_notes = resolve_route(rf.preferred_route, rf.can_swallow_tablets)
     tier = cls.overall
     chemo_days = sorted({d for r in patient.chemo for d in r.days})
-    cover_days = sorted({x for d in chemo_days for x in (d, d + 1)})
+    first_chemo = chemo_days[0] if chemo_days else 1
+    last_chemo_day = chemo_days[-1] if chemo_days else 1
+    # UZA v2 p.2 Stop: until 3 days after the LAST chemo day (R8)
+    extended_days = list(range(first_chemo, last_chemo_day + 4))
     prior_days = summary.prior_nausea_days
     has_prior = bool(prior_days)
     prior_days_txt = ", ".join(map(str, prior_days))
@@ -355,17 +368,18 @@ def compute_plan(patient: Patient, episodes: list[Episode] | None = None) -> Pla
                 )
             )
         raw = 5 * bsa
-        dose = round_half_up(min(raw, 8.0), 1)
+        # 2 decimals, rounded DOWN so the dose never exceeds 5 mg/m² (R9)
+        dose = math.floor(round(min(raw, 8.0) * 100, 6)) / 100
         steps = [f"{fmt(bsa)} m² × 5 mg/m² = {raw:.2f} mg"]
-        steps.append(f"max 8 mg/dose → {dose:.1f} mg" if raw > 8 else f"≤ 8 mg/dose, rounded to 0.1 mg → {dose:.1f} mg")
+        steps.append(f"max 8 mg/dose → {fmt(dose)} mg" if raw > 8 else f"≤ 8 mg/dose → {fmt(dose)} mg")
         lines.append(
             AntiemeticLine(
                 drug="ondansetron",
                 dose_mg=dose,
                 frequency=f"{freq}x/d",
                 route=route,
-                days=cover_days,
-                formula="5 mg/m² per dose, max 8 mg/dose",
+                days=extended_days if tier in ("high", "moderate") else list(chemo_days),
+                formula="5 mg/m² per dose, max 8 mg/dose (2 decimals, never above 5 mg/m²)",
                 steps=steps,
                 source=f"{SOURCE} · Ondansetron 5 mg/m², max 8 mg/dose",
                 notes=notes,
@@ -401,8 +415,11 @@ def compute_plan(patient: Patient, episodes: list[Episode] | None = None) -> Pla
                     + ", ".join(map(str, late_prior))
                 )
                 later_notes.append(note)
+                no_dose = f"No UZA v2 dose for D4–{last_chemo} — pharmacist must confirm"
+                later_notes.append(no_dose)
                 f23 = f23.replace("days 2–3", f"days 2–{last_chemo}")
-                plan.step_ups.append(StepUp(title=f"Aprepitant through day {last_chemo}", reason=note, source=SOURCE))
+                plan.step_ups.append(StepUp(title=f"Aprepitant through day {last_chemo}",
+                                            reason=f"{note}. {no_dose}", source=SOURCE))
             else:
                 later_notes.append(
                     f"multi-day chemo (days 1–{last_chemo}): aprepitant stays days 1–3 unless prior nausea on day ≥ 4"
@@ -438,7 +455,7 @@ def compute_plan(patient: Patient, episodes: list[Episode] | None = None) -> Pla
             notes.append(f"added because of prior nausea day {prior_days_txt}")
         lines.append(
             AntiemeticLine(
-                drug="dexamethasone", dose_mg=dose, frequency="2x/d", route=route, days=cover_days,
+                drug="dexamethasone", dose_mg=dose, frequency="2x/d", route=route, days=list(chemo_days),
                 formula="BSA ≤ 0.6 m²: 2 mg 2x/d; BSA > 0.6 m²: 4 mg 2x/d; halve with aprepitant",
                 steps=steps, source=f"{SOURCE} · Dexamethasone", notes=notes,
             )
@@ -451,7 +468,7 @@ def compute_plan(patient: Patient, episodes: list[Episode] | None = None) -> Pla
         dose = math.floor(round(capped, 6) * 2) / 2
         lines.append(
             AntiemeticLine(
-                drug="olanzapine", dose_mg=dose, frequency="1x/d (evening)", route=route, days=cover_days,
+                drug="olanzapine", dose_mg=dose, frequency="1x/d (evening)", route=route, days=extended_days,
                 formula="0.1 mg/kg once daily (first dose just before chemo, then evening), max 5 mg, rounded down to 0.5 mg",
                 steps=[f"{fmt(weight)} kg × 0.1 = {raw:.1f} mg → {dose:.1f} mg"]
                 + (["max 5 mg applied"] if raw > 5 else []),
@@ -460,6 +477,24 @@ def compute_plan(patient: Patient, episodes: list[Episode] | None = None) -> Pla
         )
 
     plan.antiemetics = lines
+
+    # ---- palonosetron step-up (UZA v2 p.2): High tier + breakthrough on a prior High-type regimen
+    if tier == "high" and _prior_high_breakthrough(patient):
+        if patient.age < 17:
+            raw_p = 20 * weight
+            p_dose = min(raw_p, 1500.0)
+            p_txt = (f"{fmt(weight)} kg × 20 mcg/kg = {fmt(raw_p)} mcg"
+                     + (" → max 1500 mcg" if raw_p > 1500 else "") + f" → {fmt(p_dose)} mcg once")
+        else:
+            p_txt = "age ≥ 17 y: 250 mcg day 1 (repeat day 4 if needed)"
+        plan.step_ups.append(
+            StepUp(
+                title="Consider palonosetron instead of ondansetron",
+                reason=(f"Breakthrough nausea/vomiting in a previous cycle on a High regimen. Palonosetron {p_txt}. "
+                        "Only after consulting supervision/pharmacy; no ondansetron until 3 days after palonosetron"),
+                source=f"{SOURCE} p.2",
+            )
+        )
 
     # ---- breakthrough (aimesis_rules UZA v2 p.2)
     plan.breakthrough = real_rules.breakthrough(patient, route)

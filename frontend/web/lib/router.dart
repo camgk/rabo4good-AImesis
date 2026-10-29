@@ -49,15 +49,17 @@ GoRouter buildRouter(AppState state) {
             ? '/login'
             : Uri(path: '/login', queryParameters: {'from': from}).toString();
       }
+      final home = (state.account?.isPharmacist ?? false) ? '/pharmacist' : '/patients';
       if (loggingIn) {
         final from = s.uri.queryParameters['from'];
-        return (from != null && from.startsWith('/') && !from.startsWith('/login')) ? from : '/patients';
+        return (from != null && from.startsWith('/') && !from.startsWith('/login')) ? from : home;
       }
-      if (s.matchedLocation == '/') return '/patients';
+      if (s.matchedLocation == '/') return home;
       return null;
     },
     routes: [
-      GoRoute(path: '/', redirect: (_, __) => '/patients'),
+      GoRoute(
+          path: '/', redirect: (_, __) => (state.account?.isPharmacist ?? false) ? '/pharmacist' : '/patients'),
       GoRoute(path: '/login', builder: (_, __) => const LoginPage()),
       GoRoute(
         path: '/patients/:id/passport/print',

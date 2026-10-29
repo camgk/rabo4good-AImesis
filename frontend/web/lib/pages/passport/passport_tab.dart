@@ -101,8 +101,6 @@ class _PassportTabState extends State<PassportTab> {
               }),
             ),
             Row(mainAxisSize: MainAxisSize.min, children: [
-              const StoryTag('Story 4'),
-              const SizedBox(width: 12),
               OutlinedButton.icon(
                 onPressed: () => setState(_load),
                 icon: const Icon(Icons.refresh_rounded),

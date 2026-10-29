@@ -69,7 +69,6 @@ class AboutPage extends StatelessWidget {
                 contentPadding: EdgeInsets.zero,
                 leading: Icon(t.icon, color: cs.primary),
                 title: Text(t.label),
-                trailing: StoryTag(t.story),
               ),
             const SizedBox(height: 8),
             Align(

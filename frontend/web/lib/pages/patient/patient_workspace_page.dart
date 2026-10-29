@@ -172,7 +172,7 @@ class _TabButton extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final fg = selected ? cs.primary : cs.onSurfaceVariant;
     return Tooltip(
-      message: tab.story,
+      message: tab.label,
       waitDuration: const Duration(milliseconds: 500),
       child: InkWell(
         onTap: onTap,

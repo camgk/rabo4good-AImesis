@@ -70,6 +70,7 @@ class OnboardingPage extends StatelessWidget {
         };
 
         return PageFrame(
+          key: ValueKey('frame-$cycleId-${current.path}'),
           title: '${p.displayName} · ${p.labelOf(c)}',
           subtitle: c.isSent ? 'Sent to the pharmacist' : _subtitles[current],
           maxWidth: 1180,
