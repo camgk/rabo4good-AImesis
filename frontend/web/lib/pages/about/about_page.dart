@@ -1,3 +1,4 @@
+import 'package:aimesis_a2ui_catalog/aimesis_a2ui_catalog.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -37,26 +38,22 @@ class AboutPage extends StatelessWidget {
                 'Every recommendation is advisory only and needs oncologist and hospital pharmacist sign-off.'),
             const SizedBox(height: 8),
             Text('Prototype · rules labelled with their source',
-                style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+                style: GovukType.style(context, GovukType.p16, color: cs.onSurfaceVariant)),
             const SizedBox(height: 2),
             Text('API: ${state.config.apiUrl}  (from ${state.config.source})',
-                style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant, fontFamily: 'monospace')),
+                style: GovukType.style(context, GovukType.p16, color: cs.onSurfaceVariant)),
           ]),
         ),
         const SizedBox(height: 16),
-        SectionCard(
+        const SectionCard(
           title: 'Roles',
           icon: Icons.badge_outlined,
-          child: Table(
-            columnWidths: const {0: FlexColumnWidth(2), 1: FlexColumnWidth(5)},
-            defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-            children: [
-              _tr('Oncologist', 'Edits risk factors and submits plans for pharmacist review'),
-              _tr('Nurse specialist', 'Edits risk factors and follows up on reported episodes'),
-              _tr('Pharmacist', 'Approves or returns submitted plans'),
-              _tr('Parent / patient', 'Uses the AImesis Family app (passport, symptom log)'),
-            ],
-          ),
+          child: GovukSummaryList(rows: [
+            GovukSummaryRow(key: 'Oncologist', value: 'Edits risk factors and submits plans for pharmacist review'),
+            GovukSummaryRow(key: 'Nurse specialist', value: 'Edits risk factors and follows up on reported episodes'),
+            GovukSummaryRow(key: 'Pharmacist', value: 'Approves or returns submitted plans'),
+            GovukSummaryRow(key: 'Parent / patient', value: 'Uses the AImesis Family app (passport, symptom log)'),
+          ]),
         ),
         const SizedBox(height: 16),
         SectionCard(
@@ -74,31 +71,33 @@ class AboutPage extends StatelessWidget {
             const SizedBox(height: 8),
             Align(
               alignment: Alignment.centerLeft,
-              child: FilledButton.tonalIcon(
+              child: GovukButton.secondary(
+                label: 'Open the worklist',
+                icon: Icons.people_alt_outlined,
                 onPressed: () => context.go('/worklist'),
-                icon: const Icon(Icons.people_alt_outlined),
-                label: const Text('Open the worklist'),
               ),
             ),
+          ]),
+        ),
+        const SizedBox(height: 16),
+        SectionCard(
+          title: 'Design and accessibility',
+          icon: Icons.accessibility_new_rounded,
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            _bullet(context,
+                'Design based on the GOV.UK Design System (MIT licence): layout, type scale, spacing, '
+                'focus states and components. AImesis is not a government service and uses its own brand.'),
+            _bullet(context, 'Aiming for WCAG 2.2 AA: visible keyboard focus, 44 px touch targets, and status shown in words, not colour alone.'),
           ]),
         ),
       ],
     );
   }
 
-  TableRow _tr(String role, String what) {
-    return TableRow(children: [
-      Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
-          child: Text(role, style: const TextStyle(fontWeight: FontWeight.w600))),
-      Padding(padding: const EdgeInsets.symmetric(vertical: 6), child: Text(what)),
-    ]);
-  }
-
   Widget _bullet(BuildContext context, String text) => Padding(
         padding: const EdgeInsets.only(bottom: 6),
         child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Icon(Icons.circle, size: 6, color: Theme.of(context).colorScheme.primary),
+          Text('•', style: GovukType.style(context, GovukType.p19, bold: true, color: Theme.of(context).colorScheme.onSurface)),
           const SizedBox(width: 10),
           Expanded(child: Text(text)),
         ]),

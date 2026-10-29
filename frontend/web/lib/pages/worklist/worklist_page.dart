@@ -1,3 +1,4 @@
+import 'package:aimesis_a2ui_catalog/aimesis_a2ui_catalog.dart';
 import 'package:aimesis_client/aimesis_client.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -97,7 +98,7 @@ class _WorklistPageState extends State<WorklistPage> {
                 runSpacing: 8,
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
-                  Icon(Icons.sell_outlined, size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  Text('Filter by tag', style: GovukType.style(context, GovukType.p19, bold: true, color: Theme.of(context).colorScheme.onSurface)),
                   FilterChip(
                     label: const Text('All'),
                     selected: tag == null,
@@ -135,6 +136,8 @@ class _WorklistPageState extends State<WorklistPage> {
   }
 }
 
+/// Headline number, GOV.UK style: big bold figure over a short label with a
+/// brand left border.
 class _Stat extends StatelessWidget {
   const _Stat({required this.label, required this.value, required this.icon});
   final String label;
@@ -144,27 +147,22 @@ class _Stat extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final dark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      width: 210,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      width: 220,
+      padding: const EdgeInsets.fromLTRB(GovukSpacing.s3, GovukSpacing.s2, GovukSpacing.s3, GovukSpacing.s2),
       decoration: BoxDecoration(
-        color: cs.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: cs.outlineVariant),
+        color: dark ? GovukColours.darkSurface : GovukColours.brandTintLight,
+        border: Border(left: BorderSide(color: dark ? GovukColours.brandOnDark : GovukColours.brand, width: GovukLayout.borderWidth)),
       ),
-      child: Row(children: [
-        Icon(icon, color: cs.primary),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
-            Text(label,
-                style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis),
-          ]),
-        ),
-      ]),
+      child: Semantics(
+        label: '$label: $value',
+        excludeSemantics: true,
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(value, style: GovukType.style(context, GovukType.p48, bold: true, color: cs.onSurface)),
+          Text(label, style: GovukType.style(context, GovukType.p19, color: cs.onSurface), maxLines: 1, overflow: TextOverflow.ellipsis),
+        ]),
+      ),
     );
   }
 }

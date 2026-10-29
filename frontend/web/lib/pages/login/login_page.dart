@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import '../../state/app_scope.dart';
 import '../../state/app_state.dart';
 import '../../widgets/common.dart';
-import '../../widgets/wordmark.dart';
 
 const demoPassword = 'aimesis-demo';
 
@@ -24,6 +23,12 @@ class _LoginPageState extends State<LoginPage> {
   bool _busy = false;
   String? _error;
   bool _familyError = false;
+
+  /// GOV.UK validation: field errors shown in the error summary and beside
+  /// each field.
+  final _emailFocus = FocusNode();
+  final _passwordFocus = FocusNode();
+  List<GovukErrorItem> _fieldErrors = const [];
 
   /// Demo accounts from the API (quick-pick). Empty / failed → the section
   /// is hidden entirely.
@@ -48,6 +53,8 @@ class _LoginPageState extends State<LoginPage> {
   void dispose() {
     _email.dispose();
     _password.dispose();
+    _emailFocus.dispose();
+    _passwordFocus.dispose();
     super.dispose();
   }
 
@@ -60,7 +67,15 @@ class _LoginPageState extends State<LoginPage> {
     });
   }
 
+  static String? _emailError(String? v) => (v == null || !v.contains('@')) ? 'Enter your email' : null;
+  static String? _passwordError(String? v) => (v == null || v.isEmpty) ? 'Enter your password' : null;
+
   Future<void> _submit() async {
+    final errors = <GovukErrorItem>[
+      if (_emailError(_email.text) case final m?) GovukErrorItem(m, onTap: _emailFocus.requestFocus),
+      if (_passwordError(_password.text) case final m?) GovukErrorItem(m, onTap: _passwordFocus.requestFocus),
+    ];
+    setState(() => _fieldErrors = errors);
     if (!(_formKey.currentState?.validate() ?? false)) return;
     setState(() {
       _busy = true;
@@ -90,96 +105,84 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
+    final gutter = GovukLayout.isTablet(context) ? GovukLayout.gutter : GovukLayout.gutterHalf;
     return Scaffold(
-      backgroundColor: cs.surfaceContainerLow,
+      appBar: GovukHeader(serviceName: 'Care team', logo: AimesisBrand.logo(height: 38)),
       body: Column(
         children: [
+          const GovukPhaseBanner(maxWidth: double.infinity),
           const AdvisoryBanner(),
           Expanded(
-            child: Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
+            child: SingleChildScrollView(
+              padding: EdgeInsets.fromLTRB(gutter, GovukSpacing.of(context, 7), gutter, GovukSpacing.of(context, 8)),
+              child: Center(
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 460),
-                  child: Card(
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      side: BorderSide(color: cs.outlineVariant),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(32, 32, 32, 24),
-                      child: Form(
-                        key: _formKey,
-                        child: AutofillGroup(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              const Center(child: Wordmark(size: 32)),
-                              const SizedBox(height: 8),
-                              Center(
-                                child: Text('Care team',
-                                    style: theme.textTheme.titleMedium?.copyWith(color: cs.onSurfaceVariant)),
-                              ),
-                              const SizedBox(height: 4),
-                              Center(
-                                child: Text('Paediatric CINV decision support',
-                                    style: theme.textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
-                              ),
-                              const SizedBox(height: 28),
-                              TextFormField(
-                                key: const Key('login-email'),
-                                controller: _email,
-                                keyboardType: TextInputType.emailAddress,
-                                autofillHints: const [AutofillHints.email, AutofillHints.username],
-                                textInputAction: TextInputAction.next,
-                                decoration: const InputDecoration(
-                                  labelText: 'Email',
-                                  prefixIcon: Icon(Icons.alternate_email_rounded),
-                                  border: OutlineInputBorder(),
-                                ),
-                                validator: (v) => (v == null || !v.contains('@')) ? 'Enter your email' : null,
-                              ),
-                              const SizedBox(height: 14),
-                              TextFormField(
-                                key: const Key('login-password'),
-                                controller: _password,
-                                obscureText: _obscure,
-                                autofillHints: const [AutofillHints.password],
-                                onFieldSubmitted: (_) => _submit(),
-                                decoration: InputDecoration(
-                                  labelText: 'Password',
-                                  helperText: _hasDemoAccounts ? 'Demo password: $demoPassword' : null,
-                                  prefixIcon: const Icon(Icons.lock_outline_rounded),
-                                  border: const OutlineInputBorder(),
-                                  suffixIcon: IconButton(
-                                    tooltip: _obscure ? 'Show password' : 'Hide password',
-                                    icon: Icon(_obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined),
-                                    onPressed: () => setState(() => _obscure = !_obscure),
-                                  ),
-                                ),
-                                validator: (v) => (v == null || v.isEmpty) ? 'Enter your password' : null,
-                              ),
-                              if (_error != null) ...[
-                                const SizedBox(height: 14),
-                                _ErrorBox(text: _error!, family: _familyError),
-                              ],
-                              const SizedBox(height: 20),
-                              SizedBox(
-                                height: 48,
-                                child: FilledButton(
-                                  key: const Key('login-submit'),
-                                  onPressed: _busy ? null : _submit,
-                                  child: _busy
-                                      ? const SizedBox(
-                                          width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2.5))
-                                      : const Text('Log in'),
-                                ),
-                              ),
-                              _DemoAccounts(future: _demoAccounts!, onPick: _pick),
-                            ],
+                  constraints: const BoxConstraints(maxWidth: 640),
+                  child: Form(
+                    key: _formKey,
+                    child: AutofillGroup(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          if (_fieldErrors.isNotEmpty) ...[
+                            GovukErrorSummary(key: ValueKey(_fieldErrors.length), errors: _fieldErrors),
+                            const SizedBox(height: GovukSpacing.s6),
+                          ] else if (_error != null && !_familyError) ...[
+                            GovukErrorSummary(errors: [GovukErrorItem(_error!)]),
+                            const SizedBox(height: GovukSpacing.s6),
+                          ],
+                          const GovukHeading('Log in', caption: 'Paediatric CINV decision support'),
+                          TextFormField(
+                            key: const Key('login-email'),
+                            controller: _email,
+                            focusNode: _emailFocus,
+                            keyboardType: TextInputType.emailAddress,
+                            autofillHints: const [AutofillHints.email, AutofillHints.username],
+                            textInputAction: TextInputAction.next,
+                            style: theme.textTheme.bodyLarge,
+                            decoration: const InputDecoration(labelText: 'Email'),
+                            validator: _emailError,
                           ),
-                        ),
+                          const SizedBox(height: GovukSpacing.s6),
+                          TextFormField(
+                            key: const Key('login-password'),
+                            controller: _password,
+                            focusNode: _passwordFocus,
+                            obscureText: _obscure,
+                            autofillHints: const [AutofillHints.password],
+                            onFieldSubmitted: (_) => _submit(),
+                            style: theme.textTheme.bodyLarge,
+                            decoration: InputDecoration(
+                              labelText: 'Password',
+                              helperText: _hasDemoAccounts ? 'Demo password: $demoPassword' : null,
+                              suffixIcon: IconButton(
+                                tooltip: _obscure ? 'Show password' : 'Hide password',
+                                icon: Icon(_obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined),
+                                onPressed: () => setState(() => _obscure = !_obscure),
+                              ),
+                            ),
+                            validator: _passwordError,
+                          ),
+                          if (_error != null && _familyError) ...[
+                            const SizedBox(height: GovukSpacing.s6),
+                            _ErrorBox(text: _error!, family: _familyError),
+                          ],
+                          const SizedBox(height: GovukSpacing.s6),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: FilledButton(
+                              key: const Key('login-submit'),
+                              onPressed: _busy ? null : _submit,
+                              child: _busy
+                                  ? SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(strokeWidth: 2.5, color: cs.onPrimary))
+                                  : const Text('Log in'),
+                            ),
+                          ),
+                          _DemoAccounts(future: _demoAccounts!, onPick: _pick),
+                        ],
                       ),
                     ),
                   ),
@@ -193,26 +196,15 @@ class _LoginPageState extends State<LoginPage> {
   }
 }
 
+/// Family account on the care-team app: GOV.UK notification banner (an
+/// important message, not a validation error).
 class _ErrorBox extends StatelessWidget {
   const _ErrorBox({required this.text, required this.family});
   final String text;
   final bool family;
 
   @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final bg = family ? cs.tertiaryContainer : cs.errorContainer;
-    final fg = family ? cs.onTertiaryContainer : cs.onErrorContainer;
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(10)),
-      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Icon(family ? Icons.family_restroom_rounded : Icons.error_outline_rounded, color: fg, size: 20),
-        const SizedBox(width: 10),
-        Expanded(child: Text(text, style: TextStyle(color: fg))),
-      ]),
-    );
-  }
+  Widget build(BuildContext context) => GovukNotificationBanner(text: text);
 }
 
 /// "Demo accounts" quick-pick; renders nothing unless the API returns
@@ -238,35 +230,29 @@ class _DemoAccounts extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SizedBox(height: 28),
-            Row(children: [
-              const Expanded(child: Divider()),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                child: Text('Demo accounts', style: Theme.of(context).textTheme.labelMedium),
-              ),
-              const Expanded(child: Divider()),
-            ]),
-            const SizedBox(height: 12),
+            const Divider(),
+            const SizedBox(height: GovukSpacing.s4),
+            const GovukHeading('Demo accounts', size: GovukHeadingSize.m),
             Wrap(
-              alignment: WrapAlignment.center,
-              spacing: 8,
-              runSpacing: 8,
+              spacing: GovukSpacing.s3,
+              runSpacing: GovukSpacing.s3,
               children: [
                 for (final a in clinicians)
-                  ActionChip(
-                    avatar: Icon(RoleChip.icon(a.role), size: 18),
-                    label: Text(a.displayName),
-                    tooltip: a.email,
-                    onPressed: () => onPick(a),
+                  Tooltip(
+                    message: a.email,
+                    child: OutlinedButton.icon(
+                      icon: Icon(RoleChip.icon(a.role), size: 20),
+                      label: Text(a.displayName),
+                      onPressed: () => onPick(a),
+                    ),
                   ),
               ],
             ),
             if (family > 0) ...[
-              const SizedBox(height: 10),
+              const SizedBox(height: GovukSpacing.s3),
               Text(
                 '$family family account${family == 1 ? '' : 's'} (parent / teen) sign in with the AImesis Family app.',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+                style: GovukType.style(context, GovukType.p16, color: cs.onSurfaceVariant),
               ),
             ],
           ],
