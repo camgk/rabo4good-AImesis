@@ -1,0 +1,55 @@
+# Casus 1 — casus voorbeelden.docx
+# 16-year-old girl, neuroblastoma, HR-NBL2 Rapid COJEC induction, next course B4 (25/09/2026).
+# Course B (protocol Table 7): vincristine 1,5 mg/m² (max 2 mg) H0; cisplatin 80 mg/m²/24h from H4.
+# Previous course B3 (05/09): ondansetron 2x/d + aprepitant + dexamethasone + olanzapine;
+# toernota: "Heeft nauseaklachten ondanks anti-emetica, geen braken." -> nausea on day 2.
+#
+# SYNTHETIC: weight 48 kg and BSA 1,46 m² are NOT in the case document.
+#            Pharmacists: replace with real values or confirm these for testing.
+# REVIEW STATUS: expected values hand-calculated from UZA v2 — pending pharmacist sign-off.
+
+patient:
+  age_years: 16
+  weight_kg: 48          # SYNTHETIC
+  bsa_m2: 1.46           # SYNTHETIC
+  diagnosis: neuroblastoma
+  oral_route: tablet
+  prior_cycles:
+    - label: B3
+      tier: high
+      ondansetron_times_per_day: 2
+      prophylaxis: [ondansetron, aprepitant, dexamethasone, olanzapine]
+      breakthrough_days: [2]
+      source: "toernota 05/09/2026"
+      confirmed_by_physician: true
+
+regimen:
+  protocol: HR-NBL2
+  course: "Rapid COJEC B4"
+  days:
+    - day: 0
+      agents:
+        - {name: vincristine, dose_mg_m2: 1.5}
+        - {name: cisplatin, dose_mg_m2: 80}
+    - day: 1            # cisplatin 24h continuous infusion runs into day 1 (OQ-10)
+      agents:
+        - {name: cisplatin, dose_mg_m2: 80}
+        - {name: hyperhydration}
+
+expected:
+  status: DRAFT_REQUIRES_PHYSICIAN_APPROVAL
+  tier: high                                # cisplatin = high; vincristine = low
+  items:
+    ondansetron:      {dose: 7.3, times_per_day: 3, days: [0, 1, 2, 3, 4]}   # 5 × 1,46 = 7,30 mg; HEC 3x/d; through 3 days after last chemo
+    aprepitant_d1:    {dose: 125, days: [0]}                                 # ≥12j
+    aprepitant_d2_d3: {dose: 80, days: [1, 2]}
+    dexamethasone:    {dose: 2, times_per_day: 2, days: [0, 1]}              # ≥0,6 m² with aprepitant
+    olanzapine:       {dose: 4.5, times_per_day: 1, days: [0, 1, 2, 3, 4]}   # 0,1 × 48 = 4,8 -> 4,5
+  rescue:
+    alizapride:              {dose: 48}                                      # 1 mg/kg, max 50
+    lorazepam_breakthrough:  {dose: 1.2, dose_max: 2}                        # 1,2–2,4 -> max 2
+  blocks: []
+  decisions: [PALO-SWITCH]                  # 20 mcg/kg × 48 = 960 mcg
+  decision_text_contains: {PALO-SWITCH: "960 mcg"}
+  warnings_contain:
+    - "below the policy baseline 3x/d"      # B3 was under-dosed for HEC

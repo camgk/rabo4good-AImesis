@@ -1,0 +1,431 @@
+# AImesis rulebook — UZA "Anti-emetica beleid bij CINV", Juli 2026 versie 2
+#
+# Every rule carries `src: {page, quote}`. The quote is the policy's own Dutch
+# wording; tools/verify_sources.py fails if a quote is not found on that page.
+# Where the policy is silent or ambiguous, the rule says `interpretation:` and
+# points to an open question (OQ-n) in rules/OPEN_QUESTIONS.md.
+#
+# STATUS: draft — every rule must be approved by the UZA pharmacists before
+# clinical use. Doses here are never edited by an LLM at runtime.
+
+meta:
+  policy: "Anti-emetica beleid bij Chemotherapy Induced Nauseau and Vomiting (CINV)"
+  version: "Juli 2026 versie 2"
+  source_file: "Anti-emetica beleid CINV - V2.pdf"
+  rulebook_version: "0.1.0-draft"
+  status: draft_pending_pharmacist_review
+  approved_by: []          # filled in on sign-off, e.g. [{name: ..., date: ...}]
+
+tiers: [minimal, low, moderate, high]   # ascending; used for max()
+
+# ---------------------------------------------------------------------------
+# 1. EMETOGENICITY OF SINGLE AGENTS (page 1)
+#    Doses in mg/m² per administration unless stated (see OQ-1).
+#    `when` operators: gt, gte, lt, lte on dose_mg_m2; route in [IV, PO, IT].
+#    Ranges for one agent must not overlap; a dose matching no rule is
+#    UNCLASSIFIED and blocks the recommendation.
+# ---------------------------------------------------------------------------
+agents:
+  carboplatin:
+    aliases: [carboplatine, carbo, carboplatin]
+    rules:
+      - {id: EMG-CARBO, tier: high, src: {page: 1, quote: "Carboplatine"}}
+  cisplatin:
+    aliases: [cisplatine, cisplatin, cisplatinum]
+    rules:
+      - {id: EMG-CISPL, tier: high, src: {page: 1, quote: "Cisplatine"}}
+  cyclophosphamide:
+    aliases: [cyclofosfamide, cyclophosphamide, cyclo, endoxan]
+    rules:
+      - {id: EMG-CYCLO-H, tier: high, when: {dose_mg_m2: {gt: 1500}},
+         src: {page: 1, quote: "Cyclofosfamide >1500mg/m²"}}
+      - {id: EMG-CYCLO-M, tier: moderate, when: {dose_mg_m2: {lte: 1500}},
+         src: {page: 1, quote: "Cyclofosfamide IV≤1500mg/m²"}}
+  cytarabine:
+    aliases: [cytarabine, ara-c, cytosar]
+    rules:
+      - {id: EMG-ARAC-H, tier: high, when: {dose_mg_m2: {gte: 3000}},
+         src: {page: 1, quote: "Cytarabine IV vanaf 3g/m²"}}
+      - {id: EMG-ARAC-M, tier: moderate, when: {dose_mg_m2: {gt: 200, lt: 3000}},
+         src: {page: 1, quote: "Cytarabine >200mg <3g/m²"},
+         interpretation: "'>200mg' read as mg/m² (OQ-2)"}
+      - {id: EMG-ARAC-L, tier: low, when: {dose_mg_m2: {lt: 200}},
+         src: {page: 1, quote: "Cytarabine <200mg/m² (lage dosis)"}}
+      # NOTE: exactly 200 mg/m² matches no rule -> UNCLASSIFIED (OQ-2)
+  dacarbazine:
+    aliases: [dacarbazine, dtic]
+    rules:
+      - {id: EMG-DTIC, tier: high, src: {page: 1, quote: "Dacarbazine"}}
+  dactinomycin:
+    aliases: [dactinomycine, dactinomycin, actinomycine d]
+    rules:
+      - {id: EMG-ACTD-H, tier: high, when: {dose_mg_m2: {gte: 1.35}},
+         src: {page: 1, quote: "Dactinomycine IV ≥ 1,35 mg/m2"}}
+      - {id: EMG-ACTD-M, tier: moderate, when: {dose_mg_m2: {lt: 1.35}},
+         src: {page: 1, quote: "Dactinomycine"},
+         interpretation: "moderate entry has no dose; read as <1.35 mg/m² (OQ-3)"}
+  doxorubicin:
+    aliases: [doxorubicine, doxorubicin, adriamycine]
+    rules:
+      - {id: EMG-DOXO, tier: high, src: {page: 1, quote: "Doxorubicine"}}
+  methotrexate:
+    aliases: [methotrexaat, methotrexate, mtx]
+    rules:
+      - {id: EMG-MTX-H, tier: high, when: {dose_mg_m2: {gte: 12000}},
+         src: {page: 1, quote: "Methotrexaat IV ≥ 12g/m²"}}
+      - {id: EMG-MTX-M, tier: moderate, when: {dose_mg_m2: {gte: 250, lt: 12000}},
+         src: {page: 1, quote: "Methotrexaat IV ≥250mg <12g/m²"}}
+      - {id: EMG-MTX-L, tier: low, when: {dose_mg_m2: {gte: 50, lt: 250}},
+         src: {page: 1, quote: "Methotrexaat <250mg/m² of IT"},
+         interpretation: "low range starts at 50 to avoid overlap with minimal <50 (OQ-4)"}
+      - {id: EMG-MTX-IT, tier: low, when: {route: IT},
+         src: {page: 1, quote: "Methotrexaat <250mg/m² of IT"}}
+      - {id: EMG-MTX-MIN, tier: minimal, when: {dose_mg_m2: {lt: 50}},
+         src: {page: 1, quote: "Methotrexaat <50mg/m²"}}
+  melphalan:
+    aliases: [melphalan]
+    rules:
+      - {id: EMG-MEL, tier: high, when: {route: IV}, src: {page: 1, quote: "Melphalan IV"}}
+  thiotepa:
+    aliases: [thiotepa, tepadina]
+    rules:
+      - {id: EMG-TT-H, tier: high, when: {dose_mg_m2: {gte: 300}},
+         src: {page: 1, quote: "Thiotepa IV ≥ 300mg/m²"}}
+      - {id: EMG-TT-L, tier: low, when: {dose_mg_m2: {lt: 300}},
+         src: {page: 1, quote: "Thiotepa <300mg/m²"}}
+  # --- moderate ---
+  arsenic_trioxide:
+    aliases: [arseentrioxide, arsenic trioxide, trisenox]
+    rules: [{id: EMG-ATO, tier: moderate, src: {page: 1, quote: "Arseentrioxide"}}]
+  azacitidine:
+    aliases: [azacitidine]
+    rules: [{id: EMG-AZA, tier: moderate, when: {route: IV}, src: {page: 1, quote: "Azacitidine IV"}}]
+  bendamustine:
+    aliases: [bendamustine]
+    rules: [{id: EMG-BENDA, tier: moderate, src: {page: 1, quote: "Bendamustine"}}]
+  busulfan:
+    aliases: [busulfan, busilvex]
+    rules: [{id: EMG-BU, tier: moderate, src: {page: 1, quote: "Busulfan"}}]
+  clofarabine:
+    aliases: [clofarabine]
+    rules: [{id: EMG-CLO, tier: moderate, src: {page: 1, quote: "Clofarabine"}}]
+  daunorubicin:
+    aliases: [daunorubicine, daunorubicin, dauno, dnr]
+    rules: [{id: EMG-DNR, tier: moderate, src: {page: 1, quote: "Daunorubicine"}}]
+  idarubicin:
+    aliases: [idarubicine, idarubicin]
+    rules: [{id: EMG-IDA, tier: moderate, src: {page: 1, quote: "Idarubicine"}}]
+  ifosfamide:
+    aliases: [ifosfamide, holoxan]
+    rules: [{id: EMG-IFO, tier: moderate, src: {page: 1, quote: "Ifosfamide"}}]
+  irinotecan:
+    aliases: [irinotecan]
+    rules: [{id: EMG-IRI, tier: moderate, src: {page: 1, quote: "Irinotecan"}}]
+  lomustine:
+    aliases: [lomustine, ccnu]
+    rules: [{id: EMG-CCNU, tier: moderate, src: {page: 1, quote: "Lomustine"}}]
+  # --- low ---
+  asparaginase:
+    aliases: [asparaginase, pegasparaginase, peg-asparaginase, peg-asp, oncaspar]
+    rules: [{id: EMG-ASP, tier: low, src: {page: 1, quote: "Asparaginase/Pegasparaginase"}}]
+  atg:
+    aliases: [atg, anti-thymocyte globulin]
+    rules: [{id: EMG-ATG, tier: low, src: {page: 1, quote: "ATG"}}]
+  blinatumomab:
+    aliases: [blinatumomab, blincyto]
+    rules: [{id: EMG-BLINA, tier: low, src: {page: 1, quote: "Blinatumomab"}}]
+  doxorubicin_liposomal:
+    aliases: [doxorubicine liposomaal, liposomal doxorubicin, caelyx]
+    rules: [{id: EMG-DOXO-LIPO, tier: low, src: {page: 1, quote: "Doxorubicine liposomaal"}}]
+  etoposide:
+    aliases: [etoposide, eptoposide, vp16, vp-16]
+    rules: [{id: EMG-ETO, tier: low, src: {page: 1, quote: "Etoposide"}}]
+  gemcitabine:
+    aliases: [gemcitabine]
+    rules: [{id: EMG-GEM, tier: low, src: {page: 1, quote: "Gemcitabine"}}]
+  inotuzumab_ozogamicin:
+    aliases: [inotuzumab ozogamicin, inotuzumab, besponsa]
+    rules: [{id: EMG-INO, tier: low, src: {page: 1, quote: "Inotuzumab ozogamicin"}}]
+  mitomycin:
+    aliases: [mitomycine, mitomycin]
+    rules: [{id: EMG-MITO, tier: low, src: {page: 1, quote: "Mitomycine"}}]
+  mitoxantrone:
+    aliases: [mitoxantrone]
+    rules: [{id: EMG-MITX, tier: low, when: {route: IV}, src: {page: 1, quote: "Mitoxantrone IV"}}]
+  temozolomide:
+    aliases: [temozolomide, temodal]
+    rules: [{id: EMG-TMZ, tier: low, src: {page: 1, quote: "Temozolomide"}}]
+  topotecan:
+    aliases: [topotecan]
+    rules: [{id: EMG-TOPO, tier: low, src: {page: 1, quote: "Topotecan"}}]
+  triple_it:
+    aliases: [triple it, itt, triple intrathecal]
+    rules: [{id: EMG-ITT, tier: low, src: {page: 1, quote: "Triple IT/ITT"}}]
+  vinblastine:
+    aliases: [vinblastine]
+    rules: [{id: EMG-VBL, tier: low, src: {page: 1, quote: "Vinblastine"}}]
+  vincristine:
+    aliases: [vincristine, vinc, vcr, oncovin]
+    rules: [{id: EMG-VCR, tier: low, src: {page: 1, quote: "Vincristine"}}]
+  vinorelbine:
+    aliases: [vinorelbine]
+    rules: [{id: EMG-VRL, tier: low, src: {page: 1, quote: "Vinorelbine"}}]
+  # --- minimal ---
+  bevacizumab:
+    aliases: [bevacizumab, avastin]
+    rules: [{id: EMG-BEV, tier: minimal, src: {page: 1, quote: "Bevacizumab"}}]
+  bleomycin:
+    aliases: [bleomycine, bleomycin]
+    rules: [{id: EMG-BLEO, tier: minimal, src: {page: 1, quote: "Bleomycine"}}]
+  bortezomib:
+    aliases: [bortezomib, velcade]
+    rules: [{id: EMG-BORT, tier: minimal, src: {page: 1, quote: "Bortezomib"}}]
+  cladribine:
+    aliases: [cladribine]
+    rules: [{id: EMG-CLAD, tier: minimal, src: {page: 1, quote: "Cladribine"}}]
+  fludarabine:
+    aliases: [fludarabine]
+    rules: [{id: EMG-FLU, tier: minimal, src: {page: 1, quote: "Fludarabine"}}]
+  gemtuzumab_ozogamicin:
+    aliases: [gemtuzumab ozogamicin, gemtuzumab, mylotarg]
+    rules: [{id: EMG-GO, tier: minimal, src: {page: 1, quote: "Gemtuzumab ozogamicin"}}]
+  nelarabine:
+    aliases: [nelarabine]
+    rules: [{id: EMG-NEL, tier: minimal, src: {page: 1, quote: "Nelarabine"}}]
+  rituximab:
+    aliases: [rituximab, mabthera]
+    rules: [{id: EMG-RTX, tier: minimal, src: {page: 1, quote: "Rituximab"}}]
+  thioguanine:
+    aliases: [thioguanine, 6-tg]
+    rules: [{id: EMG-TG, tier: minimal, src: {page: 1, quote: "Thioguanine"}}]
+
+# Drugs that are part of a chemo regimen but are not cytostatics. They do not
+# affect the tier and are skipped silently (anything else unknown -> block).
+non_emetogenic_regimen_components:
+  - {id: mesna, aliases: [mesna, 2-mercapto-ethane sulfonate]}
+  - {id: g_csf, aliases: [g-csf, filgrastim, pegfilgrastim]}
+  - {id: mannitol, aliases: [mannitol]}
+  - {id: hydration, aliases: [hyperhydration, pre-hydration, post-hydration, hydration]}
+  - {id: dexamethasone_chemo, aliases: [dexa, dexamethasone]}     # counted as steroid, see blocks
+  - {id: prednisolone_chemo, aliases: [prednisolone, prednison, prednisone]}
+  - {id: hydrocortisone_chemo, aliases: [hydrocortisone]}
+
+drug_classes:
+  anthracycline:
+    members: [doxorubicin, daunorubicin, idarubicin]
+    interpretation: "members taken from the policy's own lists; mitoxantrone and liposomal doxorubicin excluded (OQ-5)"
+  corticosteroid:
+    members: [dexamethasone_chemo, prednisolone_chemo, hydrocortisone_chemo]
+
+# ---------------------------------------------------------------------------
+# 2. COMBINATIONS RAISED TO HIGH (page 1). Evaluated per chemo day (OQ-6).
+#    A combination matches when every listed agent/class is present that day.
+# ---------------------------------------------------------------------------
+combinations:
+  - {id: CMB-ARAC-DNR, tier: high, requires: [cytarabine, daunorubicin],
+     src: {page: 1, quote: "Cytarabine/Daunorubicine of Etoposide"}}
+  - {id: CMB-ARAC-ETO, tier: high, requires: [cytarabine, etoposide],
+     src: {page: 1, quote: "Cytarabine/Daunorubicine of Etoposide"}}
+  - {id: CMB-CYCLO-ANTHRA, tier: high, requires: [cyclophosphamide, "class:anthracycline"],
+     src: {page: 1, quote: "Cyclofosfamide/anthracycline"}}
+  - {id: CMB-CYCLO-ANTHRA-ETO, tier: high, requires: [cyclophosphamide, "class:anthracycline", etoposide],
+     src: {page: 1, quote: "Cyclofosfamide/anthracycline/Etoposide"}}
+  - {id: CMB-IFO-ETO, tier: high, requires: [ifosfamide, etoposide],
+     src: {page: 1, quote: "Ifosfamide/Etoposide"}}
+
+# ---------------------------------------------------------------------------
+# 3. GENERAL PRINCIPLES (page 2)
+# ---------------------------------------------------------------------------
+principles:
+  - {id: GEN-MAX, rule: "overall tier = most emetogenic agent",
+     src: {page: 2, quote: "De meest emetogene chemotherapie bepaalt het profylaxe-niveau"}}
+  - {id: GEN-TIMING, rule: "start 30 min (IV) to 60 min (PO) before first chemo",
+     src: {page: 2, quote: "Start toediening anti-emetica 30 min. (IV) tot 60 min. (PO) voor eerste toediening chemotherapie"}}
+  - {id: GEN-EPD, rule: "check patient record for previous CINV prophylaxis",
+     src: {page: 2, quote: "Consulteer EPD voor eventuele voorgaande CINV-profylaxe"}}
+
+# ---------------------------------------------------------------------------
+# 4. BASELINE PROPHYLAXIS PER TIER (page 1)
+#    `any_of` = physician chooses one (human-in-the-loop decision).
+# ---------------------------------------------------------------------------
+bundles:
+  high:
+    id: BUN-HIGH
+    all_of:
+      - {drug: ondansetron, times_per_day: 3}
+      - {drug: dexamethasone}
+      - {drug: aprepitant}
+      - {drug: olanzapine, min_age_years_exclusive: 2}
+    src: {page: 1, quote: "Olanzapine ( >2j)"}
+  moderate:
+    id: BUN-MOD
+    all_of:
+      - {drug: ondansetron, times_per_day: 2}
+    any_of:
+      - {drug: dexamethasone}
+      - {drug: aprepitant}
+    src: {page: 1, quote: "Ondansetron (2x/d)"}
+  low:
+    id: BUN-LOW
+    all_of:
+      - {drug: ondansetron, times_per_day: 1}
+    src: {page: 1, quote: "Ondansetron (1x/d)"}
+  minimal:
+    id: BUN-MIN
+    all_of: []
+    src: {page: 1, quote: "Geen standaard profylaxe"}
+
+# ---------------------------------------------------------------------------
+# 5. DRUG DOSING (page 2). No rounding unless the policy says so (OQ-7).
+# ---------------------------------------------------------------------------
+dosing:
+  ondansetron:
+    id: DOS-OND
+    routes: [IV, PO]
+    per_dose: {mg_per_m2: 5, max_mg: 8}
+    max_times_per_day: 3
+    discharge: {route: PO, times_per_day: 2, note: "doorverwijzen naar ziekenhuisapotheek"}
+    duration:
+      moderate_or_high: {through_days_after_last_chemo: 3}
+      low: {chemo_days_only: true}
+    src:
+      - {page: 2, quote: "IV/PO: 5 mg/m² (max. 8 mg/dosis) max. 3x/d"}
+      - {page: 2, quote: "Matig- en hoog emetogeen: t.e.m. 3 dagen na laatste chemotherapie"}
+      - {page: 2, quote: "Laag emetogeen: enkel op dagen van chemotherapie"}
+      - {page: 2, quote: "Bij ontslag: 2x/d PO, patiënten doorverwijzen naar ziekenhuisapotheek"}
+
+  palonosetron:
+    id: DOS-PALO
+    routes: [IV]
+    requires_consultation: "enkel in overleg met supervisie/apotheek"
+    under_17: {mcg_per_kg: 20, max_mcg: 1500, schedule: "eenmalig"}
+    from_17: {mcg: 250, schedule: "D1, indien nodig herhalen op D4"}
+    exclusive_with_ondansetron_days: 3
+    src:
+      - {page: 2, quote: "PALONOSETRON (enkel in overleg met supervisie/apotheek)"}
+      - {page: 2, quote: "IV: <17j. 20 mcg/kg (max. 1500 mcg/dosis) eenmalig"}
+      - {page: 2, quote: "≥17j. 250 mcg/dosis eenmalig op D1, indien nodig herhalen op D4"}
+      - {page: 2, quote: "niet samen met ondansetron (tot 3 dagen na toediening palonosetron)"}
+
+  dexamethasone:
+    id: DOS-DEX
+    routes: [IV, PO]
+    times_per_day: 2
+    bsa_split_m2: 0.6            # <0.6 vs ≥0.6
+    mg_per_dose:
+      bsa_lt_split: {with_aprepitant: 1, without_aprepitant: 2}
+      bsa_gte_split: {with_aprepitant: 2, without_aprepitant: 4}
+    duration: {chemo_days_only: true}
+    iv_product_note:
+      product: "Aacidexam® 5 mg/ml"
+      active_mg_per_ml: 4
+      text: "IV Aacidexam® 5 mg/ml bevat ± 4 mg/ml actieve stof → dosis omrekenen"
+    src:
+      - {page: 2, quote: "IV/PO: <0,6m² 1mg 2x/d (i.c.m. (fos)aprepitant) OF 2mg 2x/d (zonder (fos)aprepitant)"}
+      - {page: 2, quote: "≥0,6m² 2mg 2x/d (i.c.m. (fos)aprepitant) OF 4mg 2x/d (zonder (fos)aprepitant)"}
+      - {page: 2, quote: "Dexamethasone: enkel op dagen van chemotherapie"}
+      - {page: 2, quote: "IV Aacidexam® 5 mg/ml bevat ± 4 mg/ml actieve stof → dosis omrekenen"}
+
+  aprepitant:
+    id: DOS-APR
+    routes: [PO, IV]
+    preferred_route: PO
+    not_indicated_if: {age_months_lt: 6, weight_kg_lte: 6}   # either condition
+    po:
+      under_12: {d1: {mg_per_kg: 3, max_mg: 125}, d2_d3: {mg_per_kg: 2, max_mg: 80}}
+      from_12: {d1: {mg: 125}, d2_d3: {mg: 80}}
+    iv_fosaprepitant:
+      three_day: {d1: {mg_per_kg: 3, max_mg: 115}, d2_d3: {mg_per_kg: 2, max_mg: 80}}
+      single_dose_one_day_chemo:
+        - {age_months_gt: 6, age_years_lt: 2, mg_per_kg: 5, max_mg: 150}
+        - {age_years_gte: 2, age_years_lt: 12, mg_per_kg: 4, max_mg: 150}
+        - {age_years_gte: 12, mg: 150}
+    notes:
+      - "Terugbetaling afhankelijk van leeftijd."
+      - "Opgelet voor interacties (CYP3A4/2C9)."
+    src:
+      - {page: 2, quote: "<6m of ≤6kg: geen indicatie"}
+      - {page: 2, quote: "PO: <12j. 3 mg/kg (max. 125mg) op D1 gevolgd door 2 mg/kg (max. 80mg) op D2 en D3"}
+      - {page: 2, quote: "≥12j. 125mg op D1 gevolgd door 80mg op D2 en D3"}
+      - {page: 2, quote: "IV: 3 mg/kg (max. 115mg) op D1 gevolgd door 2 mg/kg (max. 80mg) op D2 en D3"}
+      - {page: 2, quote: "PO = voorkeur. Terugbetaling afhankelijk van leeftijd. Opgelet voor interacties (CYP3A4/2C9)."}
+
+  olanzapine:
+    id: DOS-OLZ
+    routes: [PO]
+    not_indicated_if: {age_years_lt: 2}
+    per_dose: {mg_per_kg: 0.1, max_mg: 5}
+    times_per_day: 1
+    rounding: {mode: floor, step_mg: 0.5}
+    administration: "1e dosis vlak voor chemotherapie, nadien bij voorkeur 's avonds"
+    never_monotherapy: true
+    duration: {through_days_after_last_chemo: 3}
+    src:
+      - {page: 2, quote: "PO: <2j. geen indicatie"}
+      - {page: 2, quote: "≥2j. 0,1 mg/kg (max. 5 mg/dosis) 1x/d"}
+      - {page: 2, quote: "Dosis naar beneden afronden tot de dichtstbijzijnde 0,5mg"}
+      - {page: 2, quote: "Nooit in monotherapie voor CINV-indicatie."}
+      - {page: 2, quote: "Olanzapine: t.e.m. 3 dagen na laatste chemotherapie"}
+
+  lorazepam:
+    id: DOS-LZP
+    routes: [IV, PO]
+    breakthrough: {mg_per_kg_min: 0.025, mg_per_kg_max: 0.05, max_mg: 2, schedule: "elke 6u indien nodig"}
+    anticipatory: {mg_per_kg_min: 0.04, mg_per_kg_max: 0.08, max_mg: 2,
+                   schedule: "avond voor en ochtend van eerste chemotherapie"}
+    notes: ["IV-vorm niet terugbetaald"]
+    src:
+      - {page: 2, quote: "IV/PO: 0,025-0,05 mg/kg (max. 2 mg/dosis) elke 6u indien nodig bij doorbraak CINV"}
+      - {page: 2, quote: "0,04-0,08 mg/kg (max. 2 mg/dosis) avond voor en ochtend van eerste chemotherapie"}
+      - {page: 2, quote: "IV-vorm niet terugbetaald"}
+
+  alizapride:
+    id: DOS-ALZ
+    routes: [IV, PO]
+    per_dose: {mg_per_kg: 1, max_mg: 50}
+    max_times_per_day: 6
+    duration: {chemo_days_only: true}
+    src:
+      - {page: 2, quote: "IV of per os: 1 mg/kg (max. 50mg/dosis) max. 6x/d"}
+      - {page: 2, quote: "Enkel op dagen van chemotherapie"}
+
+# ---------------------------------------------------------------------------
+# 6. CONTRAINDICATIONS (page 2)
+# ---------------------------------------------------------------------------
+dexamethasone_blocks:
+  hard:   # dexamethasone is removed from the recommendation
+    - {id: BLK-DEX-STEROID, when: regimen_contains_corticosteroid,
+       src: {page: 2, quote: "GEEN dexamethasone: indien kuur al corticoïden bevat"}}
+    - {id: BLK-DEX-BRAIN, when: {diagnosis_in: [brain_tumor]},
+       src: {page: 2, quote: "bij hersentumoren"}}
+    - {id: BLK-DEX-ALL, when: {diagnosis_in: [ALL]},
+       src: {page: 2, quote: "bij ALL behandeling"}}
+    - {id: BLK-DEX-DINU, when: {comedication_in: [dinutuximab_beta]},
+       src: {page: 2, quote: "bij dinutuximab beta"}}
+  not_preferred:   # warning; physician decides (OQ-8)
+    - {id: WRN-DEX-AML, when: {diagnosis_in: [AML]},
+       src: {page: 2, quote: "GEEN voorkeur bij kuur met corticoïden/ALL/AML/hersentumoren/CAR-T patiënten"}}
+    - {id: WRN-DEX-CART, when: {comedication_in: [car_t]},
+       src: {page: 2, quote: "GEEN voorkeur bij kuur met corticoïden/ALL/AML/hersentumoren/CAR-T patiënten"}}
+
+# ---------------------------------------------------------------------------
+# 7. BREAKTHROUGH & ANTICIPATORY CINV (page 2)
+# ---------------------------------------------------------------------------
+breakthrough:
+  definition_src: {page: 2, quote: "ondanks geschikte CINV-profylaxe (zonder andere oorzaak)"}
+  steps:
+    - {id: BRK-1, action: increase_ondansetron,
+       to_times_per_day: {moderate: 3, low: 2, minimal: 1},
+       src: {page: 2, quote: "Verhoog frequentie ondansetron naar 3x/d voor matig emetogeen"}}
+    - {id: BRK-2, action: add_olanzapine, min_age_years_exclusive: 2,
+       src: {page: 2, quote: "Onvoldoende respons: overweeg opstart olanzapine (>2j)"}}
+    - {id: BRK-3, action: add_alizapride_or_lorazepam,
+       src: {page: 2, quote: "Onvoldoende respons: associatie alizapride of lorazepam"}}
+  next_cycle:
+    - {id: BRK-NEXT, action: start_one_tier_higher,
+       src: {page: 2, quote: "Volgende chemotherapie cyclus: start met hoger profylaxe niveau"}}
+    - {id: BRK-PALO, action: consider_palonosetron_switch, applies_to_tier: high,
+       src: {page: 2, quote: "Switch ondansetron → palonosetron bij onvoldoende controle van hoog emetogene kuren"}}
+anticipatory:
+  - {id: ANT-1, action: non_pharmacological, src: {page: 2, quote: "Niet-farmacologische maatregelen (o.a. relaxatie)"}}
+  - {id: ANT-2, action: add_lorazepam_anticipatory, src: {page: 2, quote: "Associatie lorazepam"}}

@@ -1,0 +1,55 @@
+# Casus 3 — casus voorbeelden.docx
+# Ewing sarcoma, iEuroEwing, alternating VDC and IE; today IE course #3.
+# IE (protocol table): ifosfamide 1800 mg/m²/d d1–d5, etoposide 100 mg/m²/d d1–d5, mesna.
+# Earlier courses: nausea and vomiting on day 4.
+# Case document: ifosfamide (moderate) + etoposide (low) = HIGH as a combination;
+# "Eventueel op dag 4 en vijf nog verder aprepitant" -> outside policy, physician decision.
+#
+# SYNTHETIC: age 14, weight 45 kg, BSA 1,40 m² are NOT in the case document.
+#            Prophylaxis given in earlier IE courses is NOT in the case document.
+# REVIEW STATUS: pending pharmacist sign-off.
+
+patient:
+  age_years: 14          # SYNTHETIC
+  weight_kg: 45          # SYNTHETIC
+  bsa_m2: 1.40           # SYNTHETIC
+  diagnosis: ewing_sarcoma
+  oral_route: tablet
+  prior_cycles:
+    - label: "IE #2"
+      tier: high
+      ondansetron_times_per_day: null      # unknown from the case document
+      breakthrough_days: [4]
+      source: "dossier"
+      confirmed_by_physician: true
+
+regimen:
+  protocol: iEuroEwing
+  course: "IE #3"
+  days:
+    - {day: 1, agents: [{name: ifosfamide, dose_mg_m2: 1800}, {name: etoposide, dose_mg_m2: 100}, {name: mesna}]}
+    - {day: 2, agents: [{name: ifosfamide, dose_mg_m2: 1800}, {name: etoposide, dose_mg_m2: 100}, {name: mesna}]}
+    - {day: 3, agents: [{name: ifosfamide, dose_mg_m2: 1800}, {name: etoposide, dose_mg_m2: 100}, {name: mesna}]}
+    - {day: 4, agents: [{name: ifosfamide, dose_mg_m2: 1800}, {name: etoposide, dose_mg_m2: 100}, {name: mesna}]}
+    - {day: 5, agents: [{name: ifosfamide, dose_mg_m2: 1800}, {name: etoposide, dose_mg_m2: 100}, {name: mesna}]}
+
+expected:
+  status: DRAFT_REQUIRES_PHYSICIAN_APPROVAL
+  tier: high                                    # combination CMB-IFO-ETO on every day
+  day_tiers: {1: high, 2: high, 3: high, 4: high, 5: high}
+  items:
+    ondansetron:      {dose: 7, times_per_day: 3, days: [1, 2, 3, 4, 5, 6, 7, 8]}   # 5 × 1,40 = 7,0 mg
+    aprepitant_d1:    {dose: 125, days: [1]}
+    aprepitant_d2_d3: {dose: 80, days: [2, 3]}                                     # policy D1–D3 only
+    dexamethasone:    {dose: 2, times_per_day: 2, days: [1, 2, 3, 4, 5]}           # chemo days only
+    olanzapine:       {dose: 4.5, times_per_day: 1, days: [1, 2, 3, 4, 5, 6, 7, 8]} # 0,1 × 45 = 4,5
+  rescue:
+    alizapride:             {dose: 45}
+    lorazepam_breakthrough: {dose: 1.125, dose_max: 2}
+  blocks: []
+  decisions: [PALO-SWITCH, APREPITANT-LATE-BREAKTHROUGH]
+  decision_text_contains:
+    PALO-SWITCH: "900 mcg"
+    APREPITANT-LATE-BREAKTHROUGH: "OUTSIDE the UZA v2 policy"
+  warnings_contain:
+    - "prophylaxis given is unknown"

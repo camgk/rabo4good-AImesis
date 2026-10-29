@@ -1,0 +1,43 @@
+# Casus 2 — casus voorbeelden.docx
+# 2-year-old boy, precursor B-cell ALL, ALLTogether Induction B, day 8.
+# Protocol (13.3 Induction B): dexa 6 mg/m² daily, VCR 1,5 mg/m² and DNR 25 mg/m² on days 1/8/15/22.
+# Toernota: "Vandaag D8 chemo: vincristine – dauno". No nausea/vomiting in earlier administrations.
+# Expected per case document: ondansetron + aprepitant, no dexamethasone.
+#
+# SYNTHETIC: weight 12 kg and BSA 0,55 m² are NOT in the case document.
+# REVIEW STATUS: pending pharmacist sign-off.
+
+patient:
+  age_years: 2
+  weight_kg: 12          # SYNTHETIC
+  bsa_m2: 0.55           # SYNTHETIC
+  diagnosis: ALL
+  oral_route: liquid
+  prior_cycles: []
+
+regimen:
+  protocol: ALLTogether1
+  course: "Induction B"
+  days:
+    - day: 8
+      agents:
+        - {name: vincristine, dose_mg_m2: 1.5}
+        - {name: daunorubicin, dose_mg_m2: 25}
+        - {name: dexamethasone}           # part of the chemo protocol (6 mg/m²/d)
+
+expected:
+  status: DRAFT_REQUIRES_PHYSICIAN_APPROVAL
+  tier: moderate                           # daunorubicin = moderate
+  items:
+    ondansetron:      {dose: 2.75, times_per_day: 2, days: [8, 9, 10, 11]}  # 5 × 0,55 = 2,75 mg
+    aprepitant_d1:    {dose: 36, days: [8]}                                 # <12j: 3 × 12 = 36 mg
+    aprepitant_d2_d3: {dose: 24, days: [9, 10]}                             # 2 × 12 = 24 mg
+  absent: [dexamethasone, olanzapine]
+  rescue:
+    alizapride:             {dose: 12}
+    lorazepam_breakthrough: {dose: 0.3, dose_max: 0.6}
+  blocks_contain: [BLK-DEX-STEROID, BLK-DEX-ALL]   # blocked twice: protocol has dexa AND diagnosis ALL
+  decisions: []
+  warnings_contain:
+    - "raise exposure to the corticosteroid"       # aprepitant + protocol dexamethasone (CYP3A4)
+    - "via liquid"
