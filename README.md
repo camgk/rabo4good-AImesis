@@ -184,6 +184,8 @@ Every file below exists and is **empty**. Fill them in as you build.
 │
 └── docs/
     ├── architecture.md             decisions behind the split above
+    ├── firestore-database-overview.md database collections, schemas, passport lifecycles & connections
+    ├── firestore-integration.md    Firestore Terraform setup & client connection guide
     ├── clinical-rules.md           UZA v2 rules as implemented, with page references
     ├── open-questions.md           questions for the UZA pharmacists + answers
     └── decisions.md                date, decision, why

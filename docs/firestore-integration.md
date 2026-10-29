@@ -2,6 +2,9 @@
 
 This guide details the Google Cloud Firestore (Native mode) setup for **rabo4good-AImesis**, including Terraform deployment, data models, and client connection patterns for Flutter Web, iOS, and Python.
 
+> [!NOTE]
+> For a full breakdown of the database collections, schemas, passport lifecycles, and dual sign-off governance, see the [Firestore Database Overview](file:///config/.gemini/antigravity/scratch/rabo4good-AImesis/docs/firestore-database-overview.md).
+
 ---
 
 ## 1. Architecture & Collections
@@ -23,6 +26,8 @@ flowchart TD
     subgraph Firestore["Firestore (Native Mode)"]
         P[("patients/<br/>Clinical context & regimens")]
         PSP[("passports/<br/>Dual sign-off Passport schedules")]
+        ACC[("accounts/<br/>RBAC & family pairing")]
+        RES[("reference_resources/<br/>Belgian hospital deep links")]
         E[("episodes/<br/>Nausea & vomiting real-time logs")]
     end
 
@@ -38,8 +43,10 @@ flowchart TD
 
 | Collection | Document ID | Purpose | Schemas / Contract |
 |---|---|---|---|
-| `patients` | `patient_id` (e.g. `PAT-2026-0042`) | Pseudonymized patient metrics (age, weight, BSA, planned chemotherapy regimen). | [`patient_context.schema.json`](file:///config/.gemini/antigravity/scratch/rabo4good-AImesis/contracts/schemas/patient_context.schema.json) |
-| `passports` | `passport_id` (e.g. `PSP-2026-0042-C1`) | CINV Patient Passport: UZA v2 emetic tier, antiemetic schedule, dexamethasone rules, breakthrough steps, oncologist & pharmacist sign-offs, family schedules in NL/FR/EN. | [`passport.schema.json`](file:///config/.gemini/antigravity/scratch/rabo4good-AImesis/contracts/schemas/passport.schema.json) |
+| `patients` | `patient_id` (e.g. `PAT-001`) | Pseudonymized patient metrics (age, weight, BSA, planned chemotherapy regimen, EHR history). | [`patient_context.schema.json`](file:///config/.gemini/antigravity/scratch/rabo4good-AImesis/contracts/schemas/patient_context.schema.json) |
+| `passports` | `passport_id` (e.g. `PSP-001-C1`) | CINV Patient Passport: UZA v2 emetic tier, antiemetic schedule, dexamethasone rules, breakthrough steps, oncologist & pharmacist sign-offs, family schedules in NL/FR/EN. | [`passport.schema.json`](file:///config/.gemini/antigravity/scratch/rabo4good-AImesis/contracts/schemas/passport.schema.json) |
+| `accounts` | `account_id` (e.g. `acc-onc`, `acc-family-01`) | Care team (oncologist, pharmacist, nurse) and family user profiles with role-based access and paired patient IDs. | In-app RBAC model |
+| `reference_resources` | `resource_id` (e.g. `res-01` to `res-27`) | Curated Belgian hospital brochures, family guides, and clinical protocols from `CINV resources in Belgium.xlsx`. | In-app resource model |
 | `episodes` | `episode_id` (UUID) | Real-time nausea/vomiting episodes logged by the family companion app. | [`episode.schema.json`](file:///config/.gemini/antigravity/scratch/rabo4good-AImesis/contracts/schemas/episode.schema.json) |
 
 ---
@@ -164,16 +171,16 @@ passport_store = PassportStore()
 episode_store = EpisodeStore()
 
 # 1. Fetch active passport
-passport = passport_store.get_active_passport_for_patient("PAT-2026-0042")
+passport = passport_store.get_active_passport_for_patient("PAT-001")
 
 # 2. Record dual sign-off
 passport_store.sign_off_passport(
-    passport_id="PSP-2026-0042-C1",
+    passport_id="PSP-001-C1",
     role="clinical_pharmacist",
-    clinician_name="Dr. S. Janssens",
-    riziv_inami="1-12345-67-890",
+    clinician_name="Pharmacist Name",
+    riziv_inami="1-XXXXX-XX-XXX",
 )
 
 # 3. Retrieve recent episodes for analysis
-episodes = episode_store.list_episodes_for_patient("PAT-2026-0042")
+episodes = episode_store.list_episodes_for_patient("PAT-001")
 ```
