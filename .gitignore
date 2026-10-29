@@ -3,34 +3,69 @@
 .idea/
 .vscode/
 *.swp
+*.swo
 
 # Clinical source documents never go into git
 docs/source/
 
 # Secrets and local config
 .env
+.env.*
+!.env.example
 *.env.local
 *.tfvars.local
 *.pem
 *.p12
 *.mobileprovision
+*credentials*.json
+service-account*.json
 
-# Python
-__pycache__/
-*.py[cod]
+# Python virtual environments & bytecode
 .venv/
+.venv*/
 venv/
+ENV/
+env/
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*$py.class
+*.so
 *.egg-info/
-.pytest_cache/
+.installed.cfg
+*.egg
+dist/
+build/
+eggs/
+.eggs/
+wheels/
 *.whl
+
+# Testing, linting & coverage caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage/
+
+# ADK local artifacts
+.adk/
 
 # Dart / Flutter
 .dart_tool/
+**/.dart_tool/
 .packages
+**/.packages
 .flutter-plugins
+**/.flutter-plugins
 .flutter-plugins-dependencies
+**/.flutter-plugins-dependencies
 build/
+**/build/
 pubspec_overrides.yaml
+**/pubspec.lock
 
 # iOS
 **/ios/Pods/
@@ -39,32 +74,25 @@ pubspec_overrides.yaml
 **/ios/Flutter/Generated.xcconfig
 **/ios/Flutter/flutter_export_environment.sh
 **/ios/Runner/GeneratedPluginRegistrant.*
-xcuserdata/
+**/xcuserdata/
 *.xcarchive
 
 # Terraform
 .terraform/
+**/.terraform/
 *.tfstate
 *.tfstate.*
 crash.log
 tfplan
+override.tf
+override.tf.json
 
-# From main (merged)
-.eggs/
-dist/
-.mypy_cache/
-.ruff_cache/
-.coverage
-htmlcov/
+# Web & Node dependencies / caches
 node_modules/
 .next/
 .turbo/
 .vite/
-coverage/
 *.tsbuildinfo
 npm-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-.env.*
-!.env.example
-service-account*.json
