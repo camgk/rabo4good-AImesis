@@ -92,8 +92,8 @@ class _PatientsPageState extends State<PatientsPage> {
               FilledButton.icon(
                 key: const Key('new-patient'),
                 onPressed: () {
-                  final d = app.onboarding.create(createdBy: app.account?.displayName ?? '');
-                  context.go(OnboardingPage.path(d.id, d.stage));
+                  final ref = app.onboarding.createPatient(createdBy: app.account?.displayName ?? '');
+                  context.go(OnboardingPage.path(ref.cycle.id, ref.cycle.stage));
                 },
                 icon: const Icon(Icons.person_add_alt_1_rounded),
                 label: const Text('New patient'),
@@ -104,17 +104,24 @@ class _PatientsPageState extends State<PatientsPage> {
             ListenableBuilder(
               listenable: app.onboarding,
               builder: (context, _) {
-                final drafts = app.onboarding.drafts;
-                if (drafts.isEmpty) return const SizedBox.shrink();
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 24),
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                    Text('Onboarding (${drafts.length})',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
+                final open = app.onboarding.inProgress;
+                final created = app.onboarding.localPatients;
+                TextStyle? h(BuildContext c) =>
+                    Theme.of(c).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600);
+                return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                  if (open.isNotEmpty) ...[
+                    Text('In progress (${open.length})', style: h(context)),
                     const SizedBox(height: 10),
-                    OnboardingList(drafts: drafts, allowDiscard: canOnboard),
-                  ]),
-                );
+                    CycleList(cycles: open, allowDiscard: canOnboard),
+                    const SizedBox(height: 24),
+                  ],
+                  if (created.isNotEmpty) ...[
+                    Text('New patients (${created.length})', style: h(context)),
+                    const SizedBox(height: 10),
+                    ProfileList(patients: created),
+                    const SizedBox(height: 24),
+                  ],
+                ]);
               },
             ),
             Wrap(spacing: 12, runSpacing: 12, children: [

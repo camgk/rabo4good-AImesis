@@ -10,18 +10,19 @@ import 'review_step.dart';
 import 'session_step.dart';
 import 'treatment_step.dart';
 
-/// `/onboarding/:id/:step` — the four-step flow for a new patient.
+/// `/onboarding/:cycleId/:step` — the four-step flow for one cycle: a new
+/// patient's first cycle, or the next cycle of an existing patient.
 class OnboardingPage extends StatelessWidget {
-  const OnboardingPage({super.key, required this.draftId, required this.step});
+  const OnboardingPage({super.key, required this.cycleId, required this.step});
 
-  final String draftId;
+  final String cycleId;
   final OnboardingStage step;
 
-  static String path(String id, OnboardingStage s) =>
-      '/onboarding/$id/${(s == OnboardingStage.sent ? OnboardingStage.review : s).path}';
+  static String path(String cycleId, OnboardingStage s) =>
+      '/onboarding/$cycleId/${(s == OnboardingStage.sent ? OnboardingStage.review : s).path}';
 
   static const _subtitles = {
-    OnboardingStage.treatment: 'Session 1 · Prepare the chemotherapy and basic patient details',
+    OnboardingStage.treatment: 'Session 1 · Prepare the chemotherapy and patient details',
     OnboardingStage.session: 'Session 2 · Fill this in together with the patient and family',
     OnboardingStage.processing: 'The models run over the inputs and bring the results together',
     OnboardingStage.review: 'Check the suggestion, approve it and send it to the pharmacist',
@@ -33,12 +34,12 @@ class OnboardingPage extends StatelessWidget {
     return ListenableBuilder(
       listenable: store,
       builder: (context, _) {
-        final draft = store.byId(draftId);
-        if (draft == null) {
-          return PageFrame(title: 'New patient', children: [
+        final ref = store.cycle(cycleId);
+        if (ref == null) {
+          return PageFrame(title: 'Cycle not found', children: [
             const EmptyView(
               icon: Icons.person_search_outlined,
-              title: 'Onboarding not found',
+              title: 'This cycle is not here',
               message: 'It may have been discarded, or it was started in another browser tab.',
             ),
             Center(
@@ -46,33 +47,46 @@ class OnboardingPage extends StatelessWidget {
             ),
           ]);
         }
+        final p = ref.patient, c = ref.cycle;
 
-        // Sent drafts only show the (read-only) review. Otherwise fall back to
-        // the furthest step that can be opened.
-        var current = draft.isSent ? OnboardingStage.review : step;
-        if (!draft.isSent && !draft.canOpen(current)) {
-          current = OnboardingStage.steps.lastWhere(draft.canOpen);
+        // Sent cycles only show the (read-only) review. Otherwise fall back
+        // to the furthest step that can be opened.
+        var current = c.isSent ? OnboardingStage.review : step;
+        if (!c.isSent && !c.canOpen(current, p.profile)) {
+          current = OnboardingStage.steps.lastWhere((s) => c.canOpen(s, p.profile));
         }
         if (current != step) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (context.mounted) context.go(path(draftId, current));
+            if (context.mounted) context.go(path(cycleId, current));
           });
         }
 
         final Widget body = switch (current) {
-          OnboardingStage.treatment => TreatmentStep(key: ValueKey('treatment-$draftId'), draft: draft),
-          OnboardingStage.session => SessionStep(key: ValueKey('session-$draftId'), draft: draft),
-          OnboardingStage.processing => ProcessingStep(key: ValueKey('processing-$draftId'), draft: draft),
-          _ => ReviewStep(key: ValueKey('review-$draftId'), draft: draft),
+          OnboardingStage.treatment => TreatmentStep(key: ValueKey('treatment-$cycleId'), cycleRef: ref),
+          OnboardingStage.session => SessionStep(key: ValueKey('session-$cycleId'), cycleRef: ref),
+          OnboardingStage.processing => ProcessingStep(key: ValueKey('processing-$cycleId'), cycleRef: ref),
+          _ => ReviewStep(key: ValueKey('review-$cycleId'), cycleRef: ref),
         };
 
-        final named = draft.intake.alias.trim().isNotEmpty;
+        final newPatient = p.isLocal && p.isFirst(c);
+        final named = p.profile.alias.trim().isNotEmpty;
+        final title = newPatient
+            ? (named ? 'New patient · ${p.displayName}' : 'New patient')
+            : '${p.displayName} · ${p.labelOf(c)}';
         return PageFrame(
-          title: draft.isSent ? draft.displayName : (named ? 'New patient · ${draft.displayName}' : 'New patient'),
-          subtitle: draft.isSent ? 'Onboarding complete · sent to the pharmacist' : _subtitles[current],
+          title: title,
+          subtitle: c.isSent ? 'Sent to the pharmacist' : _subtitles[current],
           maxWidth: 1180,
+          actions: [
+            if (!newPatient || p.cycles.length > 1)
+              TextButton.icon(
+                onPressed: () => context.go('/patients/${p.id}/cycles'),
+                icon: const Icon(Icons.history_rounded),
+                label: Text('All cycles (${p.cycleCount})'),
+              ),
+          ],
           children: [
-            OnboardingStepper(draft: draft, current: current),
+            OnboardingStepper(cycleRef: ref, current: current),
             const SizedBox(height: 24),
             body,
           ],
@@ -84,16 +98,18 @@ class OnboardingPage extends StatelessWidget {
 
 /// Numbered step header; completed steps can be reopened.
 class OnboardingStepper extends StatelessWidget {
-  const OnboardingStepper({super.key, required this.draft, required this.current});
+  const OnboardingStepper({super.key, required this.cycleRef, required this.current});
 
-  final OnboardingDraft draft;
+  final CycleRef cycleRef;
   final OnboardingStage current;
 
+  CycleRecord get _c => cycleRef.cycle;
+
   bool _done(OnboardingStage s) => switch (s) {
-        OnboardingStage.treatment => draft.intake.isComplete,
-        OnboardingStage.session => draft.session.completed,
-        OnboardingStage.processing => !draft.needsProcessing,
-        _ => draft.isSent,
+        OnboardingStage.treatment => cycleRef.patient.profile.isComplete && _c.intake.isComplete,
+        OnboardingStage.session => _c.session.completed,
+        OnboardingStage.processing => !_c.needsProcessing,
+        _ => _c.isSent,
       };
 
   @override
@@ -121,7 +137,7 @@ class OnboardingStepper extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final active = s == current;
     final done = _done(s) && !active;
-    final enabled = !active && !draft.isSent && draft.canOpen(s);
+    final enabled = !active && !_c.isSent && _c.canOpen(s, cycleRef.patient.profile);
     final circleColor = active ? cs.primary : (done ? cs.primaryContainer : cs.surfaceContainerHighest);
     final fg = active ? cs.onPrimary : (done ? cs.onPrimaryContainer : cs.onSurfaceVariant);
     return Semantics(
@@ -131,7 +147,7 @@ class OnboardingStepper extends StatelessWidget {
       child: InkWell(
         key: Key('onboarding-step-${s.path}'),
         borderRadius: BorderRadius.circular(8),
-        onTap: enabled ? () => context.go(OnboardingPage.path(draft.id, s)) : null,
+        onTap: enabled ? () => context.go(OnboardingPage.path(_c.id, s)) : null,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
           child: Row(children: [

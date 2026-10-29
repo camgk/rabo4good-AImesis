@@ -11,8 +11,8 @@ import 'onboarding_page.dart';
 
 /// Step 3 — runs the models and brings their outputs together.
 class ProcessingStep extends StatefulWidget {
-  const ProcessingStep({super.key, required this.draft});
-  final OnboardingDraft draft;
+  const ProcessingStep({super.key, required this.cycleRef});
+  final CycleRef cycleRef;
 
   @override
   State<ProcessingStep> createState() => _ProcessingStepState();
@@ -25,14 +25,15 @@ class _ProcessingStepState extends State<ProcessingStep> {
   String? _error;
 
   bool get _running => _sub != null;
-  bool get _ready => !widget.draft.needsProcessing && !_running;
+  CycleRecord get _c => widget.cycleRef.cycle;
+  bool get _ready => !_c.needsProcessing && !_running;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      if (widget.draft.needsProcessing) {
+      if (_c.needsProcessing) {
         _start();
       } else {
         setState(() => _states.addAll({for (final s in _engine.steps) s.key: ModelState.done}));
@@ -47,7 +48,7 @@ class _ProcessingStepState extends State<ProcessingStep> {
   }
 
   void _start() {
-    final d = widget.draft;
+    final d = _c;
     final store = AppScope.read(context).onboarding;
     final version = d.inputsVersion;
     setState(() {
@@ -56,7 +57,7 @@ class _ProcessingStepState extends State<ProcessingStep> {
         ..clear()
         ..addAll({for (final s in _engine.steps) s.key: ModelState.queued});
     });
-    _sub = _engine.run(d).listen(
+    _sub = _engine.run(widget.cycleRef).listen(
       (u) {
         if (!mounted) return;
         setState(() => _states[u.stepKey] = u.state);
@@ -67,7 +68,7 @@ class _ProcessingStepState extends State<ProcessingStep> {
             ..suggestion = result
             ..processedVersion = version;
           if (d.stage.index < OnboardingStage.review.index) d.stage = OnboardingStage.review;
-          store.save(d);
+          store.save(widget.cycleRef.patient, d);
         }
       },
       onError: (Object e) {
@@ -84,7 +85,7 @@ class _ProcessingStepState extends State<ProcessingStep> {
     final cs = Theme.of(context).colorScheme;
     final steps = _engine.steps;
     final done = _states.values.where((s) => s == ModelState.done).length;
-    final d = widget.draft;
+    final d = _c;
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       SectionCard(
         title: _ready ? 'Suggestion ready' : (_error != null ? 'Processing stopped' : 'Running models'),

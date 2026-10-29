@@ -23,14 +23,14 @@ class ProcessingUpdate {
   const ProcessingUpdate(this.stepKey, this.state, {this.result, this.error});
 }
 
-/// Runs the models over a draft and brings their outputs together.
+/// Runs the models over a cycle and brings their outputs together.
 ///
 /// The screens only talk to this interface. When the calculation APIs exist,
 /// add an implementation that calls them (or the AG-UI agent) and pass it to
 /// [AppState]; nothing in the onboarding pages needs to change.
 abstract class SuggestionEngine {
   List<ModelStep> get steps;
-  Stream<ProcessingUpdate> run(OnboardingDraft draft);
+  Stream<ProcessingUpdate> run(CycleRef ref);
 }
 
 const defaultModelSteps = [
@@ -60,22 +60,24 @@ class PlaceholderSuggestionEngine implements SuggestionEngine {
   List<ModelStep> get steps => defaultModelSteps;
 
   @override
-  Stream<ProcessingUpdate> run(OnboardingDraft draft) async* {
+  Stream<ProcessingUpdate> run(CycleRef ref) async* {
     for (final s in steps) {
       yield ProcessingUpdate(s.key, ModelState.running);
       if (stepDelay > Duration.zero) await Future<void>.delayed(stepDelay);
       final last = identical(s, steps.last);
-      yield ProcessingUpdate(s.key, ModelState.done, result: last ? _suggestion(draft) : null);
+      yield ProcessingUpdate(s.key, ModelState.done, result: last ? _suggestion(ref) : null);
     }
   }
 
-  Suggestion _suggestion(OnboardingDraft d) {
-    final i = d.intake, p = d.session;
+  Suggestion _suggestion(CycleRef ref) {
+    final p = ref.patient, c = ref.cycle;
+    final pr = p.profile, i = c.intake, s = c.session;
     final days = i.chemoDays;
-    final drugs = i.chemo.map((c) => c.drug).join(', ');
-    final route = !p.canSwallowTablets && p.preferredRoute == DoseRoute.oralTablet
+    final drugs = i.chemo.map((r) => r.drug).join(', ');
+    final previous = p.imported.length + p.before(c).length;
+    final route = !s.canSwallowTablets && s.preferredRoute == DoseRoute.oralTablet
         ? DoseRoute.oralLiquid
-        : p.preferredRoute;
+        : s.preferredRoute;
     const waiting = 'Placeholder until the model API is connected';
     return Suggestion(
       placeholder: true,
@@ -90,8 +92,8 @@ class PlaceholderSuggestionEngine implements SuggestionEngine {
           title: 'Chemotherapy emetogenicity',
           summary: 'Will classify $drugs on day ${daysText(days)}.',
           details: [
-            for (final c in i.chemo)
-              '${c.drug} ${fmt(c.doseMgM2)} mg/m² · day ${daysText(c.days)}',
+            for (final r in i.chemo)
+              '${r.drug} ${fmt(r.doseMgM2)} mg/m² · day ${daysText(r.days)}',
           ],
           source: waiting,
         ),
@@ -99,13 +101,19 @@ class PlaceholderSuggestionEngine implements SuggestionEngine {
           key: 'risk',
           title: 'Patient risk factors',
           summary: [
-            if (i.age != null) 'Age ${i.age}',
-            i.firstCycle ? 'first cycle' : 'previous cycles recorded',
-            if (p.anticipatory) 'anticipatory nausea reported',
-            p.canSwallowTablets ? 'can swallow tablets' : 'cannot swallow tablets',
+            if (pr.age != null) 'Age ${pr.age}',
+            previous > 0
+                ? '$previous previous cycle${previous == 1 ? '' : 's'} on the profile'
+                : (i.firstCycle ? 'first cycle' : 'earlier chemotherapy not on the profile'),
+            if (s.anticipatory) 'anticipatory nausea reported',
+            s.canSwallowTablets ? 'can swallow tablets' : 'cannot swallow tablets',
           ].join(' · '),
           details: [
-            if (p.priorNausea.trim().isNotEmpty) 'Previous nausea: ${p.priorNausea.trim()}',
+            if (s.priorNausea.trim().isNotEmpty) 'Previous nausea: ${s.priorNausea.trim()}',
+            for (final prior in p.imported)
+              if (prior.note.isNotEmpty) '${prior.label}: ${prior.note}',
+            for (final b in p.before(c))
+              if (b.session.priorNausea.trim().isNotEmpty) '${p.labelOf(b)}: ${b.session.priorNausea.trim()}',
           ],
           source: waiting,
         ),
@@ -123,8 +131,8 @@ class PlaceholderSuggestionEngine implements SuggestionEngine {
           summary: 'Doses will use ${fmt(i.weightKg ?? 0)} kg, ${fmt(i.heightCm ?? 0)} cm, '
               'route ${DoseRoute.label(route).toLowerCase()}.',
           details: [
-            if (p.formulationPreference.trim().isNotEmpty)
-              'Formulation preference: ${p.formulationPreference.trim()}',
+            if (pr.formulationPreference.trim().isNotEmpty)
+              'Formulation preference: ${pr.formulationPreference.trim()}',
           ],
           source: waiting,
         ),

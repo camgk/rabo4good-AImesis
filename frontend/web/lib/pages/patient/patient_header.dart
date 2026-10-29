@@ -61,6 +61,12 @@ class PatientHeader extends StatelessWidget {
               ],
               PlanStatusChip(plan.status),
               const SizedBox(width: 4),
+              TextButton.icon(
+                key: const Key('open-cycles'),
+                onPressed: () => context.go('/patients/${p.id}/cycles'),
+                icon: const Icon(Icons.history_rounded),
+                label: const Text('Cycles'),
+              ),
               refreshing
                   ? const Padding(
                       padding: EdgeInsets.all(12),

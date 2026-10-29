@@ -8,6 +8,7 @@ import 'pages/patient/patient_workspace_page.dart';
 import 'pages/pharmacist_queue/pharmacist_queue_page.dart';
 import 'onboarding/onboarding_models.dart';
 import 'pages/onboarding/onboarding_page.dart';
+import 'pages/onboarding/patient_cycles_page.dart';
 import 'pages/patients/patients_page.dart';
 import 'shell/app_shell.dart';
 import 'state/app_state.dart';
@@ -92,7 +93,7 @@ GoRouter buildRouter(AppState state) {
                 pageBuilder: (_, s) => NoTransitionPage(
                   key: ValueKey('onboarding-${s.pathParameters['id']}'),
                   child: OnboardingPage(
-                    draftId: s.pathParameters['id']!,
+                    cycleId: s.pathParameters['id']!,
                     step: OnboardingStage.fromPath(s.pathParameters['step']),
                   ),
                 ),
@@ -101,10 +102,20 @@ GoRouter buildRouter(AppState state) {
           ),
           GoRoute(
             path: '/patients/:id',
-            redirect: (_, s) => s.uri.pathSegments.length == 2
-                ? '/patients/${s.pathParameters['id']}/${WorkspaceTab.regimen.path}'
-                : null,
+            redirect: (_, s) {
+              if (s.uri.pathSegments.length != 2) return null;
+              final id = s.pathParameters['id']!;
+              // Patients created here have no API workspace yet: open their profile.
+              return PatientCyclesPage.isLocalId(id) ? '/patients/$id/cycles' : '/patients/$id/${WorkspaceTab.regimen.path}';
+            },
             routes: [
+              GoRoute(
+                path: 'cycles',
+                pageBuilder: (_, s) => NoTransitionPage(
+                  key: ValueKey('cycles-${s.pathParameters['id']}'),
+                  child: PatientCyclesPage(patientId: s.pathParameters['id']!),
+                ),
+              ),
               GoRoute(
                 path: ':tab',
                 pageBuilder: (_, s) => NoTransitionPage(

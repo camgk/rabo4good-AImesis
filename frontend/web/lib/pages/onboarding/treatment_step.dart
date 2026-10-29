@@ -31,8 +31,8 @@ const _languages = {'nl': 'Nederlands', 'fr': 'Français', 'en': 'English'};
 
 /// Step 1 — the doctor prepares: chemotherapy and basic patient details.
 class TreatmentStep extends StatefulWidget {
-  const TreatmentStep({super.key, required this.draft});
-  final OnboardingDraft draft;
+  const TreatmentStep({super.key, required this.cycleRef});
+  final CycleRef cycleRef;
 
   @override
   State<TreatmentStep> createState() => _TreatmentStepState();
@@ -67,20 +67,28 @@ class _ChemoCtl {
 
 class _TreatmentStepState extends State<TreatmentStep> {
   final _form = GlobalKey<FormState>();
-  late final PatientIntake _i = widget.draft.intake;
+  late final PatientRecord _p = widget.cycleRef.patient;
+  late final CycleRecord _c = widget.cycleRef.cycle;
+  late final PatientProfile _pr = _p.profile;
+  late final CycleIntake _i = _c.intake;
 
-  late final _alias = TextEditingController(text: _i.alias);
-  late final _age = TextEditingController(text: _i.age?.toString() ?? '');
+  /// Patient details are entered with a new patient's first cycle; later
+  /// cycles show them read-only.
+  late final bool _editProfile = _p.isLocal && _p.isFirst(_c);
+  late final CycleIntake? _last = _p.before(_c).lastOrNull?.intake;
+
+  late final _alias = TextEditingController(text: _pr.alias);
+  late final _age = TextEditingController(text: _pr.age?.toString() ?? '');
   late final _weight = TextEditingController(text: _i.weightKg == null ? '' : fmtNum(_i.weightKg!));
   late final _height = TextEditingController(text: _i.heightCm == null ? '' : fmtNum(_i.heightCm!));
-  late final _diagnosis = TextEditingController(text: _i.diagnosis);
+  late final _diagnosis = TextEditingController(text: _pr.diagnosis);
   late final _protocol = TextEditingController(text: _i.protocol);
   late final _cycle = TextEditingController(text: _i.cycle);
   final _med = TextEditingController();
 
-  late String? _sex = _i.sex;
-  late String _language = _i.language;
-  late String? _group = _i.diagnosisGroup;
+  late String? _sex = _pr.sex;
+  late String _language = _pr.language;
+  late String? _group = _pr.diagnosisGroup;
   late DateTime? _cycleStart = _i.cycleStart;
   late bool _firstCycle = _i.firstCycle;
   late final List<String> _meds = [..._i.activeMeds];
@@ -101,30 +109,33 @@ class _TreatmentStepState extends State<TreatmentStep> {
 
   double? _num(TextEditingController c) => double.tryParse(c.text.trim().replaceAll(',', '.'));
 
-  /// Writes the form into the draft. Returns true when the inputs changed.
+  /// Writes the form into the profile and cycle. True when inputs changed.
   bool _writeBack() {
-    final before = jsonEncode(_i.toJson());
+    final before = jsonEncode([_pr.toJson(), _i.toJson()]);
+    if (_editProfile) {
+      _pr
+        ..alias = _alias.text.trim()
+        ..age = int.tryParse(_age.text.trim())
+        ..sex = _sex
+        ..language = _language
+        ..diagnosis = _diagnosis.text.trim()
+        ..diagnosisGroup = _group;
+    }
     _i
-      ..alias = _alias.text.trim()
-      ..age = int.tryParse(_age.text.trim())
-      ..sex = _sex
       ..weightKg = _num(_weight)
       ..heightCm = _num(_height)
-      ..language = _language
-      ..diagnosis = _diagnosis.text.trim()
-      ..diagnosisGroup = _group
       ..protocol = _protocol.text.trim()
       ..cycle = _cycle.text.trim()
       ..cycleStart = _cycleStart
       ..firstCycle = _firstCycle
       ..activeMeds = [..._meds]
       ..chemo = [for (final c in _chemo) c.toRow()].whereType<ChemoRow>().toList();
-    return jsonEncode(_i.toJson()) != before;
+    return jsonEncode([_pr.toJson(), _i.toJson()]) != before;
   }
 
   void _save({required bool advance}) {
     final store = AppScope.read(context).onboarding;
-    final d = widget.draft;
+    final c = _c;
     if (advance) {
       setState(() => _triedContinue = true);
       final chemoOk = _chemo.any((c) => !c.isBlank) && _chemo.every((c) => c.isBlank || c.toRow() != null);
@@ -136,10 +147,12 @@ class _TreatmentStepState extends State<TreatmentStep> {
         return;
       }
     }
-    if (_writeBack()) d.touchInputs();
-    if (advance && d.stage.index < OnboardingStage.session.index) d.stage = OnboardingStage.session;
-    store.save(d);
-    context.go(advance ? OnboardingPage.path(d.id, OnboardingStage.session) : '/patients');
+    if (_writeBack()) c.touchInputs();
+    if (advance && c.stage.index < OnboardingStage.session.index) c.stage = OnboardingStage.session;
+    store.save(_p, c);
+    context.go(advance
+        ? OnboardingPage.path(c.id, OnboardingStage.session)
+        : (_editProfile ? '/patients' : '/patients/${_p.id}/cycles'));
   }
 
   String? _required(String? v) => (v == null || v.trim().isEmpty) ? 'Required' : null;
@@ -158,9 +171,9 @@ class _TreatmentStepState extends State<TreatmentStep> {
       key: _form,
       autovalidateMode: _triedContinue ? AutovalidateMode.onUserInteraction : AutovalidateMode.disabled,
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        _patientCard(context),
+        _editProfile ? _patientCard(context) : _profileSummary(context),
         const SizedBox(height: 16),
-        _diagnosisCard(context),
+        _cycleCard(context),
         const SizedBox(height: 16),
         _chemoCard(context),
         const SizedBox(height: 16),
@@ -179,12 +192,11 @@ class _TreatmentStepState extends State<TreatmentStep> {
   }
 
   Widget _patientCard(BuildContext context) {
-    final digits = [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))];
     return SectionCard(
       title: 'Patient',
-      subtitle: 'Use a pseudonym or initials, not the full name',
+      subtitle: 'Kept on the patient profile for every cycle · use a pseudonym or initials',
       icon: Icons.person_outline_rounded,
-      child: Wrap(spacing: 16, runSpacing: 16, children: [
+      child: Wrap(spacing: 16, runSpacing: 16, crossAxisAlignment: WrapCrossAlignment.end, children: [
         FieldSlot(
           child: TextFormField(
             key: const Key('field-alias'),
@@ -202,28 +214,6 @@ class _TreatmentStepState extends State<TreatmentStep> {
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             validator: (v) => _range(v, 0, 25, integer: true),
-          ),
-        ),
-        FieldSlot(
-          width: 140,
-          child: TextFormField(
-            key: const Key('field-weight'),
-            controller: _weight,
-            decoration: const InputDecoration(labelText: 'Weight', suffixText: 'kg'),
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            inputFormatters: digits,
-            validator: (v) => _range(v, 1, 200),
-          ),
-        ),
-        FieldSlot(
-          width: 140,
-          child: TextFormField(
-            key: const Key('field-height'),
-            controller: _height,
-            decoration: const InputDecoration(labelText: 'Height', suffixText: 'cm'),
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            inputFormatters: digits,
-            validator: (v) => _range(v, 30, 220),
           ),
         ),
         Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -250,16 +240,6 @@ class _TreatmentStepState extends State<TreatmentStep> {
             onChanged: (v) => setState(() => _language = v ?? 'nl'),
           ),
         ),
-      ]),
-    );
-  }
-
-  Widget _diagnosisCard(BuildContext context) {
-    final start = _cycleStart;
-    return SectionCard(
-      title: 'Diagnosis & protocol',
-      icon: Icons.assignment_outlined,
-      child: Wrap(spacing: 16, runSpacing: 16, crossAxisAlignment: WrapCrossAlignment.center, children: [
         FieldSlot(
           width: 300,
           child: TextFormField(
@@ -279,6 +259,83 @@ class _TreatmentStepState extends State<TreatmentStep> {
             onChanged: (v) => setState(() => _group = v),
           ),
         ),
+      ]),
+    );
+  }
+
+  /// Later cycles: the profile is shown, not re-entered.
+  Widget _profileSummary(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final sex = switch (_pr.sex) { 'F' => 'female', 'M' => 'male', _ => null };
+    final previous = _p.cycleCount - _p.cycles.length + _p.before(_c).length;
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: cs.outlineVariant),
+      ),
+      child: Row(children: [
+        Icon(Icons.badge_outlined, color: cs.primary),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(
+              [_pr.alias, if (_pr.age != null) '${_pr.age} yrs', if (sex != null) sex].join(' · '),
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+            Text(
+              [if (_pr.diagnosis.isNotEmpty) _pr.diagnosis, _languages[_pr.language] ?? _pr.language,
+                '$previous previous cycle${previous == 1 ? '' : 's'} on the profile'].join(' · '),
+              style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13),
+            ),
+          ]),
+        ),
+      ]),
+    );
+  }
+
+  Widget _cycleCard(BuildContext context) {
+    final start = _cycleStart;
+    final digits = [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))];
+    final lastW = _last?.weightKg, lastH = _last?.heightCm;
+    return SectionCard(
+      title: 'This cycle',
+      subtitle: _last == null
+          ? 'Protocol, dates and measurements for this cycle'
+          : 'Carried over from the previous cycle · measure weight and height again',
+      icon: Icons.event_repeat_outlined,
+      child: Wrap(spacing: 16, runSpacing: 16, crossAxisAlignment: WrapCrossAlignment.center, children: [
+        FieldSlot(
+          width: 150,
+          child: TextFormField(
+            key: const Key('field-weight'),
+            controller: _weight,
+            decoration: InputDecoration(
+              labelText: 'Weight',
+              suffixText: 'kg',
+              helperText: lastW == null ? null : 'Last: ${fmtNum(lastW)} kg',
+            ),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            inputFormatters: digits,
+            validator: (v) => _range(v, 1, 200),
+          ),
+        ),
+        FieldSlot(
+          width: 150,
+          child: TextFormField(
+            key: const Key('field-height'),
+            controller: _height,
+            decoration: InputDecoration(
+              labelText: 'Height',
+              suffixText: 'cm',
+              helperText: lastH == null ? null : 'Last: ${fmtNum(lastH)} cm',
+            ),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            inputFormatters: digits,
+            validator: (v) => _range(v, 30, 220),
+          ),
+        ),
         FieldSlot(
           width: 300,
           child: TextFormField(
@@ -289,8 +346,9 @@ class _TreatmentStepState extends State<TreatmentStep> {
         FieldSlot(
           width: 140,
           child: TextFormField(
+            key: const Key('field-cycle'),
             controller: _cycle,
-            decoration: const InputDecoration(labelText: 'Cycle', hintText: 'e.g. 1'),
+            decoration: InputDecoration(labelText: 'Cycle', hintText: 'e.g. ${_p.numberOf(_c)}'),
           ),
         ),
         OutlinedButton.icon(
@@ -307,15 +365,16 @@ class _TreatmentStepState extends State<TreatmentStep> {
           icon: const Icon(Icons.event_outlined),
           label: Text(start == null ? 'Cycle start date' : 'Starts ${DateFormat('d MMM yyyy').format(start)}'),
         ),
-        FieldSlot(
-          width: 320,
-          child: SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            title: const Text('First chemotherapy cycle'),
-            value: _firstCycle,
-            onChanged: (v) => setState(() => _firstCycle = v),
+        if (_editProfile)
+          FieldSlot(
+            width: 320,
+            child: SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('First chemotherapy cycle'),
+              value: _firstCycle,
+              onChanged: (v) => setState(() => _firstCycle = v),
+            ),
           ),
-        ),
       ]),
     );
   }

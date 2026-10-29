@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:aimesis_client/aimesis_client.dart';
 import 'package:flutter/material.dart' hide Route;
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 import '../../onboarding/onboarding_models.dart';
 import '../../state/app_scope.dart';
@@ -11,23 +12,27 @@ import 'onboarding_page.dart';
 
 /// Step 2 — filled in by the doctor together with the patient and family.
 class SessionStep extends StatefulWidget {
-  const SessionStep({super.key, required this.draft});
-  final OnboardingDraft draft;
+  const SessionStep({super.key, required this.cycleRef});
+  final CycleRef cycleRef;
 
   @override
   State<SessionStep> createState() => _SessionStepState();
 }
 
 class _SessionStepState extends State<SessionStep> {
-  late final PatientSession _s = widget.draft.session;
+  late final PatientRecord _p = widget.cycleRef.patient;
+  late final CycleRecord _c = widget.cycleRef.cycle;
+  late final PatientProfile _pr = _p.profile;
+  late final CycleSession _s = _c.session;
+  late final bool _first = _p.isFirst(_c) && _c.intake.firstCycle;
 
   late final Set<String> _present = {..._s.present};
   late bool _canSwallow = _s.canSwallowTablets;
   late String _route = _s.preferredRoute;
   late bool _anticipatory = _s.anticipatory;
   late final _priorNausea = TextEditingController(text: _s.priorNausea);
-  late final _formulation = TextEditingController(text: _s.formulationPreference);
-  late final _helps = TextEditingController(text: _s.whatHelps);
+  late final _formulation = TextEditingController(text: _pr.formulationPreference);
+  late final _helps = TextEditingController(text: _pr.whatHelps);
   late final _concerns = TextEditingController(text: _s.concerns);
 
   @override
@@ -39,34 +44,40 @@ class _SessionStepState extends State<SessionStep> {
   }
 
   bool _writeBack({required bool complete}) {
-    final before = jsonEncode({..._s.toJson(), 'completed': null});
+    final before = jsonEncode([{..._s.toJson(), 'completed': null}, _pr.toJson()]);
     _s
       ..present = {..._present}
       ..canSwallowTablets = _canSwallow
       ..preferredRoute = _route
       ..anticipatory = _anticipatory
       ..priorNausea = _priorNausea.text.trim()
-      ..formulationPreference = _formulation.text.trim()
-      ..whatHelps = _helps.text.trim()
       ..concerns = _concerns.text.trim();
+    _pr
+      ..formulationPreference = _formulation.text.trim()
+      ..whatHelps = _helps.text.trim();
     if (complete) _s.completed = true;
-    return jsonEncode({..._s.toJson(), 'completed': null}) != before;
+    return jsonEncode([{..._s.toJson(), 'completed': null}, _pr.toJson()]) != before;
   }
 
   void _save(String to, {bool complete = false}) {
-    final d = widget.draft;
-    if (_writeBack(complete: complete)) d.touchInputs();
-    if (complete && d.stage.index < OnboardingStage.processing.index) d.stage = OnboardingStage.processing;
-    AppScope.read(context).onboarding.save(d);
+    final c = _c;
+    if (_writeBack(complete: complete)) c.touchInputs();
+    if (complete && c.stage.index < OnboardingStage.processing.index) c.stage = OnboardingStage.processing;
+    AppScope.read(context).onboarding.save(_p, c);
     context.go(to);
   }
 
   @override
   Widget build(BuildContext context) {
-    final d = widget.draft;
-    return LayoutBuilder(builder: (context, c) {
-      final wide = c.maxWidth >= 960;
+    final id = _c.id;
+    final hasHistory = _p.imported.isNotEmpty || _p.before(_c).isNotEmpty;
+    return LayoutBuilder(builder: (context, box) {
+      final wide = box.maxWidth >= 960;
       final left = Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        if (hasHistory) ...[
+          _historyCard(context),
+          const SizedBox(height: 16),
+        ],
         _presentCard(context),
         const SizedBox(height: 16),
         _routeCard(context),
@@ -90,14 +101,17 @@ class _SessionStepState extends State<SessionStep> {
         ],
         StepFooter(
           back: TextButton.icon(
-            onPressed: () => _save(OnboardingPage.path(d.id, OnboardingStage.treatment)),
+            onPressed: () => _save(OnboardingPage.path(id, OnboardingStage.treatment)),
             icon: const Icon(Icons.arrow_back_rounded),
             label: const Text('Treatment & patient'),
           ),
-          secondary: TextButton(onPressed: () => _save('/patients'), child: const Text('Save and exit')),
+          secondary: TextButton(
+            onPressed: () => _save(_p.isLocal && _p.isFirst(_c) ? '/patients' : '/patients/${_p.id}/cycles'),
+            child: const Text('Save and exit'),
+          ),
           primary: FilledButton.icon(
             key: const Key('onboarding-run-models'),
-            onPressed: () => _save(OnboardingPage.path(d.id, OnboardingStage.processing), complete: true),
+            onPressed: () => _save(OnboardingPage.path(id, OnboardingStage.processing), complete: true),
             icon: const Icon(Icons.auto_awesome_outlined),
             label: const Text('Finish session and run models'),
           ),
@@ -108,7 +122,7 @@ class _SessionStepState extends State<SessionStep> {
 
   /// Read-only reminder of what the doctor prepared in session 1.
   Widget _treatmentSummary(BuildContext context) {
-    final i = widget.draft.intake;
+    final i = _c.intake;
     final cs = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(14),
@@ -122,14 +136,52 @@ class _SessionStepState extends State<SessionStep> {
           Icon(Icons.person_outline_rounded, size: 18, color: cs.primary),
           const SizedBox(width: 6),
           Text(
-            '${i.alias}${i.age == null ? '' : ' · ${i.age} yrs'}',
+            '${_pr.alias}${_pr.age == null ? '' : ' · ${_pr.age} yrs'} · ${_p.labelOf(_c)}',
             style: const TextStyle(fontWeight: FontWeight.w600),
           ),
         ]),
-        if (i.diagnosis.isNotEmpty) Text(i.diagnosis),
+        if (_pr.diagnosis.isNotEmpty) Text(_pr.diagnosis),
         if (i.protocol.isNotEmpty) Text(i.protocol),
         Text(i.chemo.map((c) => '${c.drug} d${daysText(c.days)}').join(' · '),
             style: TextStyle(color: cs.onSurfaceVariant)),
+      ]),
+    );
+  }
+
+  /// Earlier cycles on the profile, newest first, so the family session can
+  /// start from how they went.
+  Widget _historyCard(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final rows = <(String, String?, String)>[
+      for (final b in _p.before(_c))
+        (
+          _p.labelOf(b),
+          b.intake.cycleStart == null ? null : DateFormat('d MMM yyyy').format(b.intake.cycleStart!),
+          [
+            b.intake.chemo.map((r) => r.drug).join(', '),
+            if (b.session.priorNausea.isNotEmpty) '“${b.session.priorNausea}”',
+            if (b.isSent) 'sent to pharmacist' else b.stage.label.toLowerCase(),
+          ].where((x) => x.isNotEmpty).join(' · '),
+        ),
+      for (final prior in _p.imported) (prior.label, prior.date, [prior.summary, prior.note].where((x) => x.isNotEmpty).join(' · ')),
+    ].reversed.toList();
+    final shown = rows.take(3).toList();
+    return SectionCard(
+      title: 'Previous cycles',
+      subtitle: '${rows.length} on the profile',
+      icon: Icons.history_rounded,
+      trailing: rows.length > 3
+          ? TextButton(onPressed: () => context.go('/patients/${_p.id}/cycles'), child: const Text('See all'))
+          : null,
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        for (final r in shown)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text([r.$1, if (r.$2 != null) r.$2!].join(' · '), style: const TextStyle(fontWeight: FontWeight.w600)),
+              if (r.$3.isNotEmpty) Text(r.$3, style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
+            ]),
+          ),
       ]),
     );
   }
@@ -139,7 +191,7 @@ class _SessionStepState extends State<SessionStep> {
       title: 'Who is here',
       icon: Icons.groups_outlined,
       child: Wrap(spacing: 8, runSpacing: 8, children: [
-        for (final e in PatientSession.presentOptions.entries)
+        for (final e in CycleSession.presentOptions.entries)
           FilterChip(
             label: Text(e.value),
             selected: _present.contains(e.key),
@@ -186,7 +238,7 @@ class _SessionStepState extends State<SessionStep> {
   }
 
   Widget _nauseaCard(BuildContext context) {
-    final first = widget.draft.intake.firstCycle;
+    final first = _first;
     return SectionCard(
       title: 'Nausea history',
       icon: Icons.history_rounded,
@@ -204,8 +256,8 @@ class _SessionStepState extends State<SessionStep> {
           minLines: 2,
           maxLines: 4,
           decoration: InputDecoration(
-            labelText: first ? 'Nausea in other situations' : 'Nausea or vomiting in previous cycles',
-            hintText: first ? 'e.g. car sickness, migraines' : 'Which days, how bad, what was given',
+            labelText: first ? 'Nausea in other situations' : 'How did the last cycle go?',
+            hintText: first ? 'e.g. car sickness, migraines' : 'Nausea or vomiting: which days, how bad, what helped',
             alignLabelWithHint: true,
           ),
         ),
@@ -225,7 +277,7 @@ class _SessionStepState extends State<SessionStep> {
         );
     return SectionCard(
       title: 'Preferences',
-      subtitle: 'In the patient’s and family’s own words',
+      subtitle: 'In their own words · taste and what helps are kept on the profile',
       icon: Icons.favorite_border_rounded,
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         field(_formulation, 'Formulation and taste', 'e.g. prefers liquid, dislikes mint flavour'),

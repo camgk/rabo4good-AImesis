@@ -59,10 +59,10 @@ class PharmacistQueuePage extends StatelessWidget {
               return Padding(
                 padding: const EdgeInsets.only(top: 28),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                  Text('New patients from onboarding (${sent.length})',
+                  Text('Cycles from onboarding (${sent.length})',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
                   const SizedBox(height: 10),
-                  OnboardingList(drafts: sent),
+                  CycleList(cycles: sent),
                 ]),
               );
             },

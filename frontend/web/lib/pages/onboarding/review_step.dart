@@ -10,15 +10,17 @@ import 'onboarding_page.dart';
 
 /// Step 4 — the doctor checks the suggestion, approves it and sends it on.
 class ReviewStep extends StatefulWidget {
-  const ReviewStep({super.key, required this.draft});
-  final OnboardingDraft draft;
+  const ReviewStep({super.key, required this.cycleRef});
+  final CycleRef cycleRef;
 
   @override
   State<ReviewStep> createState() => _ReviewStepState();
 }
 
 class _ReviewStepState extends State<ReviewStep> {
-  late final _note = TextEditingController(text: widget.draft.reviewNote);
+  late final PatientRecord _p = widget.cycleRef.patient;
+  late final CycleRecord _c = widget.cycleRef.cycle;
+  late final _note = TextEditingController(text: _c.reviewNote);
   bool _reviewed = false;
 
   @override
@@ -29,23 +31,22 @@ class _ReviewStepState extends State<ReviewStep> {
 
   void _send() {
     final app = AppScope.read(context);
-    final d = widget.draft
+    final d = _c
       ..reviewNote = _note.text.trim()
       ..approvedBy = app.account?.displayName ?? 'Oncologist'
       ..approvedAt = DateTime.now()
       ..stage = OnboardingStage.sent;
-    app.onboarding.save(d);
+    app.onboarding.save(_p, d);
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       behavior: SnackBarBehavior.floating,
-      content: Text('${d.displayName} sent to the pharmacist'),
+      content: Text('${_p.displayName} · ${_p.labelOf(d)} sent to the pharmacist'),
     ));
-    context.go('/patients');
+    context.go('/patients/${_p.id}/cycles');
   }
 
   @override
   Widget build(BuildContext context) {
-    final d = widget.draft;
-    final s = d.suggestion;
+    final s = _c.suggestion;
     if (s == null) {
       return const EmptyView(icon: Icons.hourglass_empty_rounded, title: 'No suggestion yet');
     }
@@ -187,7 +188,7 @@ class _ReviewStepState extends State<ReviewStep> {
   }
 
   Widget _approvalCard(BuildContext context) {
-    final d = widget.draft;
+    final d = _c;
     final cs = Theme.of(context).colorScheme;
     final acc = AppScope.of(context).account;
     final canApprove = acc?.canSubmitPlan ?? false;
@@ -250,9 +251,10 @@ class _ReviewStepState extends State<ReviewStep> {
   }
 
   Widget _inputsCard(BuildContext context) {
-    final d = widget.draft;
-    final i = d.intake, p = d.session;
+    final d = _c;
+    final pr = _p.profile, i = d.intake, p = d.session;
     final cs = Theme.of(context).colorScheme;
+    final previous = _p.imported.length + _p.before(d).length;
     Widget section(String title, OnboardingStage step, List<Widget> rows) => Padding(
           padding: const EdgeInsets.only(bottom: 12),
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -274,9 +276,10 @@ class _ReviewStepState extends State<ReviewStep> {
       icon: Icons.fact_check_outlined,
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         section('Treatment & patient', OnboardingStage.treatment, [
-          KeyValue('Patient', '${i.alias}${i.age == null ? '' : ', ${i.age} yrs'}${i.sex == null ? '' : ', ${i.sex}'}'),
+          KeyValue('Patient', '${pr.alias}${pr.age == null ? '' : ', ${pr.age} yrs'}${pr.sex == null ? '' : ', ${pr.sex}'}'),
+          KeyValue('Diagnosis', text(pr.diagnosis)),
+          KeyValue('Cycle', '${_p.labelOf(d)} · ${previous == 0 ? 'no previous cycles on the profile' : '$previous previous on the profile'}'),
           KeyValue('Weight / height', '${fmtNum(i.weightKg ?? 0)} kg · ${fmtNum(i.heightCm ?? 0)} cm'),
-          KeyValue('Diagnosis', text(i.diagnosis)),
           KeyValue('Protocol', '${text(i.protocol)}${i.cycle.isEmpty ? '' : ' · cycle ${i.cycle}'}'),
           KeyValue('Chemotherapy',
               i.chemo.map((c) => '${c.drug} ${fmtNum(c.doseMgM2)} mg/m² d${daysText(c.days)}').join('\n')),
@@ -288,8 +291,8 @@ class _ReviewStepState extends State<ReviewStep> {
           KeyValue('Preferred route', DoseRoute.label(p.preferredRoute)),
           KeyValue('Anticipatory nausea', p.anticipatory ? 'Yes' : 'No'),
           KeyValue('Nausea history', text(p.priorNausea)),
-          KeyValue('Formulation', text(p.formulationPreference)),
-          KeyValue('What helps', text(p.whatHelps)),
+          KeyValue('Formulation', text(pr.formulationPreference)),
+          KeyValue('What helps', text(pr.whatHelps)),
           KeyValue('Worries', text(p.concerns)),
         ]),
       ]),

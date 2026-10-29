@@ -6,12 +6,10 @@ import '../../onboarding/onboarding_models.dart';
 import '../../state/app_scope.dart';
 import 'onboarding_page.dart';
 
-/// Compact list of onboarding drafts (Patients page, pharmacist queue).
-class OnboardingList extends StatelessWidget {
-  const OnboardingList({super.key, required this.drafts, this.allowDiscard = false});
-
-  final List<OnboardingDraft> drafts;
-  final bool allowDiscard;
+/// Bordered card holding rows separated by dividers.
+class _ListCard extends StatelessWidget {
+  const _ListCard(this.rows);
+  final List<Widget> rows;
 
   @override
   Widget build(BuildContext context) {
@@ -24,56 +22,73 @@ class OnboardingList extends StatelessWidget {
         side: BorderSide(color: cs.outlineVariant),
       ),
       child: Column(children: [
-        for (var i = 0; i < drafts.length; i++) ...[
+        for (var i = 0; i < rows.length; i++) ...[
           if (i > 0) Divider(height: 1, color: cs.outlineVariant),
-          _row(context, drafts[i]),
+          rows[i],
         ],
       ]),
     );
   }
+}
 
-  Widget _row(BuildContext context, OnboardingDraft d) {
+/// Cycles going through (or done with) the flow: Patients page, pharmacist queue.
+class CycleList extends StatelessWidget {
+  const CycleList({super.key, required this.cycles, this.allowDiscard = false});
+
+  final List<CycleRef> cycles;
+  final bool allowDiscard;
+
+  @override
+  Widget build(BuildContext context) => _ListCard([for (final r in cycles) _row(context, r)]);
+
+  Widget _row(BuildContext context, CycleRef ref) {
     final cs = Theme.of(context).colorScheme;
-    final i = d.intake;
-    final when = d.isSent && d.approvedAt != null ? d.approvedAt! : d.updatedAt;
+    final p = ref.patient, c = ref.cycle;
+    final when = c.isSent && c.approvedAt != null ? c.approvedAt! : c.updatedAt;
+    final newPatient = p.isLocal && p.isFirst(c);
     final details = [
-      if (i.age != null) '${i.age} yrs',
-      if (i.diagnosis.isNotEmpty) i.diagnosis,
-      if (i.protocol.isNotEmpty) i.protocol,
-      '${d.isSent ? 'Sent' : 'Updated'} ${DateFormat('d MMM, HH:mm').format(when)}',
+      if (newPatient) 'New patient',
+      if (p.profile.diagnosis.isNotEmpty) p.profile.diagnosis,
+      if (c.intake.protocol.isNotEmpty) c.intake.protocol,
+      '${c.isSent ? 'Sent' : 'Updated'} ${DateFormat('d MMM, HH:mm').format(when)}',
     ].join(' · ');
-    void open() => context.go(OnboardingPage.path(d.id, d.stage));
+    void open() => context.go(OnboardingPage.path(c.id, c.stage));
     return ListTile(
-      key: Key('onboarding-row-${d.id}'),
+      key: Key('cycle-row-${c.id}'),
       onTap: open,
       leading: CircleAvatar(
-        backgroundColor: d.isSent ? cs.primaryContainer : cs.secondaryContainer,
-        child: Icon(d.isSent ? Icons.send_rounded : Icons.person_add_alt_1_outlined,
-            size: 20, color: d.isSent ? cs.onPrimaryContainer : cs.onSecondaryContainer),
+        backgroundColor: c.isSent ? cs.primaryContainer : cs.secondaryContainer,
+        child: Icon(
+          c.isSent ? Icons.send_rounded : (newPatient ? Icons.person_add_alt_1_outlined : Icons.event_repeat_outlined),
+          size: 20,
+          color: c.isSent ? cs.onPrimaryContainer : cs.onSecondaryContainer,
+        ),
       ),
-      title: Text(d.displayName, style: const TextStyle(fontWeight: FontWeight.w600)),
+      title: Text('${p.displayName} · ${p.labelOf(c)}', style: const TextStyle(fontWeight: FontWeight.w600)),
       subtitle: Text(details, maxLines: 2, overflow: TextOverflow.ellipsis),
       trailing: Row(mainAxisSize: MainAxisSize.min, children: [
-        _StageChip(d.stage),
+        StageChip(c.stage),
         const SizedBox(width: 8),
-        TextButton(onPressed: open, child: Text(d.isSent ? 'Open' : 'Continue')),
-        if (allowDiscard && !d.isSent)
+        TextButton(onPressed: open, child: Text(c.isSent ? 'Open' : 'Continue')),
+        if (allowDiscard && !c.isSent)
           IconButton(
             tooltip: 'Discard',
             icon: const Icon(Icons.delete_outline_rounded),
             onPressed: () async {
               final ok = await showDialog<bool>(
                 context: context,
-                builder: (c) => AlertDialog(
-                  title: Text('Discard ${d.displayName}?'),
-                  content: const Text('The onboarding inputs entered so far will be removed.'),
+                builder: (d) => AlertDialog(
+                  title: Text('Discard ${p.labelOf(c).toLowerCase()} for ${p.displayName}?'),
+                  content: Text(newPatient
+                      ? 'This patient has no other cycles, so the new patient is removed too.'
+                      : 'The inputs entered for this cycle will be removed. Earlier cycles stay on the profile.'),
                   actions: [
-                    TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancel')),
-                    FilledButton(onPressed: () => Navigator.pop(c, true), child: const Text('Discard')),
+                    TextButton(onPressed: () => Navigator.pop(d, false), child: const Text('Cancel')),
+                    FilledButton(onPressed: () => Navigator.pop(d, true), child: const Text('Discard')),
                   ],
                 ),
               );
-              if (ok == true && context.mounted) AppScope.read(context).onboarding.remove(d.id);
+              if (ok == true && context.mounted) AppScope.read(context).onboarding.discardCycle(c.id);
             },
           ),
       ]),
@@ -81,9 +96,48 @@ class OnboardingList extends StatelessWidget {
   }
 }
 
-class _StageChip extends StatelessWidget {
-  const _StageChip(this.stage);
+/// Patients created here, each opening their profile with all cycles.
+class ProfileList extends StatelessWidget {
+  const ProfileList({super.key, required this.patients});
+  final List<PatientRecord> patients;
+
+  @override
+  Widget build(BuildContext context) => _ListCard([for (final p in patients) _row(context, p)]);
+
+  Widget _row(BuildContext context, PatientRecord p) {
+    final cs = Theme.of(context).colorScheme;
+    final latest = p.latest;
+    final pr = p.profile;
+    void open() => context.go('/patients/${p.id}/cycles');
+    return ListTile(
+      key: Key('profile-row-${p.id}'),
+      onTap: open,
+      leading: CircleAvatar(
+        backgroundColor: cs.tertiaryContainer,
+        child: Text(
+          pr.alias.trim().isEmpty ? '?' : pr.alias.trim()[0].toUpperCase(),
+          style: TextStyle(color: cs.onTertiaryContainer, fontWeight: FontWeight.w700),
+        ),
+      ),
+      title: Text(p.displayName, style: const TextStyle(fontWeight: FontWeight.w600)),
+      subtitle: Text([
+        if (pr.age != null) '${pr.age} yrs',
+        if (pr.diagnosis.isNotEmpty) pr.diagnosis,
+        '${p.cycleCount} cycle${p.cycleCount == 1 ? '' : 's'}',
+      ].join(' · ')),
+      trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+        if (latest != null) StageChip(latest.stage, prefix: '${p.labelOf(latest)}: '),
+        const SizedBox(width: 8),
+        TextButton(onPressed: open, child: const Text('Profile')),
+      ]),
+    );
+  }
+}
+
+class StageChip extends StatelessWidget {
+  const StageChip(this.stage, {super.key, this.prefix = ''});
   final OnboardingStage stage;
+  final String prefix;
 
   @override
   Widget build(BuildContext context) {
@@ -97,7 +151,7 @@ class _StageChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20)),
-      child: Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: fg)),
+      child: Text('$prefix$label', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: fg)),
     );
   }
 }

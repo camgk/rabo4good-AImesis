@@ -24,65 +24,103 @@ enum OnboardingStage {
       values.firstWhere((s) => s.name == n, orElse: () => treatment);
 }
 
-/// Session 1 — the doctor prepares: chemotherapy and basic patient details.
-class PatientIntake {
+/// What stays the same across cycles: who the patient is and their lasting
+/// preferences.
+class PatientProfile {
   String alias;
   int? age;
   String? sex;
-  double? weightKg;
-  double? heightCm;
   String language;
   String diagnosis;
   String? diagnosisGroup;
+  String formulationPreference;
+  String whatHelps;
+
+  PatientProfile({
+    this.alias = '',
+    this.age,
+    this.sex,
+    this.language = 'nl',
+    this.diagnosis = '',
+    this.diagnosisGroup,
+    this.formulationPreference = '',
+    this.whatHelps = '',
+  });
+
+  bool get isComplete => alias.trim().isNotEmpty && age != null && diagnosis.trim().isNotEmpty;
+
+  factory PatientProfile.fromApi(Patient p) => PatientProfile(
+        alias: p.alias,
+        age: p.age,
+        sex: p.sex,
+        language: p.language ?? 'nl',
+        diagnosis: p.diagnosis ?? '',
+        diagnosisGroup: p.diagnosisGroup,
+      );
+
+  factory PatientProfile.fromJson(Map<String, dynamic> j) => PatientProfile(
+        alias: (j['alias'] as String?) ?? '',
+        age: (j['age'] as num?)?.toInt(),
+        sex: j['sex'] as String?,
+        language: (j['language'] as String?) ?? 'nl',
+        diagnosis: (j['diagnosis'] as String?) ?? '',
+        diagnosisGroup: j['diagnosisGroup'] as String?,
+        formulationPreference: (j['formulationPreference'] as String?) ?? '',
+        whatHelps: (j['whatHelps'] as String?) ?? '',
+      );
+
+  Map<String, dynamic> toJson() => {
+        'alias': alias,
+        'age': age,
+        'sex': sex,
+        'language': language,
+        'diagnosis': diagnosis,
+        'diagnosisGroup': diagnosisGroup,
+        'formulationPreference': formulationPreference,
+        'whatHelps': whatHelps,
+      };
+}
+
+/// Session 1 for one cycle — the doctor prepares the chemotherapy.
+/// Weight and height are per cycle because children grow between cycles.
+class CycleIntake {
   String protocol;
   String cycle;
   DateTime? cycleStart;
+  double? weightKg;
+  double? heightCm;
+
+  /// Only asked on a patient's first recorded cycle.
   bool firstCycle;
   List<ChemoRow> chemo;
   List<String> activeMeds;
 
-  PatientIntake({
-    this.alias = '',
-    this.age,
-    this.sex,
-    this.weightKg,
-    this.heightCm,
-    this.language = 'nl',
-    this.diagnosis = '',
-    this.diagnosisGroup,
+  CycleIntake({
     this.protocol = '',
     this.cycle = '',
     this.cycleStart,
+    this.weightKg,
+    this.heightCm,
     this.firstCycle = true,
     List<ChemoRow>? chemo,
     List<String>? activeMeds,
   })  : chemo = chemo ?? [],
         activeMeds = activeMeds ?? [];
 
-  /// Enough to move on to the patient session.
   bool get isComplete =>
-      alias.trim().isNotEmpty &&
-      age != null &&
       weightKg != null &&
       heightCm != null &&
-      diagnosis.trim().isNotEmpty &&
       chemo.isNotEmpty &&
       chemo.every((c) => c.drug.trim().isNotEmpty && c.doseMgM2 > 0 && c.days.isNotEmpty);
 
   List<int> get chemoDays => (chemo.expand((c) => c.days).toSet().toList()..sort());
 
-  factory PatientIntake.fromJson(Map<String, dynamic> j) => PatientIntake(
-        alias: (j['alias'] as String?) ?? '',
-        age: (j['age'] as num?)?.toInt(),
-        sex: j['sex'] as String?,
-        weightKg: (j['weightKg'] as num?)?.toDouble(),
-        heightCm: (j['heightCm'] as num?)?.toDouble(),
-        language: (j['language'] as String?) ?? 'nl',
-        diagnosis: (j['diagnosis'] as String?) ?? '',
-        diagnosisGroup: j['diagnosisGroup'] as String?,
+  factory CycleIntake.fromJson(Map<String, dynamic> j) => CycleIntake(
         protocol: (j['protocol'] as String?) ?? '',
         cycle: (j['cycle'] as String?) ?? '',
         cycleStart: j['cycleStart'] == null ? null : DateTime.tryParse(j['cycleStart'] as String),
+        weightKg: (j['weightKg'] as num?)?.toDouble(),
+        heightCm: (j['heightCm'] as num?)?.toDouble(),
         firstCycle: (j['firstCycle'] as bool?) ?? true,
         chemo: [
           for (final c in (j['chemo'] as List? ?? const []))
@@ -92,43 +130,34 @@ class PatientIntake {
       );
 
   Map<String, dynamic> toJson() => {
-        'alias': alias,
-        'age': age,
-        'sex': sex,
-        'weightKg': weightKg,
-        'heightCm': heightCm,
-        'language': language,
-        'diagnosis': diagnosis,
-        'diagnosisGroup': diagnosisGroup,
         'protocol': protocol,
         'cycle': cycle,
         'cycleStart': cycleStart?.toIso8601String().substring(0, 10),
+        'weightKg': weightKg,
+        'heightCm': heightCm,
         'firstCycle': firstCycle,
         'chemo': chemo.map((c) => c.toJson()).toList(),
         'activeMeds': activeMeds,
       };
 }
 
-/// Session 2 — filled in by the doctor together with the patient and family.
-class PatientSession {
+/// Session 2 for one cycle — filled in with the patient and family.
+/// Route and swallowing can change between cycles, so they live here.
+class CycleSession {
   Set<String> present;
   bool canSwallowTablets;
   String preferredRoute;
   bool anticipatory;
   String priorNausea;
-  String formulationPreference;
-  String whatHelps;
   String concerns;
   bool completed;
 
-  PatientSession({
+  CycleSession({
     Set<String>? present,
     this.canSwallowTablets = true,
     this.preferredRoute = DoseRoute.oralTablet,
     this.anticipatory = false,
     this.priorNausea = '',
-    this.formulationPreference = '',
-    this.whatHelps = '',
     this.concerns = '',
     this.completed = false,
   }) : present = present ?? {};
@@ -146,14 +175,12 @@ class PatientSession {
         priorNauseaNote: priorNausea.trim().isEmpty ? null : priorNausea.trim(),
       );
 
-  factory PatientSession.fromJson(Map<String, dynamic> j) => PatientSession(
+  factory CycleSession.fromJson(Map<String, dynamic> j) => CycleSession(
         present: {for (final p in (j['present'] as List? ?? const [])) p as String},
         canSwallowTablets: (j['canSwallowTablets'] as bool?) ?? true,
         preferredRoute: (j['preferredRoute'] as String?) ?? DoseRoute.oralTablet,
         anticipatory: (j['anticipatory'] as bool?) ?? false,
         priorNausea: (j['priorNausea'] as String?) ?? '',
-        formulationPreference: (j['formulationPreference'] as String?) ?? '',
-        whatHelps: (j['whatHelps'] as String?) ?? '',
         concerns: (j['concerns'] as String?) ?? '',
         completed: (j['completed'] as bool?) ?? false,
       );
@@ -164,11 +191,29 @@ class PatientSession {
         'preferredRoute': preferredRoute,
         'anticipatory': anticipatory,
         'priorNausea': priorNausea,
-        'formulationPreference': formulationPreference,
-        'whatHelps': whatHelps,
         'concerns': concerns,
         'completed': completed,
       };
+}
+
+/// A cycle from the existing patient record (API), shown read-only in the
+/// history. Cycles added here are [CycleRecord]s instead.
+class PriorCycle {
+  final String label;
+  final String? date;
+  final String summary;
+  final String note;
+
+  const PriorCycle({required this.label, this.date, this.summary = '', this.note = ''});
+
+  factory PriorCycle.fromJson(Map<String, dynamic> j) => PriorCycle(
+        label: (j['label'] as String?) ?? '',
+        date: j['date'] as String?,
+        summary: (j['summary'] as String?) ?? '',
+        note: (j['note'] as String?) ?? '',
+      );
+
+  Map<String, dynamic> toJson() => {'label': label, 'date': date, 'summary': summary, 'note': note};
 }
 
 /// What one model contributed to the suggestion.
@@ -264,15 +309,16 @@ class Suggestion {
       };
 }
 
-/// One new patient going through onboarding.
-class OnboardingDraft {
+/// One chemotherapy cycle going through the four steps, and its outcome.
+class CycleRecord {
   final String id;
+  final String patientId;
   final DateTime createdAt;
   final String createdBy;
   DateTime updatedAt;
   OnboardingStage stage;
-  PatientIntake intake;
-  PatientSession session;
+  CycleIntake intake;
+  CycleSession session;
   Suggestion? suggestion;
 
   /// Bumped whenever inputs change, so a stale suggestion is re-run.
@@ -283,14 +329,15 @@ class OnboardingDraft {
   String? approvedBy;
   DateTime? approvedAt;
 
-  OnboardingDraft({
+  CycleRecord({
     required this.id,
+    required this.patientId,
     required this.createdAt,
     required this.createdBy,
     DateTime? updatedAt,
     this.stage = OnboardingStage.treatment,
-    PatientIntake? intake,
-    PatientSession? session,
+    CycleIntake? intake,
+    CycleSession? session,
     this.suggestion,
     this.inputsVersion = 0,
     this.processedVersion,
@@ -298,32 +345,35 @@ class OnboardingDraft {
     this.approvedBy,
     this.approvedAt,
   })  : updatedAt = updatedAt ?? createdAt,
-        intake = intake ?? PatientIntake(),
-        session = session ?? PatientSession();
+        intake = intake ?? CycleIntake(),
+        session = session ?? CycleSession();
 
   bool get isSent => stage == OnboardingStage.sent;
   bool get needsProcessing => suggestion == null || processedVersion != inputsVersion;
-  String get displayName => intake.alias.trim().isEmpty ? 'New patient' : intake.alias.trim();
-
-  /// Whether the stepper may jump to [step].
-  bool canOpen(OnboardingStage step) => switch (step) {
-        OnboardingStage.treatment => true,
-        OnboardingStage.session => intake.isComplete,
-        OnboardingStage.processing => intake.isComplete && session.completed,
-        OnboardingStage.review || OnboardingStage.sent => suggestion != null && !needsProcessing,
-      };
 
   /// Inputs changed: any existing suggestion is now out of date.
   void touchInputs() => inputsVersion++;
 
-  factory OnboardingDraft.fromJson(Map<String, dynamic> j) => OnboardingDraft(
+  /// Whether the stepper may jump to [step].
+  bool canOpen(OnboardingStage step, PatientProfile profile) {
+    final ready = profile.isComplete && intake.isComplete;
+    return switch (step) {
+      OnboardingStage.treatment => true,
+      OnboardingStage.session => ready,
+      OnboardingStage.processing => ready && session.completed,
+      OnboardingStage.review || OnboardingStage.sent => suggestion != null && !needsProcessing,
+    };
+  }
+
+  factory CycleRecord.fromJson(Map<String, dynamic> j) => CycleRecord(
         id: j['id'] as String,
+        patientId: j['patientId'] as String,
         createdAt: DateTime.parse(j['createdAt'] as String),
         createdBy: (j['createdBy'] as String?) ?? '',
         updatedAt: DateTime.tryParse((j['updatedAt'] as String?) ?? ''),
         stage: OnboardingStage.fromName(j['stage'] as String?),
-        intake: PatientIntake.fromJson(Map<String, dynamic>.from((j['intake'] as Map?) ?? const {})),
-        session: PatientSession.fromJson(Map<String, dynamic>.from((j['session'] as Map?) ?? const {})),
+        intake: CycleIntake.fromJson(Map<String, dynamic>.from((j['intake'] as Map?) ?? const {})),
+        session: CycleSession.fromJson(Map<String, dynamic>.from((j['session'] as Map?) ?? const {})),
         suggestion: j['suggestion'] == null
             ? null
             : Suggestion.fromJson(Map<String, dynamic>.from(j['suggestion'] as Map)),
@@ -336,6 +386,7 @@ class OnboardingDraft {
 
   Map<String, dynamic> toJson() => {
         'id': id,
+        'patientId': patientId,
         'createdAt': createdAt.toIso8601String(),
         'createdBy': createdBy,
         'updatedAt': updatedAt.toIso8601String(),
@@ -350,6 +401,80 @@ class OnboardingDraft {
         'approvedAt': approvedAt?.toIso8601String(),
       };
 }
+
+/// One patient profile holding every cycle: cycles from the existing record
+/// ([imported], API patients only) followed by cycles added here ([cycles]).
+class PatientRecord {
+  final String id;
+  final DateTime createdAt;
+
+  /// True for patients created here; false for API patients that got a new
+  /// cycle here.
+  final bool isLocal;
+  PatientProfile profile;
+  List<PriorCycle> imported;
+  List<CycleRecord> cycles;
+
+  PatientRecord({
+    required this.id,
+    required this.createdAt,
+    required this.isLocal,
+    PatientProfile? profile,
+    List<PriorCycle>? imported,
+    List<CycleRecord>? cycles,
+  })  : profile = profile ?? PatientProfile(),
+        imported = imported ?? [],
+        cycles = cycles ?? [];
+
+  String get displayName => profile.alias.trim().isEmpty ? 'New patient' : profile.alias.trim();
+  CycleRecord? get latest => cycles.isEmpty ? null : cycles.last;
+  CycleRecord? get inProgress => cycles.where((c) => !c.isSent).lastOrNull;
+  DateTime get lastActivity =>
+      cycles.isEmpty ? createdAt : cycles.map((c) => c.approvedAt ?? c.updatedAt).reduce((a, b) => a.isAfter(b) ? a : b);
+
+  /// Total cycles on the profile, including imported history.
+  int get cycleCount => imported.length + cycles.length;
+
+  /// 1-based position of [c] across the whole history.
+  int numberOf(CycleRecord c) => imported.length + cycles.indexWhere((x) => x.id == c.id) + 1;
+
+  /// Cycles before [c] (added here); imported ones come before all of them.
+  List<CycleRecord> before(CycleRecord c) => cycles.takeWhile((x) => x.id != c.id).toList();
+
+  /// Whether [c] is the patient's first cycle overall: profile details are
+  /// entered with it.
+  bool isFirst(CycleRecord c) => imported.isEmpty && cycles.isNotEmpty && cycles.first.id == c.id;
+
+  String labelOf(CycleRecord c) =>
+      c.intake.cycle.trim().isEmpty ? 'Cycle ${numberOf(c)}' : 'Cycle ${c.intake.cycle.trim()}';
+
+  factory PatientRecord.fromJson(Map<String, dynamic> j) => PatientRecord(
+        id: j['id'] as String,
+        createdAt: DateTime.parse(j['createdAt'] as String),
+        isLocal: (j['isLocal'] as bool?) ?? true,
+        profile: PatientProfile.fromJson(Map<String, dynamic>.from((j['profile'] as Map?) ?? const {})),
+        imported: [
+          for (final c in (j['imported'] as List? ?? const []))
+            PriorCycle.fromJson(Map<String, dynamic>.from(c as Map)),
+        ],
+        cycles: [
+          for (final c in (j['cycles'] as List? ?? const []))
+            CycleRecord.fromJson(Map<String, dynamic>.from(c as Map)),
+        ],
+      );
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'createdAt': createdAt.toIso8601String(),
+        'isLocal': isLocal,
+        'profile': profile.toJson(),
+        'imported': imported.map((c) => c.toJson()).toList(),
+        'cycles': cycles.map((c) => c.toJson()).toList(),
+      };
+}
+
+/// A cycle together with its patient — what the flow screens work on.
+typedef CycleRef = ({PatientRecord patient, CycleRecord cycle});
 
 /// "1-3, 8" / "1,2,3" / "1–3" → [1, 2, 3, 8]. Null when it can't be read.
 List<int>? parseDays(String text) {
